@@ -2,7 +2,13 @@
 <html lang="cs">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Kostky">
+<meta name="theme-color" content="#14120F" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#F5EFE2" media="(prefers-color-scheme: light)">
 <title>Kostky — počítadlo</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -50,7 +56,8 @@
     --body:#3B3529;
     color-scheme:light;
   }
-  *{box-sizing:border-box}
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html{overscroll-behavior:none;touch-action:manipulation}
   html,body{margin:0;padding:0}
   body{
     background:var(--soot);
@@ -58,7 +65,11 @@
     font-family:"Alegreya Sans","Segoe UI",system-ui,sans-serif;
     font-size:16px;
     line-height:1.45;
-    padding:12px 14px;
+    padding:
+      calc(12px + env(safe-area-inset-top))
+      calc(14px + env(safe-area-inset-right))
+      calc(6px + env(safe-area-inset-bottom))
+      calc(14px + env(safe-area-inset-left));
     max-width:560px;
     margin:0 auto;
     height:100vh;
@@ -301,7 +312,7 @@
   /* menší telefony a prohlížeč s lištami: 620–720 px */
   @media (max-height:719px){
     :root{--tap:40px}
-    body{padding:9px 13px}
+    body{padding:calc(9px + env(safe-area-inset-top)) calc(13px + env(safe-area-inset-right)) calc(5px + env(safe-area-inset-bottom)) calc(13px + env(safe-area-inset-left))}
     .tab{min-height:36px;font-size:11px}
     .score .line{padding:3px 1px}
     .score .line b{font-size:31px}
@@ -323,7 +334,7 @@
   /* iPhone SE2 v Safari, Galaxy S8: 540–640 px */
   @media (max-height:639px){
     :root{--tap:38px}
-    body{padding:7px 12px}
+    body{padding:calc(7px + env(safe-area-inset-top)) calc(12px + env(safe-area-inset-right)) calc(4px + env(safe-area-inset-bottom)) calc(12px + env(safe-area-inset-left))}
     .top{padding-bottom:6px}
     .wordmark{font-size:20px}
     .tab{min-height:33px}
@@ -364,7 +375,7 @@
     .score .line b{font-size:19px}
     .score .sub{display:flex}
     .chip .v{display:none}
-    body{padding:5px 10px}
+    body{padding:calc(5px + env(safe-area-inset-top)) calc(10px + env(safe-area-inset-right)) calc(4px + env(safe-area-inset-bottom)) calc(10px + env(safe-area-inset-left))}
     .turn{margin-top:0}
     .turnbar{padding:3px 10px}
     .turnbar .p{font-size:20px}
@@ -819,6 +830,8 @@
     if(!enter){ btn.hidden = true; return; }
 
     function active(){ return document.fullscreenElement || document.webkitFullscreenElement || null; }
+    /* iOS: zaostření vstupu vyhodí stránku z celé obrazovky; po odklepnutí
+       se dá vrátit jedním klepnutím, proto stav vždy překreslíme */
     function mark(){
       var on = !!active();
       $("fsin").hidden = on;
