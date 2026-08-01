@@ -1,31 +1,31 @@
-/* Kostky — service worker
-   Zvyš číslo verze při každé změně souborů; stará cache se pak sama smaže. */
-const VERZE = "kostky-v1";
+const VERZE = "kostky-v2";
 
-/* Cesty jsou relativní k umístění sw.js, takže to funguje i v podadresáři
-   (GitHub Pages projektový web běží na uzivatel.github.io/repo/). */
 const SOUBORY = [
   "./",
   "./index.html",
   "./manifest.webmanifest",
-  "./fonts/imfell.woff2",
-  "./fonts/imfellsc.woff2",
-  "./fonts/alegreya-400.woff2",
-  "./fonts/alegreya-500.woff2",
-  "./fonts/alegreya-700.woff2",
-  "./icons/icon-192.png",
-  "./icons/icon-512.png",
-  "./icons/icon-maskable-512.png",
-  "./icons/apple-touch-icon.png",
-  "./icons/favicon-64.png"
+  "./icon-192.png",
+  "./icon-512.png",
+  "./icon-maskable-512.png",
+  "./apple-touch-icon.png",
+  "./favicon-64.png"
 ];
 
-self.addEventListener("install", (e) => {
-  e.waitUntil(
-    caches.open(VERZE)
-      .then((c) => c.addAll(SOUBORY))
-      .then(() => self.skipWaiting())
+/* Zamerne NEpouzivame cache.addAll(): je atomicka a jediny chybejici
+   soubor by shodil celou instalaci. Takhle se ulozi, co je k dispozici. */
+async function naplnCache() {
+  const cache = await caches.open(VERZE);
+  await Promise.all(
+    SOUBORY.map((cesta) =>
+      cache.add(new Request(cesta, { cache: "reload" })).catch((e) => {
+        console.warn("[sw] nepodarilo se ulozit:", cesta, e);
+      })
+    )
   );
+}
+
+self.addEventListener("install", (e) => {
+  e.waitUntil(naplnCache().then(() => self.skipWaiting()));
 });
 
 self.addEventListener("activate", (e) => {
@@ -41,8 +41,8 @@ self.addEventListener("activate", (e) => {
 self.addEventListener("fetch", (e) => {
   const req = e.request;
   if (req.method !== "GET") return;
+  if (new URL(req.url).origin !== self.location.origin) return;
 
-  /* Navigace: zkus síť (kvůli aktualizaci), při výpadku vrať uloženou stránku. */
   if (req.mode === "navigate") {
     e.respondWith(
       fetch(req)
@@ -51,12 +51,14 @@ self.addEventListener("fetch", (e) => {
           caches.open(VERZE).then((c) => c.put("./index.html", kopie));
           return odp;
         })
-        .catch(() => caches.match("./index.html", { ignoreSearch: true }))
+        .catch(() =>
+          caches.match("./index.html", { ignoreSearch: true })
+            .then((ulozene) => ulozene || caches.match("./"))
+        )
     );
     return;
   }
 
-  /* Ostatní: nejdřív cache, pak síť; stažené se uloží pro příště. */
   e.respondWith(
     caches.match(req, { ignoreSearch: true }).then((ulozene) => {
       if (ulozene) return ulozene;
