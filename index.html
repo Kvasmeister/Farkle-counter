@@ -2,7 +2,7 @@
 <html lang="cs">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -10,10 +10,22 @@
 <meta name="theme-color" content="#14120F" media="(prefers-color-scheme: dark)">
 <meta name="theme-color" content="#F5EFE2" media="(prefers-color-scheme: light)">
 <title>Kostky — počítadlo</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=IM+Fell+English:ital@0;1&family=IM+Fell+English+SC&family=Alegreya+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/favicon-64.png" sizes="64x64">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <style>
+  /* fonty jsou v repu, aplikace funguje offline */
+  @font-face{font-family:"IM Fell English";src:url("fonts/imfell.woff2") format("woff2");
+    font-weight:400;font-style:normal;font-display:swap}
+  @font-face{font-family:"IM Fell English SC";src:url("fonts/imfellsc.woff2") format("woff2");
+    font-weight:400;font-style:normal;font-display:swap}
+  @font-face{font-family:"Alegreya Sans";src:url("fonts/alegreya-400.woff2") format("woff2");
+    font-weight:400;font-style:normal;font-display:swap}
+  @font-face{font-family:"Alegreya Sans";src:url("fonts/alegreya-500.woff2") format("woff2");
+    font-weight:500;font-style:normal;font-display:swap}
+  @font-face{font-family:"Alegreya Sans";src:url("fonts/alegreya-700.woff2") format("woff2");
+    font-weight:700;font-style:normal;font-display:swap}
+
   :root{
     --soot:#14120F;
     --slate:#1D1A16;
@@ -56,8 +68,8 @@
     --body:#3B3529;
     color-scheme:light;
   }
-  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-  html{overscroll-behavior:none;touch-action:manipulation}
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+  html{overscroll-behavior:none}
   html,body{margin:0;padding:0}
   body{
     background:var(--soot);
@@ -84,7 +96,7 @@
   button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
 
   /* hlavička */
-  .top{display:flex;align-items:center;gap:8px;padding-bottom:8px;border-bottom:1px solid var(--edge);flex:0 0 auto}
+  .top{position:relative;display:flex;align-items:center;gap:8px;padding-bottom:8px;border-bottom:1px solid var(--edge);flex:0 0 auto}
   .wordmark{font-family:"IM Fell English SC",Georgia,serif;font-size:22px;letter-spacing:.06em;line-height:1.2}
   .fs{
     background:transparent;border:1px solid var(--edge);border-radius:var(--r);
@@ -94,9 +106,9 @@
   .wordmark{margin-right:auto}
   .goal{font-size:13px;color:var(--dim);display:flex;align-items:center;gap:6px;flex-wrap:wrap;min-width:0}
   .goal select{min-width:0;max-width:46vw}
-  .goal select,.goal input{
+  .goal select,.goal input{font-size:16px;
     background:transparent;border:1px solid var(--edge);border-radius:var(--r);
-    color:var(--bone);font-family:inherit;font-size:14px;padding:0 6px;min-height:40px;
+    color:var(--bone);font-family:inherit;font-size:16px;padding:0 6px;min-height:40px;
   }
   .goal input{width:74px;background:var(--field)}
   .goal input:focus{outline:none;border-color:var(--brass)}
@@ -128,9 +140,14 @@
 
   /* volba režimu a cíle (stránka Zápis tahů) */
   .setup{
-    display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;
-    border:1px solid var(--edge);border-radius:var(--r);padding:9px 11px;margin:14px 0 0;
+    position:absolute;top:100%;left:0;right:0;z-index:30;margin-top:5px;
+    display:flex;align-items:center;gap:8px;flex-wrap:wrap;
+    border:1px solid var(--brass);border-radius:var(--r);
+    padding:8px 10px;background:var(--slate);
+    box-shadow:0 10px 26px rgba(0,0,0,.45);
   }
+  .setup[hidden]{display:none}
+  #cog.on{border-color:var(--brass);color:var(--brass)}
 
   /* přehled na stránce zápisu */
   .stats{display:flex;gap:8px;margin:16px 0 18px}
@@ -369,7 +386,11 @@
   /* telefon na šířku */
   @media (max-height:459px){
     :root{--tap:34px}
-    .top,.tabs{display:none}
+    .tabs{display:none}
+    /* horní lišta zůstává, jinak by nešlo otevřít nastavení; jen se stáhne */
+    .top{padding-bottom:3px;border-bottom:none}
+    .wordmark{display:none}
+    .fs{min-height:30px;padding:0 8px}
     .score{display:flex;gap:14px;padding:2px 0 0}
     .score .line{flex:1;border-bottom:none;padding:1px}
     .score .line b{font-size:19px}
@@ -383,9 +404,17 @@
     .cap{margin-bottom:2px}
     .cap.gap{margin-top:4px}
     .row,.kind,.pips,.kind .col{gap:4px}
-    .act,.rollbtn{min-height:38px;font-size:13.5px}
-    .rollbtnwrap{padding-top:5px}
-    .acts{padding-top:4px;gap:5px}
+    .act,.rollbtn{min-height:34px;font-size:13px}
+    .rollbtnwrap{padding-top:4px}
+    .acts{padding-top:3px;gap:5px}
+    .score{padding:0}
+    .score .line b{font-size:17px}
+    .score .line span{font-size:10px;letter-spacing:.12em}
+    .turnbar{padding:2px 10px}
+    .pips .chip{min-height:32px}
+    .cap{font-size:9.5px;margin-bottom:1px}
+    .rollhead{display:none}
+    .pad{padding:4px 10px}
   }
 
   @media(prefers-reduced-motion:reduce){*{transition:none!important}}
@@ -395,6 +424,12 @@
 
 <div class="top">
   <div class="wordmark">Kostky</div>
+  <button class="fs" id="cog" type="button" title="Nastavení hry" aria-label="Nastavení hry" aria-expanded="false">
+    <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="3.1"/>
+      <path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-2.7 1.1v.3a2 2 0 1 1-4 0v-.2a1.6 1.6 0 0 0-2.8-1.1l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1A1.6 1.6 0 0 0 3.5 15H3a2 2 0 1 1 0-4h.2A1.6 1.6 0 0 0 4.3 8.2l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.6 1.6 0 0 0 1.8.3H9a1.6 1.6 0 0 0 1-1.5V4a2 2 0 1 1 4 0v.2a1.6 1.6 0 0 0 2.7 1.1l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0-.3 1.8V10a1.6 1.6 0 0 0 1.5 1h.3a2 2 0 1 1 0 4h-.2a1.6 1.6 0 0 0-1.4 1z"/>
+    </svg>
+  </button>
   <button class="fs" id="theme" type="button" title="Světlý režim" aria-label="Světlý režim">
     <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round">
       <g id="thsun" hidden><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M19.1 4.9l-1.4 1.4M6.3 17.7l-1.4 1.4"/></g>
@@ -407,7 +442,25 @@
       <path id="fsout" d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" hidden/>
     </svg>
   </button>
+<div class="setup" id="setup" hidden>
+  <label class="goal">hraje se
+    <select id="modesel">
+      <option value="points" selected>do bodů</option>
+      <option value="rounds">na kola</option>
+    </select>
+    <select id="goalsel">
+      <option value="2000">2 000</option>
+      <option value="4000" selected>4 000</option>
+      <option value="6000">6 000</option>
+      <option value="8000">8 000</option>
+      <option value="10000">10 000</option>
+      <option value="custom">vlastní…</option>
+    </select>
+    <input id="goalnum" type="number" inputmode="numeric" min="100" step="100" hidden>
+  </label>
 </div>
+</div>
+
 
 <div class="tabs" role="tablist">
   <button class="tab" id="tab0" role="tab" aria-selected="true" aria-controls="page0">Počítadlo</button>
@@ -493,24 +546,6 @@
 <div class="tally" id="tally"></div>
 <div class="tallycap" id="tallycap"></div>
 
-<div class="setup">
-  <label class="goal">hraje se
-    <select id="modesel">
-      <option value="points" selected>do bodů</option>
-      <option value="rounds">na kola</option>
-    </select>
-    <select id="goalsel">
-      <option value="2000">2 000</option>
-      <option value="4000" selected>4 000</option>
-      <option value="6000">6 000</option>
-      <option value="8000">8 000</option>
-      <option value="10000">10 000</option>
-      <option value="custom">vlastní…</option>
-    </select>
-    <input id="goalnum" type="number" inputmode="numeric" min="100" step="100" hidden>
-  </label>
-</div>
-
 <div class="stats" id="stats"></div>
 
 <section class="hist">
@@ -541,7 +576,7 @@
       <tr><td>Postupka 1–6</td><td>1 500</td></tr>
     </table>
     <p class="note">Trojice = hodnota × 100 (jedničky 1 000). Každá další kostka navíc hodnotu <b>zdvojnásobí</b>: čtyři pětky 1 000, pět pětek 2 000, šest pětek 4 000. Šest jedniček je 8 000.</p>
-    <p class="note">Dvojice ani „skoro trojice“ neboduje — odložit jde jen jednička, pětka, hotová trojice a výš, nebo postupka. Bez odznaků a cinknutých kostek.</p>
+    <p class="note">Dvojice ani „skoro trojice“ neboduje — odložit jde jen jednička, pětka, hotová trojice a výš, nebo postupka.</p>
   </div>
 </section>
 
@@ -559,20 +594,15 @@
 
   var KEY = "farkle-solo-v3";
   function save(){
-    try{ if(window.storage && window.storage.set){ window.storage.set(KEY, JSON.stringify(S)); } }catch(e){}
+    try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){}
   }
   function load(cb){
     try{
-      if(window.storage && window.storage.get){
-        window.storage.get(KEY).then(function(r){
-          if(r && r.value){ try{
-            var d = JSON.parse(r.value);
-            if(d && typeof d.banked === "number" && d.rolls && d.rolls.length){ S = d; }
-            if(S.mode !== "rounds"){ S.mode = "points"; }
-          }catch(e){} }
-          cb();
-        }).catch(function(){ cb(); });
-        return;
+      var raw = localStorage.getItem(KEY);
+      if(raw){
+        var d = JSON.parse(raw);
+        if(d && typeof d.banked === "number" && d.rolls && d.rolls.length){ S = d; }
+        if(S.mode !== "rounds"){ S.mode = "points"; }
       }
     }catch(e){}
     cb();
@@ -792,6 +822,26 @@
     elEmpty.style.display = S.turns.length ? "none" : "block";
   }
 
+  /* ---------- panel nastavení hry ---------- */
+  (function(){
+    var btn = $("cog"), panel = $("setup");
+    function open(show){
+      panel.hidden = !show;
+      btn.classList.toggle("on", show);
+      btn.setAttribute("aria-expanded", show ? "true" : "false");
+    }
+    btn.addEventListener("click", function(){ open(panel.hidden); });
+    /* klepnutí mimo panel ho zavře */
+    document.addEventListener("click", function(e){
+      if(panel.hidden) return;
+      if(panel.contains(e.target) || btn.contains(e.target)) return;
+      open(false);
+    });
+    document.addEventListener("keydown", function(e){
+      if(e.key === "Escape" && !panel.hidden) open(false);
+    });
+  })();
+
   /* ---------- světlý / tmavý režim ---------- */
   (function(){
     var btn = $("theme"), root = document.documentElement, TKEY = "farkle-theme";
@@ -803,35 +853,43 @@
       var label = light ? "Tmavý režim" : "Světlý režim";
       btn.title = label;
       btn.setAttribute("aria-label", label);
-      try{ if(window.storage && window.storage.set){ window.storage.set(TKEY, mode); } }catch(e){}
+      try{ localStorage.setItem(TKEY, mode); }catch(e){}
     }
     btn.addEventListener("click", function(){
       apply(root.getAttribute("data-theme") === "light" ? "dark" : "light");
     });
-    var start = "dark";
-    try{
-      if(window.matchMedia && window.matchMedia("(prefers-color-scheme: light)").matches){ start = "light"; }
-    }catch(e){}
-    apply(start);
-    try{
-      if(window.storage && window.storage.get){
-        window.storage.get(TKEY).then(function(r){
-          if(r && (r.value === "light" || r.value === "dark")) apply(r.value);
-        }).catch(function(){});
-      }
-    }catch(e){}
+    var ulozeny = null;
+    try{ ulozeny = localStorage.getItem(TKEY); }catch(e){}
+    if(ulozeny === "light" || ulozeny === "dark"){
+      apply(ulozeny);
+    } else {
+      var svetlo = false;
+      try{ svetlo = window.matchMedia && matchMedia("(prefers-color-scheme: light)").matches; }catch(e){}
+      apply(svetlo ? "light" : "dark");
+    }
   })();
 
-  /* ---------- celá obrazovka ---------- */
+  /* ---------- celá obrazovka ----------
+     Pozor: iOS Safari metodu requestFullscreen vystavuje, ale na jiném než
+     video elementu nic neudělá. Ptáme se proto na fullscreenEnabled, což na
+     iPhonu vrací false — tlačítko se tam skryje místo aby mátlo. */
   (function(){
     var btn = $("fs"), root = document.documentElement;
-    var enter = root.requestFullscreen || root.webkitRequestFullscreen || root.msRequestFullscreen;
-    var exit = document.exitFullscreen || document.webkitExitFullscreen || document.msExitFullscreen;
-    if(!enter){ btn.hidden = true; return; }
+    var enter = root.requestFullscreen || root.webkitRequestFullscreen;
+    var exit = document.exitFullscreen || document.webkitExitFullscreen;
+    var allowed = (document.fullscreenEnabled !== undefined)
+      ? document.fullscreenEnabled
+      : (document.webkitFullscreenEnabled !== undefined ? document.webkitFullscreenEnabled : false);
+
+    /* nainstalovaná aplikace už na celé obrazovce běží sama */
+    var jakoAplikace = (window.matchMedia &&
+        (matchMedia("(display-mode: fullscreen)").matches ||
+         matchMedia("(display-mode: standalone)").matches)) ||
+        navigator.standalone === true;
+
+    if(!enter || !exit || !allowed || jakoAplikace){ btn.remove(); return; }
 
     function active(){ return document.fullscreenElement || document.webkitFullscreenElement || null; }
-    /* iOS: zaostření vstupu vyhodí stránku z celé obrazovky; po odklepnutí
-       se dá vrátit jedním klepnutím, proto stav vždy překreslíme */
     function mark(){
       var on = !!active();
       $("fsin").hidden = on;
@@ -840,11 +898,13 @@
       btn.title = label;
       btn.setAttribute("aria-label", label);
     }
+    function fail(){ btn.remove(); }   /* volání selhalo: tlačítko je k ničemu */
+
     btn.addEventListener("click", function(){
       try{
-        if(active()){ exit.call(document); }
-        else { enter.call(root, {navigationUI:"hide"}); }
-      }catch(e){}
+        var p = active() ? exit.call(document) : enter.call(root);
+        if(p && typeof p.catch === "function") p.catch(fail);
+      }catch(e){ fail(); }
     });
     ["fullscreenchange","webkitfullscreenchange"].forEach(function(ev){
       document.addEventListener(ev, mark);
@@ -904,7 +964,7 @@
     var avg = S.turns.length ? Math.round(S.banked / S.turns.length) : 0;
     $("stats").innerHTML =
       '<div><span>celkem</span><b>' + fmt(S.banked) + '</b></div>' +
-      '<div><span>nejlepší tah</span><b>' + fmt(best) + '</b></div>' +
+      '<div><span>nejlepší</span><b>' + fmt(best) + '</b></div>' +
       '<div><span>průměr</span><b>' + fmt(avg) + '</b></div>' +
       '<div><span>farklů</span><b>' + busts + '</b></div>';
   }
@@ -1022,6 +1082,13 @@
 
   /* ---------- start ---------- */
   load(function(){ syncGoalUI(); render(); });
+
+  /* ---------- offline režim ---------- */
+  if("serviceWorker" in navigator){
+    window.addEventListener("load", function(){
+      navigator.serviceWorker.register("sw.js").catch(function(){});
+    });
+  }
 })();
 </script>
 </body>
