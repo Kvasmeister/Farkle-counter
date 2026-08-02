@@ -346,6 +346,23 @@
   tr.f td.g{color:var(--danger);text-decoration:line-through;text-decoration-thickness:1px}
   .empty{color:var(--dim);font-size:13.5px;font-style:italic;padding:6px 0}
 
+  /* zápis do historie */
+  .archwrap{margin-top:16px}
+  .arch{
+    width:100%;min-height:46px;font-size:14px;padding:6px 10px;
+    border-color:var(--brass);color:var(--brass);
+  }
+  .arch:hover:not(:disabled){background:var(--brass);color:var(--onbrass);border-color:var(--brass)}
+  .arch:disabled{border-color:var(--edge);color:var(--dim);cursor:not-allowed}
+  .arch.warn{border-color:var(--oxblood);color:var(--danger)}
+  .arch.warn:hover{background:var(--oxblood);color:var(--bone)}
+
+  /* nadpis oddílu v nastavení */
+  .setcap{
+    font-family:"IM Fell English SC",Georgia,serif;font-size:12px;letter-spacing:.18em;
+    color:var(--dim);margin:16px 0 2px;font-weight:400;
+  }
+
   /* pravidla */
   .rules{font-size:14px;color:var(--body);margin-top:10px}
   .rules p{margin:0 0 9px}
@@ -607,6 +624,9 @@
   </div>
   <table><tbody id="rows"></tbody></table>
   <div class="empty" id="empty">Zatím žádný tah. Hoď všemi šesti.</div>
+  <div class="archwrap">
+    <button class="ghost arch" id="arch" type="button">Zatím není co zapsat</button>
+  </div>
 </section>
 
 </section>
@@ -658,9 +678,8 @@
         <div class="t"><b>Celá obrazovka</b><span>Skryje lišty prohlížeče.</span></div>
         <button class="ghost" id="fs" type="button">Zapnout</button>
       </div>
-      <div class="setrow">
-        <div class="t"><span>Obnova smazané hry a záloha historie přibudou v příští etapě.</span></div>
-      </div>
+      <h3 class="setcap">Obnova hry</h3>
+      <div id="koslist"></div>
     </div>
   </div>
 </div>
@@ -673,7 +692,7 @@
      rolls = hody v rozehraném tahu, poslední je ten, který právě řeším
      roll  = { thrown: kolika kostkami se hází, hot: bool, items: [...] }  */
   var S = { mode:"points", goal:4000, roundGoal:null, banked:0, turns:[],
-            rolls:[{thrown:6, hot:false, items:[]}], archivedId:null };
+            rolls:[{thrown:6, hot:false, items:[]}], archivedId:null, dirty:false };
 
   var KEY  = "farkle-solo-v3";   /* rozehraná hra */
   var HKEY = "farkle-hist-v1";   /* dohrané hry */
@@ -694,6 +713,7 @@
     /* doplnění polí, která ve starším uložení chybí */
     if(typeof S.roundGoal !== "number" || S.roundGoal < 1){ S.roundGoal = null; }
     if(typeof S.archivedId !== "string"){ S.archivedId = null; }
+    S.dirty = !!S.dirty;
     cb();
   }
 
@@ -739,6 +759,20 @@
     return base * Math.pow(2, count - 3);
   }
   var STRAIGHTS = { "15":{p:500,d:5,l:"postupka 1–5"}, "26":{p:750,d:5,l:"postupka 2–6"}, "16":{p:1500,d:6,l:"postupka 1–6"} };
+  /* Vlastní formát místo toLocale*: na různých zařízeních by se lišil
+     a font má omezenou sadu znaků. */
+  function dt(ms){
+    var d = new Date(ms);
+    return d.getDate() + ". " + (d.getMonth() + 1) + ". " + d.getFullYear() +
+           " \u00B7 " + d.getHours() + ":" + ("0" + d.getMinutes()).slice(-2);
+  }
+  function popisHry(rec){
+    var kol = (rec.turns || []).length;
+    var rez = rec.mode === "rounds"
+      ? ("na kola" + (rec.roundGoal ? " \u00B7 limit " + rec.roundGoal : ""))
+      : ("do " + fmt(rec.goal || 0));
+    return dt(rec.savedAt) + " \u00B7 " + rez + " \u00B7 " + kol + (kol === 1 ? " kolo" : (kol < 5 ? " kola" : " kol"));
+  }
   function fmt(n){ return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, "\u202F"); }
   function kostkami(n){ return n === 1 ? "1 kostkou" : n + " kostkami"; }
 
@@ -759,7 +793,7 @@
       elPot=$("pot"), elTurnNo=$("turnno"), elTurnWord=$("turnword"),
       elRollLine=$("rollline"), elFix=$("fix"),
       elRollOn=$("rollon"), elBank=$("bank"), elBust=$("bust"), elLock=$("lock"),
-      elRows=$("rows"), elEmpty=$("empty"),
+      elRows=$("rows"), elEmpty=$("empty"), elArch=$("arch"), elKosList=$("koslist"),
       elTally=$("tally"), elTallyCap=$("tallycap"),
       elModeSel=$("modesel"), elGoalSel=$("goalsel"), elGoalNum=$("goalnum"),
       elRoundSel=$("roundsel"), elRoundNum=$("roundnum"),
@@ -806,7 +840,7 @@
   function bank(){
     var p = potTotal();
     if(p <= 0 || locked()) return;
-    S.archivedId = null;
+    S.dirty = true;
     S.turns.push({p:p, bust:false, d:turnDesc()});
     S.banked += p;
     S.rolls = [{thrown:6, hot:false, items:[]}];
@@ -814,13 +848,13 @@
   }
   function bust(){
     if(locked()) return;
-    S.archivedId = null;
+    S.dirty = true;
     S.turns.push({p:potTotal(), bust:true, d:turnDesc()});
     S.rolls = [{thrown:6, hot:false, items:[]}];
     render();
   }
   function undo(){
-    S.archivedId = null;
+    S.dirty = true;
     if(cur().items.length){ unkeep(cur().items.length - 1); return; }
     if(S.rolls.length > 1){ S.rolls.pop(); render(); return; }
     var t = S.turns.pop();
@@ -829,9 +863,112 @@
   }
   function wipe(){
     S.banked = 0; S.turns = []; S.rolls = [{thrown:6, hot:false, items:[]}];
-    S.archivedId = null;
+    S.archivedId = null; S.dirty = false;
     render();
   }
+  /* ---------- zápis do historie ----------
+     Hra se do historie zapíše na povel. Když už tam je a od té doby se hrálo,
+     nabídne se aktualizace téhož záznamu — jinak by se rekordy počítaly dvakrát. */
+  var archTimer = null, archMsg = "";
+  function histIndex(list, id){
+    for(var i = 0; i < list.length; i++){ if(list[i].id === id) return i; }
+    return -1;
+  }
+  function archive(){
+    if(gameEmpty()) return;
+    /* nezapsaný tah propadne — na to se ptáme, jinde potvrzení není */
+    if(potTotal() > 0 && !archTimer){
+      archTimer = setTimeout(function(){ archTimer = null; renderArch(); }, 5000);
+      renderArch();
+      return;
+    }
+    clearTimeout(archTimer); archTimer = null;
+
+    var list = histAll();
+    var i = S.archivedId ? histIndex(list, S.archivedId) : -1;
+    var rec = makeRecord(i >= 0 ? S.archivedId : null);
+    if(i >= 0){ list[i] = rec; } else { list.push(rec); }
+
+    if(!histWrite(list)){
+      archMsg = "Nepodařilo se uložit — došlo místo";
+      setTimeout(function(){ archMsg = ""; renderArch(); }, 4000);
+      renderArch();
+      return;
+    }
+    S.archivedId = rec.id; S.dirty = false;
+    render();
+  }
+  function renderArch(){
+    elArch.classList.remove("warn");
+    if(archMsg){ elArch.disabled = true; elArch.textContent = archMsg; return; }
+    if(gameEmpty()){ elArch.disabled = true; elArch.textContent = "Zatím není co zapsat"; return; }
+    if(archTimer){
+      elArch.disabled = false;
+      elArch.classList.add("warn");
+      elArch.textContent = "Na stole je " + fmt(potTotal()) + " a propadne — zapsat?";
+      return;
+    }
+    if(S.archivedId && !S.dirty){
+      elArch.disabled = true; elArch.textContent = "Uloženo v historii"; return;
+    }
+    elArch.disabled = false;
+    elArch.textContent = S.archivedId ? "Aktualizovat v historii" : "Zapsat do historie";
+  }
+
+  /* ---------- koš ----------
+     Nová hra nesmaže rozehranou hru nenávratně: pokud není v historii,
+     odloží se sem a jde obnovit v nastavení. */
+  function kosPush(){
+    if(gameEmpty()) return;
+    if(S.archivedId && !S.dirty) return;   /* v historii už je, zálohu netřeba */
+    var list = kosAll();
+    list.unshift(makeRecord(null));
+    while(list.length > KOS_MAX){ list.pop(); }
+    kosWrite(list);
+  }
+  function nactiZaznam(rec){
+    S.mode = rec.mode === "rounds" ? "rounds" : "points";
+    S.goal = rec.goal > 0 ? rec.goal : 4000;
+    S.roundGoal = rec.roundGoal > 0 ? rec.roundGoal : null;
+    S.banked = rec.banked || 0;
+    S.turns = (rec.turns || []).map(function(t){
+      return { p: t.p || 0, bust: !!t.bust, d: t.d || "" };
+    });
+    S.rolls = [{thrown:6, hot:false, items:[]}];
+    S.archivedId = null; S.dirty = false;
+  }
+  function restore(id){
+    var list = kosAll(), i = histIndex(list, id);
+    if(i < 0) return;
+    var rec = list[i];
+    kosPush();                       /* co je právě rozehrané, taky neztratíme */
+    list = kosAll().filter(function(x){ return x.id !== id; });
+    kosWrite(list);
+    nactiZaznam(rec);
+    if(zavriModal) zavriModal();
+    syncGoalUI(); render(); renderKos();
+  }
+  function renderKos(){
+    var list = kosAll();
+    elKosList.innerHTML = "";
+    if(!list.length){
+      elKosList.innerHTML = '<div class="empty">Zatím není co obnovit. Hra smazaná tlačítkem Nová hra se sem odloží sama.</div>';
+      return;
+    }
+    list.forEach(function(rec){
+      var row = document.createElement("div");
+      row.className = "setrow";
+      var t = document.createElement("div");
+      t.className = "t";
+      t.innerHTML = "<b>" + fmt(rec.banked || 0) + "</b><span>" + popisHry(rec) + "</span>";
+      var b = document.createElement("button");
+      b.type = "button"; b.className = "ghost"; b.textContent = "Obnovit";
+      b.addEventListener("click", function(){ restore(rec.id); });
+      row.appendChild(t); row.appendChild(b);
+      elKosList.appendChild(row);
+    });
+  }
+
   var resetTimer = null;
   function disarmReset(){
     clearTimeout(resetTimer); resetTimer = null;
@@ -849,6 +986,7 @@
       return;
     }
     disarmReset();
+    kosPush();
     wipe();
   }
 
@@ -990,6 +1128,7 @@
 
   /* ---------- okna: pravidla a nastavení ---------- */
   function modalOpen(){ return !!document.querySelector(".modal:not([hidden])"); }
+  var zavriModal = null;
   (function(){
     var otevrene = null, vyvolal = null;
     function zavri(){
@@ -1008,6 +1147,7 @@
       var x = m.querySelector(".modalx");
       if(x) x.focus();
     }
+    zavriModal = zavri;
     $("infobtn").addEventListener("click", function(){ otevri("rulesmodal", this); });
     $("setbtn").addEventListener("click", function(){ otevri("setmodal", this); });
     document.querySelectorAll("[data-close]").forEach(function(b){
@@ -1208,7 +1348,7 @@
     if(manualDice > Math.max(1, l)) manualDice = Math.max(1, l);
     elMkost.textContent = manualDice + " kost.";
 
-    renderKind(); renderFix(); renderRows(); renderStats(); renderTally();
+    renderKind(); renderFix(); renderRows(); renderStats(); renderTally(); renderArch();
     save();
   }
 
@@ -1248,6 +1388,8 @@
   $("bust").addEventListener("click", bust);
   $("undo").addEventListener("click", undo);
   $("reset").addEventListener("click", reset);
+  elArch.addEventListener("click", archive);
+  $("setbtn").addEventListener("click", renderKos);
 
   /* režim a cíl hry */
   var PRESETS = ["2000","4000","6000","8000","10000"];
