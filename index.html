@@ -139,7 +139,7 @@
   #page0 .lock{flex:0 0 auto}
   #page0 .acts{margin-top:0;padding-top:8px;flex:0 0 auto}
 
-  /* volba režimu a cíle (stránka Zápis tahů) */
+  /* volba režimu a cíle (stránka Zápis kol) */
   .setup{
     position:absolute;top:100%;left:0;right:0;z-index:30;margin-top:5px;
     display:flex;align-items:center;gap:8px;flex-wrap:wrap;
@@ -223,7 +223,7 @@
   .tally i.cut{background:var(--brass);height:22px}
   .tallycap{text-align:center;font-size:12px;color:var(--dim)}
 
-  /* tah */
+  /* kolo */
   .turn{margin-top:14px;border:1px solid var(--edge);border-radius:var(--r);background:var(--slate)}
   .turnbar{display:flex;align-items:center;justify-content:space-between;padding:9px 13px;border-bottom:1px solid var(--edge)}
   .turnbar .l{font-family:"IM Fell English SC",Georgia,serif;font-size:13px;letter-spacing:.14em;color:var(--dim)}
@@ -274,7 +274,7 @@
   .manual input:focus{outline:none;border-color:var(--brass)}
 
   /* odložené v tomto hodu */
-  /* dvě vnitřní stránky boxu tahu: zadávání / opravy */
+  /* dvě vnitřní stránky boxu kola: zadávání / opravy */
   .sheettabs{display:flex;gap:4px;flex:0 0 auto}
   .sheettabs button{
     background:transparent;border:1px solid var(--edge);border-radius:var(--r);
@@ -314,7 +314,7 @@
   .rollbtn:hover:not(:disabled){background:var(--brass);color:var(--onbrass)}
   .rollbtn:disabled{border-color:var(--edge);color:var(--dim);cursor:not-allowed}
 
-  /* předchozí hody v tahu */
+  /* předchozí hody v kole */
 
   /* akce */
   .lock{
@@ -426,6 +426,27 @@
     color:var(--dim);margin:16px 0 2px;font-weight:400;
   }
 
+  /* režim oprav v zápise kol */
+  .histbtns{display:flex;gap:6px;flex:0 0 auto}
+  .ghost.on{border-color:var(--brass);color:var(--brass)}
+  td.x{width:44px;text-align:right;padding-left:6px}
+  .delbtn{
+    background:transparent;border:1px solid var(--edge);border-radius:var(--r);
+    color:var(--oxblood);min-height:34px;min-width:34px;font-size:16px;line-height:1;
+    display:inline-flex;align-items:center;justify-content:center;
+  }
+  .delbtn:hover{border-color:var(--oxblood);background:var(--dangerbg)}
+  tr.confirm td{background:var(--dangerbg);padding:8px 6px}
+  .cf{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .cf .q{font-size:13px;color:var(--danger);flex:1 1 auto;min-width:0}
+  .mini{
+    background:transparent;border:1px solid var(--edge);border-radius:var(--r);
+    color:var(--dim);font-size:12px;padding:0 12px;min-height:34px;flex:0 0 auto;
+  }
+  .mini:hover{border-color:var(--bone);color:var(--bone)}
+  .mini.danger{border-color:var(--oxblood);color:var(--danger)}
+  .mini.danger:hover{background:var(--oxblood);color:var(--bone)}
+
   /* pravidla */
   .rules{font-size:14px;color:var(--body);margin-top:10px}
   .rules p{margin:0 0 9px}
@@ -485,7 +506,7 @@
     .top{padding-bottom:6px}
     .wordmark{font-size:20px}
     .tab{min-height:33px}
-    .score .sub{display:none}          /* „zbývá“ ustoupí; skóre a tah zůstávají */
+    .score .sub{display:none}          /* „zbývá“ ustoupí; skóre a kolo zůstávají */
     .score .line b{font-size:28px}
     .turn{margin-top:7px}
     .rollhead{padding:4px 12px}
@@ -594,7 +615,7 @@
 
 <div class="tabs" role="tablist">
   <button class="tab" id="tab0" role="tab" aria-selected="true" aria-controls="page0">Počítadlo</button>
-  <button class="tab" id="tab1" role="tab" aria-selected="false" aria-controls="page1">Zápis tahů</button>
+  <button class="tab" id="tab1" role="tab" aria-selected="false" aria-controls="page1">Zápis kol</button>
   <button class="tab" id="tab2" role="tab" aria-selected="false" aria-controls="page2">Statistiky</button>
 </div>
 
@@ -608,7 +629,7 @@
 
 <section class="turn">
   <div class="turnbar">
-    <div class="l"><span id="turnword">Tah</span> <span id="turnno">1</span> — na stole</div>
+    <div class="l">Kolo <span id="turnno">1</span> — na stole</div>
     <div class="p" id="pot">0</div>
   </div>
 
@@ -632,8 +653,8 @@
     <div class="cap gap">Stejné hodnoty</div>
     <div class="kind">
       <div class="col">
-        <div class="pips" id="pips"></div>
         <div class="pips" id="counts"></div>
+        <div class="pips" id="pips"></div>
       </div>
       <button class="addbtn" id="addkind" disabled>+ 0</button>
     </div>
@@ -682,11 +703,14 @@
 
 <section class="hist">
   <div class="histhead">
-    <h2>Zápis tahů</h2>
-    <button class="ghost" id="reset">Nová hra</button>
+    <h2>Zápis kol</h2>
+    <div class="histbtns">
+      <button class="ghost" id="fixturns" type="button" aria-pressed="false">Opravit</button>
+      <button class="ghost" id="reset">Nová hra</button>
+    </div>
   </div>
   <table><tbody id="rows"></tbody></table>
-  <div class="empty" id="empty">Zatím žádný tah. Hoď všemi šesti.</div>
+  <div class="empty" id="empty">Zatím žádné kolo. Hoď všemi šesti.</div>
   <div class="archwrap">
     <button class="ghost arch" id="arch" type="button">Zatím není co uložit do historie</button>
   </div>
@@ -723,9 +747,9 @@
     </div>
     <div class="modalbody">
       <div class="rules">
-    <p>Hodíš šesti kostkami a odložíš si z hodu aspoň jednu bodující kostku nebo kombinaci. Když hod nedá vůbec nic, je to <b>Farkle</b> — všechno, co máš v tahu na stole, propadá a hraje soupeř.</p>
-    <p>Po každém hodu se rozhoduješ: <b>zapsat</b> body a předat tah, nebo <b>házet dál</b> jen těmi kostkami, které jsi neodložil.</p>
-    <p>Když odložíš i poslední kostku, přicházejí <b>horké kostky</b> — házíš znovu všemi šesti a body se sčítají dál v tomtéž tahu.</p>
+    <p>Hodíš šesti kostkami a odložíš si z hodu aspoň jednu bodující kostku nebo kombinaci. Když hod nedá vůbec nic, je to <b>Farkle</b> — všechno, co máš v kole na stole, propadá a hraje soupeř.</p>
+    <p>Po každém hodu se rozhoduješ: <b>zapsat</b> body a předat kolo, nebo <b>házet dál</b> jen těmi kostkami, které jsi neodložil.</p>
+    <p>Když odložíš i poslední kostku, přicházejí <b>horké kostky</b> — házíš znovu všemi šesti a body se sčítají dál v tomtéž kole.</p>
     <table>
       <tr><td>Každá jednička</td><td>100</td></tr>
       <tr><td>Každá pětka</td><td>50</td></tr>
@@ -801,7 +825,7 @@
   "use strict";
 
   /* ---------- stav ----------
-     rolls = hody v rozehraném tahu, poslední je ten, který právě řeším
+     rolls = hody v rozehraném kole, poslední je ten, který právě řeším
      roll  = { thrown: kolika kostkami se hází, hot: bool, items: [...] }  */
   var S = { mode:"points", goal:4000, roundGoal:null, banked:0, turns:[],
             rolls:[{thrown:6, hot:false, items:[]}], archivedId:null, dirty:false };
@@ -853,7 +877,7 @@
   function newId(){
     return "h" + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
   }
-  /* otisk rozehrané hry pro historii nebo koš; rozehraný tah se nezapočítává */
+  /* otisk rozehrané hry pro historii nebo koš; rozehrané kolo se nezapočítává */
   function snapshot(){
     return {
       mode: S.mode, goal: S.goal, roundGoal: S.roundGoal || null,
@@ -909,7 +933,7 @@
   /* ---------- prvky ---------- */
   var $ = function(id){ return document.getElementById(id); };
   var elScore=$("score"), elTotal=$("total"), elRest=$("rest"), elRestLabel=$("restlabel"),
-      elPot=$("pot"), elTurnNo=$("turnno"), elTurnWord=$("turnword"),
+      elPot=$("pot"), elTurnNo=$("turnno"),
       elRollLine=$("rollline"), elFix=$("fix"),
       elRollOn=$("rollon"), elBank=$("bank"), elBust=$("bust"), elLock=$("lock"),
       elRows=$("rows"), elEmpty=$("empty"), elArch=$("arch"), elKosList=$("koslist"), elKosHistList=$("koshistlist"),
@@ -929,7 +953,7 @@
   });
   [3,4,5,6].forEach(function(c){
     var b = document.createElement("button");
-    b.className = "chip"; b.textContent = "×" + c; b.dataset.count = c;
+    b.className = "chip"; b.textContent = c + "×"; b.dataset.count = c;
     b.addEventListener("click", function(){ selCount = c; renderKind(); });
     elCounts.appendChild(b);
   });
@@ -981,6 +1005,7 @@
     render();
   }
   function wipe(){
+    fixMode = false; pendingDel = null;
     S.banked = 0; S.turns = []; S.rolls = [{thrown:6, hot:false, items:[]}];
     S.archivedId = null; S.dirty = false;
     render();
@@ -995,7 +1020,7 @@
   }
   function archive(){
     if(gameEmpty()) return;
-    /* nezapsaný tah propadne — na to se ptáme, jinde potvrzení není */
+    /* nezapsané kolo propadne — na to se ptáme, jinde potvrzení není */
     if(potTotal() > 0 && !archTimer){
       archTimer = setTimeout(function(){ archTimer = null; renderArch(); }, 5000);
       renderArch();
@@ -1046,6 +1071,7 @@
     kosWrite(list);
   }
   function nactiZaznam(rec){
+    fixMode = false; pendingDel = null;
     S.mode = rec.mode === "rounds" ? "rounds" : "points";
     S.goal = rec.goal > 0 ? rec.goal : 4000;
     S.roundGoal = rec.roundGoal > 0 ? rec.roundGoal : null;
@@ -1205,7 +1231,7 @@
   function renderTally(){ tallyInto(elTally, elTallyCap, snapshot()); }
 
   /* přepočítá, kolika kostkami se v jednotlivých hodech háže,
-     když se z tahu odebere položka kdekoliv */
+     když se z kola odebere položka kdekoliv */
   function rechain(){
     S.rolls = S.rolls.filter(function(r, i){ return r.items.length || i === S.rolls.length - 1; });
     if(!S.rolls.length) S.rolls = [{thrown:6, hot:false, items:[]}];
@@ -1229,7 +1255,7 @@
     elFix.innerHTML = "";
     var any = S.rolls.some(function(r){ return r.items.length; });
     if(!any){
-      elFix.innerHTML = '<div class="none">V tomto tahu zatím nic zapsaného.</div>';
+      elFix.innerHTML = '<div class="none">V tomto kole zatím nic zapsaného.</div>';
       return;
     }
     S.rolls.forEach(function(r, ri){
@@ -1266,8 +1292,81 @@
     });
     return out;
   }
+  /* režim oprav v zápise kol: fixMode zapíná křížky u řádků,
+     pendingDel drží index kola, u kterého se právě ptáme na potvrzení.
+     Řádky se tu skládají po prvcích, ne přes rowsHTML — ten zůstává
+     pro nedotknutelný náhled hry z historie. */
+  var fixMode = false, pendingDel = null;
+
+  function deleteTurn(i){
+    var t = S.turns[i];
+    if(!t) return;
+    if(!t.bust){ S.banked -= t.p; }
+    S.turns.splice(i, 1);
+    pendingDel = null;
+    if(!S.turns.length){ fixMode = false; }
+    S.dirty = true;
+    render();
+  }
+
   function renderRows(){
-    elRows.innerHTML = rowsHTML(S.turns);
+    elRows.innerHTML = "";
+    if(pendingDel !== null && !S.turns[pendingDel]) pendingDel = null;
+
+    var fb = $("fixturns");
+    fb.style.display = S.turns.length ? "" : "none";
+    fb.classList.toggle("on", fixMode);
+    fb.setAttribute("aria-pressed", fixMode ? "true" : "false");
+    fb.textContent = fixMode ? "Hotovo" : "Opravit";
+
+    var run = 0;
+    S.turns.forEach(function(t, i){
+      if(!t.bust) run += t.p;
+      var tr = document.createElement("tr");
+
+      if(pendingDel === i){
+        tr.className = "confirm";
+        var td = document.createElement("td");
+        td.colSpan = 5;
+        var wrap = document.createElement("div");
+        wrap.className = "cf";
+        var q = document.createElement("span");
+        q.className = "q";
+        q.textContent = "Opravdu smazat kolo " + (i + 1) + "?";
+        var yes = document.createElement("button");
+        yes.type = "button"; yes.className = "mini danger"; yes.textContent = "Smazat";
+        yes.addEventListener("click", function(){ deleteTurn(i); });
+        var no = document.createElement("button");
+        no.type = "button"; no.className = "mini"; no.textContent = "Zrušit";
+        no.addEventListener("click", function(){ pendingDel = null; renderRows(); });
+        wrap.appendChild(q); wrap.appendChild(yes); wrap.appendChild(no);
+        td.appendChild(wrap);
+        tr.appendChild(td);
+        elRows.appendChild(tr);
+        return;
+      }
+
+      if(t.bust) tr.className = "f";
+      tr.innerHTML =
+        '<td class="n">' + (i + 1) + '</td>' +
+        '<td class="d">' + (t.bust ? ("farkle" + (t.d ? " — " + t.d : "")) : (t.d || "&nbsp;")) + '</td>' +
+        '<td class="g">' + fmt(t.p || 0) + '</td>' +
+        '<td class="s">' + fmt(run) + '</td>';
+
+      if(fixMode){
+        var xtd = document.createElement("td");
+        xtd.className = "x";
+        var x = document.createElement("button");
+        x.type = "button"; x.className = "delbtn"; x.innerHTML = "\u00D7";
+        x.title = "Smazat kolo " + (i + 1);
+        x.setAttribute("aria-label", "Smazat kolo " + (i + 1));
+        x.addEventListener("click", function(){ pendingDel = i; renderRows(); });
+        xtd.appendChild(x);
+        tr.appendChild(xtd);
+      }
+
+      elRows.appendChild(tr);
+    });
     elEmpty.style.display = S.turns.length ? "none" : "block";
   }
 
@@ -1407,7 +1506,7 @@
     mark();
   })();
 
-  /* ---------- vnitřní stránky boxu tahu ---------- */
+  /* ---------- vnitřní stránky boxu kola ---------- */
   var elSheets = $("sheets"), sheetBtns = Array.prototype.slice.call($("sheettabs").children), sheet = 0;
   function goSheet(i){
     sheet = Math.max(0, Math.min(sheetBtns.length - 1, i));
@@ -1843,7 +1942,7 @@
     elStatList.innerHTML = "";
     if(!hry.length){
       elStatList.innerHTML = '<div class="empty">Zatím žádná dohraná hra. ' +
-        'Hru zapíšeš do historie tlačítkem dole v Zápisu tahů.</div>';
+        'Hru zapíšeš do historie tlačítkem dole v Zápisu kol.</div>';
       return;
     }
     STATY.forEach(function(def, i){
@@ -1888,7 +1987,7 @@
     elHistList.innerHTML = "";
     if(!hry.length){
       elHistList.innerHTML = '<div class="empty">Historie je prázdná. ' +
-        'Dohranou hru do ní zapíšeš tlačítkem dole v Zápisu tahů.</div>';
+        'Dohranou hru do ní zapíšeš tlačítkem dole v Zápisu kol.</div>';
       return;
     }
     hry.forEach(function(rec){
@@ -1966,7 +2065,6 @@
       elRest.textContent = fmt(Math.abs(rest));
     }
     elPot.textContent = fmt(pot);
-    elTurnWord.textContent = (S.mode === "rounds") ? "Kolo" : "Tah";
     elTurnNo.textContent = S.turns.length + 1;
 
     elRollLine.innerHTML = "Hod " + S.rolls.length + " — házíš <b>" + kostkami(r.thrown) + "</b>" +
@@ -2035,6 +2133,11 @@
   elBank.addEventListener("click", bank);
   $("bust").addEventListener("click", bust);
   $("undo").addEventListener("click", undo);
+  $("fixturns").addEventListener("click", function(){
+    fixMode = !fixMode;
+    pendingDel = null;
+    renderRows();
+  });
   $("reset").addEventListener("click", reset);
   elArch.addEventListener("click", archive);
   $("setbtn").addEventListener("click", function(){ renderKos(); renderZaloha(); });
