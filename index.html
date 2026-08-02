@@ -409,6 +409,14 @@
   /* dvojice tlačítek u importu */
   .improw{display:flex;gap:8px;margin:8px 0 2px}
   .improw button{flex:1;min-height:44px;font-size:13px}
+  #pastebox{margin:8px 0 2px}
+  #pastebox[hidden]{display:none}
+  #pastearea{
+    display:block;width:100%;box-sizing:border-box;min-height:86px;resize:vertical;
+    background:var(--field);border:1px solid var(--edge);border-radius:var(--r);
+    color:var(--bone);font-family:inherit;font-size:16px;line-height:1.35;padding:8px 10px;
+  }
+  #pastearea:focus{outline:none;border-color:var(--brass)}
   .msg{font-size:13px;color:var(--bone);padding:8px 0 2px;line-height:1.4}
   .msg.bad{color:var(--danger)}
 
@@ -680,7 +688,7 @@
   <table><tbody id="rows"></tbody></table>
   <div class="empty" id="empty">Zatím žádný tah. Hoď všemi šesti.</div>
   <div class="archwrap">
-    <button class="ghost arch" id="arch" type="button">Zatím není co zapsat</button>
+    <button class="ghost arch" id="arch" type="button">Zatím není co uložit do historie</button>
   </div>
 </section>
 
@@ -745,8 +753,11 @@
         <div class="t"><b>Celá obrazovka</b><span>Skryje lišty prohlížeče.</span></div>
         <button class="ghost" id="fs" type="button">Zapnout</button>
       </div>
-      <h3 class="setcap">Obnova hry</h3>
+      <h3 class="setcap">Obnova rozehrané hry</h3>
       <div id="koslist"></div>
+
+      <h3 class="setcap">Smazané z historie</h3>
+      <div id="koshistlist"></div>
 
       <h3 class="setcap">Záloha historie</h3>
       <div class="setrow">
@@ -754,12 +765,23 @@
         <button class="ghost" id="expbtn" type="button">Uložit</button>
       </div>
       <div class="setrow">
-        <div class="t"><b>Zkopírovat do schránky</b><span>Náhrada, když stahování souborů nefunguje.</span></div>
+        <div class="t"><b>Zkopírovat do schránky</b><span>Pro případ nefunkčního stahování.</span></div>
         <button class="ghost" id="copybtn" type="button">Kopírovat</button>
       </div>
       <div class="setrow">
         <div class="t"><b>Import ze souboru</b><span>Načte zálohu a nabídne přidání nebo nahrazení.</span></div>
         <button class="ghost" id="impbtn" type="button">Vybrat soubor</button>
+      </div>
+      <div class="setrow">
+        <div class="t"><b>Import ze schránky</b><span>Vlož text zálohy do pole a načti ho.</span></div>
+        <button class="ghost" id="pastebtn" type="button">Vložit text</button>
+      </div>
+      <div id="pastebox" hidden>
+        <textarea id="pastearea" placeholder="Sem vlož zkopírovanou zálohu"></textarea>
+        <div class="improw">
+          <button class="ghost" id="pasteload" type="button">Načíst</button>
+          <button class="ghost" id="pastecancel" type="button">Zrušit</button>
+        </div>
       </div>
       <div id="impbox" hidden>
         <div class="msg" id="impinfo"></div>
@@ -787,7 +809,9 @@
   var KEY  = "farkle-solo-v3";   /* rozehraná hra */
   var HKEY = "farkle-hist-v1";   /* dohrané hry */
   var KKEY = "farkle-kos-v1";    /* neviditelná záloha přepsaných her */
+  var KHKEY = "farkle-koshist-v1"; /* hry smazané z historie */
   var KOS_MAX = 5;
+  var KOSH_MAX = 10;
   function save(){
     try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){}
   }
@@ -823,6 +847,8 @@
   function histWrite(list){ return writeList(HKEY, list); }
   function kosAll(){ return readList(KKEY); }
   function kosWrite(list){ return writeList(KKEY, list); }
+  function kosHistAll(){ return readList(KHKEY); }
+  function kosHistWrite(list){ return writeList(KHKEY, list); }
 
   function newId(){
     return "h" + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
@@ -886,7 +912,7 @@
       elPot=$("pot"), elTurnNo=$("turnno"), elTurnWord=$("turnword"),
       elRollLine=$("rollline"), elFix=$("fix"),
       elRollOn=$("rollon"), elBank=$("bank"), elBust=$("bust"), elLock=$("lock"),
-      elRows=$("rows"), elEmpty=$("empty"), elArch=$("arch"), elKosList=$("koslist"),
+      elRows=$("rows"), elEmpty=$("empty"), elArch=$("arch"), elKosList=$("koslist"), elKosHistList=$("koshistlist"),
       elTally=$("tally"), elTallyCap=$("tallycap"),
       elModeSel=$("modesel"), elGoalSel=$("goalsel"), elGoalNum=$("goalnum"),
       elRoundSel=$("roundsel"), elRoundNum=$("roundnum"),
@@ -994,7 +1020,7 @@
   function renderArch(){
     elArch.classList.remove("warn");
     if(archMsg){ elArch.disabled = true; elArch.textContent = archMsg; return; }
-    if(gameEmpty()){ elArch.disabled = true; elArch.textContent = "Zatím není co zapsat"; return; }
+    if(gameEmpty()){ elArch.disabled = true; elArch.textContent = "Zatím není co uložit do historie"; return; }
     if(archTimer){
       elArch.disabled = false;
       elArch.classList.add("warn");
@@ -1042,6 +1068,7 @@
     syncGoalUI(); render(); renderKos();
   }
   function renderKos(){
+    renderKosHist();
     var list = kosAll();
     elKosList.innerHTML = "";
     if(!list.length){
@@ -1059,6 +1086,48 @@
       b.addEventListener("click", function(){ restore(rec.id); });
       row.appendChild(t); row.appendChild(b);
       elKosList.appendChild(row);
+    });
+  }
+
+  /* ---------- koš pro hry smazané z historie ----------
+     Smazání z historie není nenávratné: záznam se odloží sem
+     a tlačítkem se vrátí zpátky mezi dohrané hry. */
+  function kosHistPush(rec){
+    if(!rec) return;
+    var list = kosHistAll();
+    list.unshift(rec);
+    while(list.length > KOSH_MAX){ list.pop(); }
+    kosHistWrite(list);
+  }
+  function vratDoHistorie(id){
+    var list = kosHistAll(), i = histIndex(list, id);
+    if(i < 0) return;
+    var rec = list[i];
+    var hry = histAll();
+    /* kdyby se mezitím objevil záznam se stejným id (třeba importem) */
+    if(histIndex(hry, rec.id) >= 0){ rec.id = newId(); }
+    if(!histWrite(hry.concat([rec]))) return;
+    kosHistWrite(list.filter(function(x, k){ return k !== i; }));
+    renderKosHist(); renderP2(); renderZaloha2();
+  }
+  function renderKosHist(){
+    var list = kosHistAll();
+    elKosHistList.innerHTML = "";
+    if(!list.length){
+      elKosHistList.innerHTML = '<div class="empty">Zatím není co vracet. Hra smazaná z historie se sem odloží sama.</div>';
+      return;
+    }
+    list.forEach(function(rec){
+      var row = document.createElement("div");
+      row.className = "setrow";
+      var t = document.createElement("div");
+      t.className = "t";
+      t.innerHTML = "<b>" + fmt(rec.banked || 0) + "</b><span>" + popisHry(rec) + "</span>";
+      var b = document.createElement("button");
+      b.type = "button"; b.className = "ghost"; b.textContent = "Vrátit";
+      b.addEventListener("click", function(){ vratDoHistorie(rec.id); });
+      row.appendChild(t); row.appendChild(b);
+      elKosHistList.appendChild(row);
     });
   }
 
@@ -1443,9 +1512,9 @@
     { n:"Nejvíc bodů — hra na body",    m:gBody,        a:"max",   f:fmt,      s:"points" },
     { n:"Nejvíc bodů — hra na kola",    m:gBody,        a:"max",   f:fmt,      s:"rounds", kol:true },
     { n:"Nejlepší kolo",                m:gNejlepsiKolo,a:"max",   f:fmt },
-    { n:"Nejhorší kolo mimo farkle",    m:gNejhorsiKolo,a:"min",   f:fmt },
+    { n:"Nejhorší kolo bez farklu",     m:gNejhorsiKolo,a:"min",   f:fmt },
     { n:"Nejvíc farklů za hru",         m:gFarkle,      a:"max",   f:cislo,    kol:true },
-    { n:"Nejdelší série bez farkle",    m:gSerie,       a:"max",   f:cislo,    kol:true },
+    { n:"Nejdelší série bez farklu",    m:gSerie,       a:"max",   f:cislo,    kol:true },
     { n:"Nejméně kol k dosažení cíle",  m:gKolKCili,    a:"min",   f:cislo,    s:"points" },
     { n:"Nejvíc kol v jedné hře",       m:gKol,         a:"max",   f:cislo },
     { n:"Celkový průměr na kolo",       m:gPrumer,      a:"pomer", f:fmtR,     num:gBody, den:gKol },
@@ -1593,6 +1662,7 @@
   }
 
   var elZalMsg=$("zalmsg"), elImpBox=$("impbox"), elImpInfo=$("impinfo"), elImpFile=$("impfile");
+  var elPasteBox=$("pastebox"), elPasteArea=$("pastearea");
   var nactene = null, repTimer = null;
   function zalMsg(text, spatne){
     elZalMsg.hidden = !text;
@@ -1610,12 +1680,40 @@
     clearTimeout(repTimer); repTimer = null;
     $("imprep").textContent = "Nahradit vše";
   }
+  function zavriVlozeni(){
+    elPasteBox.hidden = true;
+    elPasteArea.value = "";
+  }
   function renderZaloha(){
     var prazdno = histAll().length === 0;
     $("expbtn").disabled = prazdno;
     $("copybtn").disabled = prazdno;
     zalMsg("");
     zavriImport();
+    zavriVlozeni();
+  }
+
+  /* společné pro import ze souboru i ze schránky */
+  function prijmiZalohu(text, cemu, vCem){
+    var list = parseZaloha(String(text || ""));
+    if(!list){
+      zavriImport();
+      zalMsg(cemu + " nerozumím — chybí v něm datový řádek.", true);
+      return;
+    }
+    if(!list.length){
+      zavriImport();
+      zalMsg("V " + vCem + " není žádná hra.", true);
+      return;
+    }
+    nactene = list;
+    var nove = novychZ(list).length;
+    elImpInfo.textContent = "V " + vCem + " " + list.length + " " + hrySlovo(list.length) +
+      ", z toho " + nove + " " + novaSlovo(nove) + ".";
+    $("impadd").disabled = nove === 0;
+    $("impadd").textContent = nove ? ("Přidat " + nove) : "Není co přidat";
+    elImpBox.hidden = false;
+    zalMsg("");
   }
 
   $("expbtn").addEventListener("click", function(){
@@ -1637,31 +1735,33 @@
     if(!f) return;
     var fr = new FileReader();
     fr.onload = function(){
-      var list = parseZaloha(String(fr.result || ""));
-      if(!list){
-        zavriImport();
-        zalMsg("Souboru nerozumím — chybí v něm datový řádek.", true);
-        return;
-      }
-      if(!list.length){
-        zavriImport();
-        zalMsg("V souboru není žádná hra.", true);
-        return;
-      }
-      nactene = list;
-      var nove = novychZ(list).length;
-      elImpInfo.textContent = "V souboru " + list.length + " " + hrySlovo(list.length) +
-        ", z toho " + nove + " " + novaSlovo(nove) + ".";
-      $("impadd").disabled = nove === 0;
-      $("impadd").textContent = nove ? ("Přidat " + nove) : "Není co přidat";
-      elImpBox.hidden = false;
-      zalMsg("");
+      zavriVlozeni();
+      prijmiZalohu(fr.result, "Souboru", "souboru");
     };
     fr.onerror = function(){
       zavriImport();
       zalMsg("Soubor se nepodařilo přečíst.", true);
     };
     fr.readAsText(f, "utf-8");
+  });
+  $("pastebtn").addEventListener("click", function(){
+    zalMsg("");
+    zavriImport();
+    elPasteBox.hidden = false;
+    elPasteArea.focus();
+  });
+  $("pastecancel").addEventListener("click", function(){
+    zavriImport();
+    zavriVlozeni();
+    zalMsg("");
+  });
+  $("pasteload").addEventListener("click", function(){
+    var text = elPasteArea.value;
+    if(!text.trim()){
+      zalMsg("Pole je prázdné — vlož do něj text zálohy.", true);
+      return;
+    }
+    prijmiZalohu(text, "Textu", "textu");
   });
   $("impadd").addEventListener("click", function(){
     if(!nactene) return;
@@ -1672,6 +1772,7 @@
       return;
     }
     zavriImport();
+    zavriVlozeni();
     zalMsg(pocet === 1 ? "Přidána 1 hra."
       : (pocet < 5 ? ("Přidány " + pocet + " hry.") : ("Přidáno " + pocet + " her.")));
     renderP2(); renderZaloha2();
@@ -1696,6 +1797,7 @@
       render();
     }
     zavriImport();
+    zavriVlozeni();
     zalMsg("Historie nahrazena, " + pocet + " " + hrySlovo(pocet) + ".");
     renderP2(); renderZaloha2();
   });
@@ -1829,6 +1931,7 @@
         return;
       }
       clearTimeout(delTimer); delTimer = null;
+      kosHistPush(rec);
       histWrite(histAll().filter(function(g){ return g.id !== id; }));
       /* rozehraná hra už v historii není, ať jde zapsat znovu */
       if(S.archivedId === id){ S.archivedId = null; S.dirty = false; }
