@@ -346,6 +346,55 @@
   tr.f td.g{color:var(--danger);text-decoration:line-through;text-decoration-thickness:1px}
   .empty{color:var(--dim);font-size:13.5px;font-style:italic;padding:6px 0}
 
+  /* dvě velké části stránky Statistiky */
+  .seg{display:flex;gap:6px;margin:14px 0 2px;flex:0 0 auto}
+  .seg button{
+    flex:1;min-height:46px;padding:0 6px;
+    background:transparent;border:1px solid var(--edge);border-radius:var(--r);
+    color:var(--dim);font-family:"IM Fell English SC",Georgia,serif;
+    font-size:13px;letter-spacing:.16em;
+  }
+  .seg button:hover{border-color:var(--brass);color:var(--brass)}
+  .seg button.on{background:var(--brass);border-color:var(--brass);color:var(--onbrass)}
+
+  /* řádek statistiky */
+  .strow{
+    width:100%;display:flex;align-items:baseline;gap:10px;text-align:left;
+    background:transparent;border:none;border-bottom:1px solid var(--hair);
+    padding:9px 1px;min-height:46px;color:inherit;
+  }
+  .strow:hover:not(:disabled) .sn{color:var(--brass)}
+  .strow:disabled{cursor:default;opacity:.75}
+  .strow .sn{flex:1;min-width:0;font-size:14px}
+  .strow .sd{display:block;font-size:11.5px;color:var(--dim);margin-top:1px}
+  .strow .sv{
+    flex:0 0 auto;font-family:"IM Fell English",Georgia,serif;font-weight:400;
+    font-size:19px;line-height:1;
+  }
+  .strow .chev{flex:0 0 auto;color:var(--dim);font-size:15px;line-height:1}
+
+  /* řádek hry v historii */
+  .grow{
+    width:100%;display:flex;align-items:baseline;gap:10px;text-align:left;
+    background:transparent;border:none;border-bottom:1px solid var(--hair);
+    padding:9px 1px;min-height:48px;color:inherit;
+  }
+  .grow:hover .gn{color:var(--brass)}
+  .grow .gn{flex:1;min-width:0;font-size:13.5px;color:var(--dim)}
+  .grow .gn b{display:block;font-weight:500;font-size:14.5px;color:var(--bone);margin-bottom:1px}
+  .grow .gv{
+    flex:0 0 auto;font-family:"IM Fell English",Georgia,serif;font-weight:400;
+    font-size:20px;line-height:1;
+  }
+
+  /* podstránka: detail hry nebo žebříček */
+  .dethead{display:flex;align-items:center;gap:10px;margin:14px 0 4px}
+  .dethead h2{
+    font-family:"IM Fell English SC",Georgia,serif;font-size:13px;
+    letter-spacing:.16em;color:var(--dim);min-width:0;
+  }
+  .back{flex:0 0 auto}
+
   /* zápis do historie */
   .archwrap{margin-top:16px}
   .arch{
@@ -632,10 +681,22 @@
 </section>
 <section class="page" id="page2" role="tabpanel" aria-labelledby="tab2">
 
-<section class="hist">
-  <div class="histhead"><h2>Statistiky</h2></div>
-  <div class="empty">Dlouhodobé statistiky a historie her přibudou v příští etapě.</div>
-</section>
+<div id="p2list">
+  <div class="seg" id="seg">
+    <button type="button" class="on" data-seg="0">Statistiky</button>
+    <button type="button" data-seg="1">Historie her</button>
+  </div>
+  <div id="statlist"></div>
+  <div id="histlist" hidden></div>
+</div>
+
+<div id="p2detail" hidden>
+  <div class="dethead">
+    <button class="ghost back" id="detback" type="button">« Zpět</button>
+    <h2 id="dettitle"></h2>
+  </div>
+  <div id="detbody"></div>
+</div>
 
 </section>
 </div>
@@ -738,16 +799,18 @@
     return "h" + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
   }
   /* otisk rozehrané hry pro historii nebo koš; rozehraný tah se nezapočítává */
-  function makeRecord(id){
+  function snapshot(){
     return {
-      id: id || newId(),
-      savedAt: Date.now(),
-      mode: S.mode,
-      goal: S.goal,
-      roundGoal: S.roundGoal || null,
+      mode: S.mode, goal: S.goal, roundGoal: S.roundGoal || null,
       banked: S.banked,
       turns: S.turns.map(function(t){ return { p:t.p, bust:!!t.bust, d:t.d || "" }; })
     };
+  }
+  function makeRecord(id){
+    var r = snapshot();
+    r.id = id || newId();
+    r.savedAt = Date.now();
+    return r;
   }
   function gameEmpty(){
     return S.turns.length === 0 && S.rolls.length === 1 && cur().items.length === 0;
@@ -766,12 +829,13 @@
     return d.getDate() + ". " + (d.getMonth() + 1) + ". " + d.getFullYear() +
            " \u00B7 " + d.getHours() + ":" + ("0" + d.getMinutes()).slice(-2);
   }
+  function kolSlovo(n){ return n === 1 ? "kolo" : (n < 5 ? "kola" : "kol"); }
   function popisHry(rec){
     var kol = (rec.turns || []).length;
     var rez = rec.mode === "rounds"
       ? ("na kola" + (rec.roundGoal ? " \u00B7 limit " + rec.roundGoal : ""))
       : ("do " + fmt(rec.goal || 0));
-    return dt(rec.savedAt) + " \u00B7 " + rez + " \u00B7 " + kol + (kol === 1 ? " kolo" : (kol < 5 ? " kola" : " kol"));
+    return dt(rec.savedAt) + " \u00B7 " + rez + " \u00B7 " + kol + " " + kolSlovo(kol);
   }
   function fmt(n){ return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, "\u202F"); }
   function kostkami(n){ return n === 1 ? "1 kostkou" : n + " kostkami"; }
@@ -896,7 +960,7 @@
       return;
     }
     S.archivedId = rec.id; S.dirty = false;
-    render();
+    render(); renderP2();
   }
   function renderArch(){
     elArch.classList.remove("warn");
@@ -1007,37 +1071,40 @@
     elAddKind.textContent = ok ? ("+ " + fmt(kindPoints(selValue, selCount))) : "+ 0";
   }
 
-  function renderTally(){
-    elTally.innerHTML = "";
+  /* Vrubovka i přehledové dlaždice se kreslí z otisku hry, takže stejný kód
+     obslouží rozehranou hru i hru vytaženou z historie. */
+  function tallyInto(elBars, elCap, rec){
+    elBars.innerHTML = "";
     var i, s;
 
-    if(S.mode === "rounds"){
-      var played = S.turns.length;
-      var kol = S.roundGoal > 0 ? Math.min(40, S.roundGoal) : Math.min(40, played);
+    if(rec.mode === "rounds"){
+      var played = (rec.turns || []).length;
+      var kol = rec.roundGoal > 0 ? Math.min(40, rec.roundGoal) : Math.min(40, played);
       for(i = 0; i < kol; i++){
         s = document.createElement("i");
         if(i < played) s.className = "cut";
-        elTally.appendChild(s);
+        elBars.appendChild(s);
       }
-      if(S.roundGoal > 0){
-        elTallyCap.textContent = "odehráno kol: " + played + " z " + S.roundGoal;
+      if(rec.roundGoal > 0){
+        elCap.textContent = "odehráno kol: " + played + " z " + rec.roundGoal;
       } else {
-        elTallyCap.textContent = played ? ("odehráno kol: " + played) : "zatím žádné kolo";
+        elCap.textContent = played ? ("odehráno kol: " + played) : "zatím žádné kolo";
       }
       return;
     }
 
-    var step = Math.max(100, Math.round(S.goal / 8 / 100) * 100);
-    var n = Math.min(40, Math.max(4, Math.round(S.goal / step)));
-    var done = Math.max(0, Math.min(n, Math.floor(S.banked / step)));
+    var step = Math.max(100, Math.round(rec.goal / 8 / 100) * 100);
+    var n = Math.min(40, Math.max(4, Math.round(rec.goal / step)));
+    var done = Math.max(0, Math.min(n, Math.floor(rec.banked / step)));
     for(i = 0; i < n; i++){
       s = document.createElement("i");
       if(i < done) s.className = "cut";
-      elTally.appendChild(s);
+      elBars.appendChild(s);
     }
-    var rest = S.goal - S.banked;
-    elTallyCap.textContent = rest > 0 ? ("do cíle zbývá " + fmt(rest)) : ("cíl překonán o " + fmt(-rest));
+    var rest = rec.goal - rec.banked;
+    elCap.textContent = rest > 0 ? ("do cíle zbývá " + fmt(rest)) : ("cíl překonán o " + fmt(-rest));
   }
+  function renderTally(){ tallyInto(elTally, elTallyCap, snapshot()); }
 
   /* přepočítá, kolika kostkami se v jednotlivých hodech háže,
      když se z tahu odebere položka kdekoliv */
@@ -1089,20 +1156,20 @@
     });
   }
 
-  function renderRows(){
-    elRows.innerHTML = "";
-    var run = 0;
-    S.turns.forEach(function(t, i){
+  function rowsHTML(turns){
+    var run = 0, out = "";
+    (turns || []).forEach(function(t, i){
       if(!t.bust) run += t.p;
-      var tr = document.createElement("tr");
-      if(t.bust) tr.className = "f";
-      tr.innerHTML =
+      out += '<tr' + (t.bust ? ' class="f"' : '') + '>' +
         '<td class="n">' + (i + 1) + '</td>' +
         '<td class="d">' + (t.bust ? ("farkle" + (t.d ? " — " + t.d : "")) : (t.d || "&nbsp;")) + '</td>' +
         '<td class="g">' + fmt(t.p || 0) + '</td>' +
-        '<td class="s">' + fmt(run) + '</td>';
-      elRows.appendChild(tr);
+        '<td class="s">' + fmt(run) + '</td></tr>';
     });
+    return out;
+  }
+  function renderRows(){
+    elRows.innerHTML = rowsHTML(S.turns);
     elEmpty.style.display = S.turns.length ? "none" : "block";
   }
 
@@ -1264,6 +1331,7 @@
   var elPages = $("pages"), tabs = [$("tab0"), $("tab1"), $("tab2")], page = 0;
   function goTo(i, smooth){
     page = Math.max(0, Math.min(tabs.length - 1, i));
+    if(page === 2) renderP2();
     var reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     var behavior = (smooth === false || reduce) ? "auto" : "smooth";
     var x = page * elPages.clientWidth;
@@ -1288,17 +1356,254 @@
     if(e.key === "ArrowLeft") goTo(page - 1);
   });
 
-  function renderStats(){
-    var scored = S.turns.filter(function(t){ return !t.bust; });
-    var busts = S.turns.length - scored.length;
+  function statsHTML(rec){
+    var turns = rec.turns || [];
+    var scored = turns.filter(function(t){ return !t.bust; });
+    var busts = turns.length - scored.length;
     var best = scored.reduce(function(a, t){ return Math.max(a, t.p); }, 0);
-    var avg = S.turns.length ? Math.round(S.banked / S.turns.length) : 0;
-    $("stats").innerHTML =
-      '<div><span>celkem</span><b>' + fmt(S.banked) + '</b></div>' +
-      '<div><span>nejlepší</span><b>' + fmt(best) + '</b></div>' +
-      '<div><span>průměr</span><b>' + fmt(avg) + '</b></div>' +
-      '<div><span>farklů</span><b>' + busts + '</b></div>';
+    var avg = turns.length ? Math.round((rec.banked || 0) / turns.length) : 0;
+    return '<div><span>celkem</span><b>' + fmt(rec.banked || 0) + '</b></div>' +
+           '<div><span>nejlepší</span><b>' + fmt(best) + '</b></div>' +
+           '<div><span>průměr</span><b>' + fmt(avg) + '</b></div>' +
+           '<div><span>farklů</span><b>' + busts + '</b></div>';
   }
+  function renderStats(){ $("stats").innerHTML = statsHTML(snapshot()); }
+
+  /* ---------- odvozené údaje o jedné hře ---------- */
+  function gKol(g){ return (g.turns || []).length; }
+  function gFarkle(g){
+    var n = 0;
+    (g.turns || []).forEach(function(t){ if(t.bust) n++; });
+    return n;
+  }
+  function gNejlepsiKolo(g){
+    var m = null;
+    (g.turns || []).forEach(function(t){ if(!t.bust && (m === null || t.p > m)) m = t.p; });
+    return m;
+  }
+  function gNejhorsiKolo(g){
+    var m = null;
+    (g.turns || []).forEach(function(t){ if(!t.bust && t.p > 0 && (m === null || t.p < m)) m = t.p; });
+    return m;
+  }
+  function gSerie(g){
+    var nej = 0, b = 0;
+    (g.turns || []).forEach(function(t){
+      if(t.bust){ b = 0; } else { b++; if(b > nej) nej = b; }
+    });
+    return nej;
+  }
+  function gPrumer(g){
+    var k = gKol(g);
+    return k ? Math.round((g.banked || 0) / k) : null;
+  }
+  function gKolKCili(g){
+    return (g.mode !== "rounds" && g.goal > 0 && (g.banked || 0) >= g.goal) ? gKol(g) : null;
+  }
+  function gBody(g){ return g.banked || 0; }
+
+  function cislo(v){ return String(v); }
+  function fmtR(v){ return fmt(Math.round(v)); }
+  function desetina(v){ return (Math.round(v * 10) / 10).toString().replace(".", ","); }
+
+  /* ---------- sledované statistiky ----------
+     s: omezení na režim, m: hodnota jedné hry, a: způsob shrnutí,
+     f: formát, dir: směr žebříčku, kol: dopsat do žebříčku počet kol */
+  var STATY = [
+    { n:"Nejvíc bodů za hru",           m:gBody,        a:"max",   f:fmt,      kol:true },
+    { n:"Nejvíc bodů — hra na body",    m:gBody,        a:"max",   f:fmt,      s:"points" },
+    { n:"Nejvíc bodů — hra na kola",    m:gBody,        a:"max",   f:fmt,      s:"rounds", kol:true },
+    { n:"Nejlepší kolo",                m:gNejlepsiKolo,a:"max",   f:fmt },
+    { n:"Nejhorší kolo mimo farkle",    m:gNejhorsiKolo,a:"min",   f:fmt },
+    { n:"Nejvíc farklů za hru",         m:gFarkle,      a:"max",   f:cislo,    kol:true },
+    { n:"Nejdelší série bez farkle",    m:gSerie,       a:"max",   f:cislo,    kol:true },
+    { n:"Nejméně kol k dosažení cíle",  m:gKolKCili,    a:"min",   f:cislo,    s:"points" },
+    { n:"Nejvíc kol v jedné hře",       m:gKol,         a:"max",   f:cislo },
+    { n:"Celkový průměr na kolo",       m:gPrumer,      a:"pomer", f:fmtR,     num:gBody, den:gKol },
+    { n:"Průměr na kolo — hra na body", m:gPrumer,      a:"pomer", f:fmtR,     num:gBody, den:gKol, s:"points" },
+    { n:"Průměr na kolo — hra na kola", m:gPrumer,      a:"pomer", f:fmtR,     num:gBody, den:gKol, s:"rounds" },
+    { n:"Farklů na hru",                m:gFarkle,      a:"pomer", f:desetina, num:gFarkle, den:function(){ return 1; }, dir:"asc" },
+    { n:"Odehráno her",                 a:"pocet",      f:cislo },
+    { n:"Celkem nasbíráno bodů",        a:"soucet",     f:fmt,      num:gBody }
+  ];
+
+  function vyberHry(def, hry){
+    if(!def.s) return hry;
+    return hry.filter(function(g){
+      return def.s === "rounds" ? g.mode === "rounds" : g.mode !== "rounds";
+    });
+  }
+  function statHodnota(def, hry){
+    var v = vyberHry(def, hry);
+    if(def.a === "pocet"){ return { txt: def.f(v.length) }; }
+    if(def.a === "soucet"){
+      var sc = 0;
+      v.forEach(function(g){ sc += def.num(g); });
+      return v.length ? { txt: def.f(sc) } : null;
+    }
+    if(def.a === "pomer"){
+      var a = 0, b = 0;
+      v.forEach(function(g){
+        var d = def.den(g);
+        if(d > 0){ a += def.num(g); b += d; }
+      });
+      return b ? { txt: def.f(a / b) } : null;
+    }
+    var nej = null;
+    v.forEach(function(g){
+      var x = def.m(g);
+      if(x === null || x === undefined) return;
+      if(!nej || (def.a === "max" ? x > nej.x : x < nej.x)) nej = { x:x, g:g };
+    });
+    return nej ? { txt: def.f(nej.x), kdy: nej.g.savedAt } : null;
+  }
+  function zebricek(def, hry){
+    var dir = def.dir || (def.a === "min" ? "asc" : "desc");
+    var v = vyberHry(def, hry).map(function(g){ return { g:g, x:def.m(g) }; })
+      .filter(function(r){ return r.x !== null && r.x !== undefined; });
+    v.sort(function(a, b){ return dir === "asc" ? a.x - b.x : b.x - a.x; });
+    return v;
+  }
+  function jdeRozkliknout(def){ return def.a !== "pocet" && def.a !== "soucet"; }
+
+  /* ---------- stránka Statistiky ---------- */
+  var segIdx = 0, delTimer = null;
+  var elSeg=$("seg"), elStatList=$("statlist"), elHistList=$("histlist"),
+      elP2List=$("p2list"), elP2Detail=$("p2detail"),
+      elDetTitle=$("dettitle"), elDetBody=$("detbody");
+
+  function zpetNaSeznam(){
+    clearTimeout(delTimer); delTimer = null;
+    elP2Detail.hidden = true;
+    elP2List.hidden = false;
+    renderP2();
+  }
+  function doDetailu(titulek){
+    elDetTitle.textContent = titulek;
+    elP2List.hidden = true;
+    elP2Detail.hidden = false;
+    elP2Detail.scrollTop = 0;
+    $("page2").scrollTop = 0;
+  }
+
+  function renderP2(){
+    var hry = histAll();
+    hry.sort(function(a, b){ return (b.savedAt || 0) - (a.savedAt || 0); });
+    elStatList.hidden = segIdx !== 0;
+    elHistList.hidden = segIdx !== 1;
+    Array.prototype.forEach.call(elSeg.children, function(b, i){
+      b.classList.toggle("on", i === segIdx);
+    });
+    if(segIdx === 0) renderStatList(hry); else renderHistList(hry);
+  }
+
+  function renderStatList(hry){
+    elStatList.innerHTML = "";
+    if(!hry.length){
+      elStatList.innerHTML = '<div class="empty">Zatím žádná dohraná hra. ' +
+        'Hru zapíšeš do historie tlačítkem dole v Zápisu tahů.</div>';
+      return;
+    }
+    STATY.forEach(function(def, i){
+      var h = statHodnota(def, hry);
+      var lze = jdeRozkliknout(def) && h;
+      var b = document.createElement("button");
+      b.type = "button";
+      b.className = "strow";
+      b.disabled = !lze;
+      b.innerHTML =
+        '<span class="sn">' + def.n +
+          (h && h.kdy ? '<span class="sd">' + dt(h.kdy) + '</span>' : '') +
+        '</span>' +
+        '<b class="sv">' + (h ? h.txt : "\u2014") + '</b>' +
+        (lze ? '<span class="chev">\u203A</span>' : '');
+      if(lze){
+        b.addEventListener("click", function(){ otevriZebricek(i); });
+      }
+      elStatList.appendChild(b);
+    });
+  }
+
+  function otevriZebricek(i){
+    var def = STATY[i], hry = histAll(), v = zebricek(def, hry);
+    doDetailu(def.n);
+    if(!v.length){
+      elDetBody.innerHTML = '<div class="empty">Pro tuhle statistiku zatím nejsou data.</div>';
+      return;
+    }
+    var out = '<table><tbody>';
+    v.forEach(function(r, k){
+      out += '<tr>' +
+        '<td class="n">' + (k + 1) + '</td>' +
+        '<td class="d">' + dt(r.g.savedAt) +
+          (def.kol ? ' \u00B7 ' + gKol(r.g) + ' ' + kolSlovo(gKol(r.g)) : '') + '</td>' +
+        '<td class="g">' + def.f(r.x) + '</td></tr>';
+    });
+    elDetBody.innerHTML = out + '</tbody></table>';
+  }
+
+  function renderHistList(hry){
+    elHistList.innerHTML = "";
+    if(!hry.length){
+      elHistList.innerHTML = '<div class="empty">Historie je prázdná. ' +
+        'Dohranou hru do ní zapíšeš tlačítkem dole v Zápisu tahů.</div>';
+      return;
+    }
+    hry.forEach(function(rec){
+      var b = document.createElement("button");
+      b.type = "button";
+      b.className = "grow";
+      b.innerHTML = '<span class="gn"><b>' + dt(rec.savedAt) + '</b>' +
+        (rec.mode === "rounds"
+          ? ("na kola" + (rec.roundGoal ? " \u00B7 limit " + rec.roundGoal : ""))
+          : ("do " + fmt(rec.goal || 0))) +
+        ' \u00B7 ' + gKol(rec) + ' ' + kolSlovo(gKol(rec)) + ' \u00B7 ' + gFarkle(rec) + '\u00D7 farkle</span>' +
+        '<b class="gv">' + fmt(rec.banked || 0) + '</b>';
+      b.addEventListener("click", function(){ otevriHru(rec.id); });
+      elHistList.appendChild(b);
+    });
+  }
+
+  function otevriHru(id){
+    var hry = histAll(), i = histIndex(hry, id);
+    if(i < 0) return;
+    var rec = hry[i];
+    doDetailu("Hra z " + dt(rec.savedAt));
+    elDetBody.innerHTML =
+      '<div class="tally" id="dtally"></div><div class="tallycap" id="dtallycap"></div>' +
+      '<div class="stats">' + statsHTML(rec) + '</div>' +
+      '<table><tbody>' + rowsHTML(rec.turns) + '</tbody></table>' +
+      (gKol(rec) ? '' : '<div class="empty">V téhle hře není zapsané žádné kolo.</div>') +
+      '<div class="archwrap"><button class="ghost arch" id="delgame" type="button">Smazat z historie</button></div>';
+    tallyInto($("dtally"), $("dtallycap"), rec);
+    var db = $("delgame");
+    db.addEventListener("click", function(){
+      if(!delTimer){
+        db.classList.add("warn");
+        db.textContent = "Opravdu smazat?";
+        delTimer = setTimeout(function(){
+          delTimer = null;
+          db.classList.remove("warn");
+          db.textContent = "Smazat z historie";
+        }, 4000);
+        return;
+      }
+      clearTimeout(delTimer); delTimer = null;
+      histWrite(histAll().filter(function(g){ return g.id !== id; }));
+      /* rozehraná hra už v historii není, ať jde zapsat znovu */
+      if(S.archivedId === id){ S.archivedId = null; S.dirty = false; }
+      zpetNaSeznam();
+      render();
+    });
+  }
+
+  Array.prototype.forEach.call(elSeg.children, function(b, i){
+    b.addEventListener("click", function(){
+      segIdx = i;
+      zpetNaSeznam();
+    });
+  });
+  $("detback").addEventListener("click", zpetNaSeznam);
 
   function render(){
     var r = cur(), l = left(), pot = potTotal();
@@ -1453,7 +1758,7 @@
   });
 
   /* ---------- start ---------- */
-  load(function(){ syncGoalUI(); render(); });
+  load(function(){ syncGoalUI(); render(); renderP2(); });
 
   /* ---------- offline režim ---------- */
   if("serviceWorker" in navigator){
