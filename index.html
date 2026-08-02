@@ -447,6 +447,11 @@
   .mini.danger{border-color:var(--oxblood);color:var(--danger)}
   .mini.danger:hover{background:var(--oxblood);color:var(--bone)}
 
+  /* Okno s informacemi drží plnou výšku, ať se při přepnutí karty
+     nemění velikost — kratší pravidla nechají dole prázdno. */
+  #rulesmodal .modalbox{height:100%}
+  #rulesmodal .modalbody{flex:1 1 auto;min-height:0}
+
   /* okno s informacemi: dvě karty */
   .modalbody .seg{margin:10px 0 0}
   .infocard[hidden]{display:none}
