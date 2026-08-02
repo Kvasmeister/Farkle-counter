@@ -406,6 +406,12 @@
   .arch.warn{border-color:var(--oxblood);color:var(--danger)}
   .arch.warn:hover{background:var(--oxblood);color:var(--bone)}
 
+  /* dvojice tlačítek u importu */
+  .improw{display:flex;gap:8px;margin:8px 0 2px}
+  .improw button{flex:1;min-height:44px;font-size:13px}
+  .msg{font-size:13px;color:var(--bone);padding:8px 0 2px;line-height:1.4}
+  .msg.bad{color:var(--danger)}
+
   /* nadpis oddílu v nastavení */
   .setcap{
     font-family:"IM Fell English SC",Georgia,serif;font-size:12px;letter-spacing:.18em;
@@ -741,6 +747,29 @@
       </div>
       <h3 class="setcap">Obnova hry</h3>
       <div id="koslist"></div>
+
+      <h3 class="setcap">Záloha historie</h3>
+      <div class="setrow">
+        <div class="t"><b>Export do souboru</b><span>Textový soubor s přehledem her a daty pro pozdější import.</span></div>
+        <button class="ghost" id="expbtn" type="button">Uložit</button>
+      </div>
+      <div class="setrow">
+        <div class="t"><b>Zkopírovat do schránky</b><span>Náhrada, když stahování souborů nefunguje.</span></div>
+        <button class="ghost" id="copybtn" type="button">Kopírovat</button>
+      </div>
+      <div class="setrow">
+        <div class="t"><b>Import ze souboru</b><span>Načte zálohu a nabídne přidání nebo nahrazení.</span></div>
+        <button class="ghost" id="impbtn" type="button">Vybrat soubor</button>
+      </div>
+      <div id="impbox" hidden>
+        <div class="msg" id="impinfo"></div>
+        <div class="improw">
+          <button class="ghost" id="impadd" type="button">Přidat nové</button>
+          <button class="ghost warn" id="imprep" type="button">Nahradit vše</button>
+        </div>
+      </div>
+      <div class="msg" id="zalmsg" hidden></div>
+      <input type="file" id="impfile" accept=".txt,text/plain" hidden>
     </div>
   </div>
 </div>
@@ -829,7 +858,7 @@
     return d.getDate() + ". " + (d.getMonth() + 1) + ". " + d.getFullYear() +
            " \u00B7 " + d.getHours() + ":" + ("0" + d.getMinutes()).slice(-2);
   }
-  function kolSlovo(n){ return n === 1 ? "kolo" : (n < 5 ? "kola" : "kol"); }
+  function kolSlovo(n){ return n === 1 ? "kolo" : ((n >= 2 && n < 5) ? "kola" : "kol"); }
   function popisHry(rec){
     var kol = (rec.turns || []).length;
     var rez = rec.mode === "rounds"
@@ -1466,6 +1495,217 @@
   }
   function jdeRozkliknout(def){ return def.a !== "pocet" && def.a !== "soucet"; }
 
+  /* ---------- záloha historie ----------
+     Soubor je čitelný text; poslední řádek nese data pro import.
+     Kdyby ho někdo z přehledu smazal, import to pozná a řekne to. */
+  var ZNACKA = "#DATA:";
+  function hrySlovo(n){ return n === 1 ? "hra" : ((n >= 2 && n < 5) ? "hry" : "her"); }
+  function novaSlovo(n){ return n === 1 ? "nová" : ((n >= 2 && n < 5) ? "nové" : "nových"); }
+  function datumProNazev(){
+    var d = new Date();
+    return d.getFullYear() + "-" + ("0" + (d.getMonth() + 1)).slice(-2) + "-" + ("0" + d.getDate()).slice(-2);
+  }
+  function exportText(){
+    var hry = histAll().slice().sort(function(a, b){ return (a.savedAt || 0) - (b.savedAt || 0); });
+    var r = [];
+    r.push("Kostky \u2014 z\u00E1loha historie her");
+    r.push("vytvo\u0159eno " + dt(Date.now()) + ", her: " + hry.length);
+    r.push("");
+    hry.forEach(function(rec, i){
+      r.push((i + 1) + ") " + popisHry(rec));
+      r.push("   celkem " + fmt(rec.banked || 0) +
+             ", nejlep\u0161\u00ED kolo " + (gNejlepsiKolo(rec) === null ? "\u2014" : fmt(gNejlepsiKolo(rec))) +
+             ", farkl\u016F " + gFarkle(rec));
+      var run = 0;
+      (rec.turns || []).forEach(function(t, k){
+        if(!t.bust) run += t.p;
+        r.push("   " + (k + 1) + ". " + (t.bust ? "farkle" : fmt(t.p || 0)) +
+               (t.d ? "  (" + t.d + ")" : "") + "   celkem " + fmt(run));
+      });
+      r.push("");
+    });
+    /* v čitelné části nechceme úzkou nezlomitelnou mezeru, v textovém
+       souboru by se leckde zobrazila jako podivný znak */
+    return r.join("\n").replace(/\u202F/g, " ") +
+           "\n--- data pro import, ne\u0161ahat ---\n" + ZNACKA + JSON.stringify(hry);
+  }
+  function parseZaloha(text){
+    var i = text.lastIndexOf(ZNACKA);
+    if(i < 0) return null;
+    var radek = text.slice(i + ZNACKA.length).split("\n")[0].trim();
+    var d;
+    try{ d = JSON.parse(radek); }catch(e){ return null; }
+    if(!Array.isArray(d)) return null;
+    var out = [];
+    d.forEach(function(g){
+      if(!g || typeof g !== "object" || !Array.isArray(g.turns)) return;
+      out.push({
+        id: (typeof g.id === "string" && g.id) ? g.id : newId(),
+        savedAt: typeof g.savedAt === "number" ? g.savedAt : Date.now(),
+        mode: g.mode === "rounds" ? "rounds" : "points",
+        goal: g.goal > 0 ? g.goal : 4000,
+        roundGoal: g.roundGoal > 0 ? g.roundGoal : null,
+        banked: typeof g.banked === "number" ? g.banked : 0,
+        turns: g.turns.map(function(t){
+          return {
+            p: (t && typeof t.p === "number") ? t.p : 0,
+            bust: !!(t && t.bust),
+            d: (t && typeof t.d === "string") ? t.d : ""
+          };
+        })
+      });
+    });
+    return out;
+  }
+  function stahni(nazev, text){
+    try{
+      var blob = new Blob([text], { type: "text/plain;charset=utf-8" });
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement("a");
+      a.href = url; a.download = nazev; a.style.display = "none";
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(function(){
+        if(a.parentNode) a.parentNode.removeChild(a);
+        URL.revokeObjectURL(url);
+      }, 1500);
+      return true;
+    }catch(e){ return false; }
+  }
+  function doSchranky(text){
+    try{
+      if(navigator.clipboard && navigator.clipboard.writeText){
+        navigator.clipboard.writeText(text);
+        return true;
+      }
+    }catch(e){}
+    try{
+      var ta = document.createElement("textarea");
+      ta.value = text;
+      ta.setAttribute("readonly", "");
+      ta.style.position = "fixed"; ta.style.opacity = "0";
+      document.body.appendChild(ta);
+      ta.select();
+      var ok = document.execCommand("copy");
+      document.body.removeChild(ta);
+      return ok;
+    }catch(e){ return false; }
+  }
+
+  var elZalMsg=$("zalmsg"), elImpBox=$("impbox"), elImpInfo=$("impinfo"), elImpFile=$("impfile");
+  var nactene = null, repTimer = null;
+  function zalMsg(text, spatne){
+    elZalMsg.hidden = !text;
+    elZalMsg.textContent = text || "";
+    elZalMsg.classList.toggle("bad", !!spatne);
+  }
+  function novychZ(list){
+    var mame = {};
+    histAll().forEach(function(g){ mame[g.id] = true; });
+    return list.filter(function(g){ return !mame[g.id]; });
+  }
+  function zavriImport(){
+    nactene = null;
+    elImpBox.hidden = true;
+    clearTimeout(repTimer); repTimer = null;
+    $("imprep").textContent = "Nahradit vše";
+  }
+  function renderZaloha(){
+    var prazdno = histAll().length === 0;
+    $("expbtn").disabled = prazdno;
+    $("copybtn").disabled = prazdno;
+    zalMsg("");
+    zavriImport();
+  }
+
+  $("expbtn").addEventListener("click", function(){
+    var text = exportText();
+    var ok = stahni("kostky-historie-" + datumProNazev() + ".txt", text);
+    zalMsg(ok ? "Soubor se ukládá." : "Stažení se nepodařilo — zkus kopii do schránky.", !ok);
+  });
+  $("copybtn").addEventListener("click", function(){
+    var ok = doSchranky(exportText());
+    zalMsg(ok ? "Záloha je ve schránce." : "Do schránky se to nepodařilo zkopírovat.", !ok);
+  });
+  $("impbtn").addEventListener("click", function(){
+    zalMsg("");
+    elImpFile.value = "";
+    elImpFile.click();
+  });
+  elImpFile.addEventListener("change", function(){
+    var f = elImpFile.files && elImpFile.files[0];
+    if(!f) return;
+    var fr = new FileReader();
+    fr.onload = function(){
+      var list = parseZaloha(String(fr.result || ""));
+      if(!list){
+        zavriImport();
+        zalMsg("Souboru nerozumím — chybí v něm datový řádek.", true);
+        return;
+      }
+      if(!list.length){
+        zavriImport();
+        zalMsg("V souboru není žádná hra.", true);
+        return;
+      }
+      nactene = list;
+      var nove = novychZ(list).length;
+      elImpInfo.textContent = "V souboru " + list.length + " " + hrySlovo(list.length) +
+        ", z toho " + nove + " " + novaSlovo(nove) + ".";
+      $("impadd").disabled = nove === 0;
+      $("impadd").textContent = nove ? ("Přidat " + nove) : "Není co přidat";
+      elImpBox.hidden = false;
+      zalMsg("");
+    };
+    fr.onerror = function(){
+      zavriImport();
+      zalMsg("Soubor se nepodařilo přečíst.", true);
+    };
+    fr.readAsText(f, "utf-8");
+  });
+  $("impadd").addEventListener("click", function(){
+    if(!nactene) return;
+    var nove = novychZ(nactene);
+    var pocet = nove.length;
+    if(!histWrite(histAll().concat(nove))){
+      zalMsg("Nepodařilo se uložit — došlo místo.", true);
+      return;
+    }
+    zavriImport();
+    zalMsg(pocet === 1 ? "Přidána 1 hra."
+      : (pocet < 5 ? ("Přidány " + pocet + " hry.") : ("Přidáno " + pocet + " her.")));
+    renderP2(); renderZaloha2();
+  });
+  $("imprep").addEventListener("click", function(){
+    if(!nactene) return;
+    var b = $("imprep");
+    if(!repTimer){
+      b.textContent = "Opravdu nahradit?";
+      repTimer = setTimeout(function(){ repTimer = null; b.textContent = "Nahradit vše"; }, 5000);
+      return;
+    }
+    clearTimeout(repTimer); repTimer = null;
+    var pocet = nactene.length;
+    if(!histWrite(nactene.slice())){
+      zalMsg("Nepodařilo se uložit — došlo místo.", true);
+      return;
+    }
+    /* rozehraná hra se mohla vázat na záznam, který už neexistuje */
+    if(S.archivedId && histIndex(histAll(), S.archivedId) < 0){
+      S.archivedId = null; S.dirty = false;
+      render();
+    }
+    zavriImport();
+    zalMsg("Historie nahrazena, " + pocet + " " + hrySlovo(pocet) + ".");
+    renderP2(); renderZaloha2();
+  });
+  /* po zápisu se mění jen zapnutost tlačítek, hlášku necháváme na obrazovce */
+  function renderZaloha2(){
+    var prazdno = histAll().length === 0;
+    $("expbtn").disabled = prazdno;
+    $("copybtn").disabled = prazdno;
+  }
+
   /* ---------- stránka Statistiky ---------- */
   var segIdx = 0, delTimer = null;
   var elSeg=$("seg"), elStatList=$("statlist"), elHistList=$("histlist"),
@@ -1694,7 +1934,7 @@
   $("undo").addEventListener("click", undo);
   $("reset").addEventListener("click", reset);
   elArch.addEventListener("click", archive);
-  $("setbtn").addEventListener("click", renderKos);
+  $("setbtn").addEventListener("click", function(){ renderKos(); renderZaloha(); });
 
   /* režim a cíl hry */
   var PRESETS = ["2000","4000","6000","8000","10000"];
