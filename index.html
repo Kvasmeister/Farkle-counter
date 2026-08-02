@@ -136,6 +136,7 @@
   #page0 .turn{flex:0 0 auto;display:flex;flex-direction:column}
   #page0 .pad,#page0 .rollhead,#page0 .turnbar,#page0 .sheets{flex:0 0 auto}
   #page0 .rollbtnwrap{margin-top:auto;flex:0 0 auto}
+  #page0 .lock{flex:0 0 auto}
   #page0 .acts{margin-top:0;padding-top:8px;flex:0 0 auto}
 
   /* volba režimu a cíle (stránka Zápis tahů) */
@@ -273,6 +274,12 @@
   /* předchozí hody v tahu */
 
   /* akce */
+  .lock{
+    margin-top:10px;border:1px solid var(--brass);border-radius:var(--r);
+    background:var(--selbg);color:var(--brass);
+    padding:8px 11px;font-size:13px;line-height:1.35;text-align:center;
+  }
+  .lock[hidden]{display:none}
   .acts{display:flex;gap:8px;margin-top:12px}
   .act{flex:1;border-radius:var(--r);min-height:50px;padding:6px 10px;font-size:15px;font-weight:700;border:1px solid}
   .bank{background:var(--verdigris);border-color:var(--verdigris);color:var(--ongreen)}
@@ -443,6 +450,11 @@
       <option value="custom">vlastní…</option>
     </select>
     <input id="goalnum" type="number" inputmode="numeric" min="100" step="100" hidden>
+    <select id="roundsel" hidden>
+      <option value="none" selected>neomezeně kol</option>
+      <option value="custom">vlastní počet kol…</option>
+    </select>
+    <input id="roundnum" type="number" inputmode="numeric" min="1" step="1" hidden>
   </label>
 </div>
 </div>
@@ -520,6 +532,8 @@
   <button class="rollbtn" id="rollon" disabled>Házet dál</button>
 </div>
 
+<div class="lock" id="lock" hidden></div>
+
 <div class="acts">
   <button class="ghost" id="undo" style="flex:0 0 auto;padding:0 14px">Zpět</button>
   <button class="act bank" id="bank" disabled>Zapsat a předat</button>
@@ -576,9 +590,13 @@
   /* ---------- stav ----------
      rolls = hody v rozehraném tahu, poslední je ten, který právě řeším
      roll  = { thrown: kolika kostkami se hází, hot: bool, items: [...] }  */
-  var S = { mode:"points", goal:4000, banked:0, turns:[], rolls:[{thrown:6, hot:false, items:[]}] };
+  var S = { mode:"points", goal:4000, roundGoal:null, banked:0, turns:[],
+            rolls:[{thrown:6, hot:false, items:[]}], archivedId:null };
 
-  var KEY = "farkle-solo-v3";
+  var KEY  = "farkle-solo-v3";   /* rozehraná hra */
+  var HKEY = "farkle-hist-v1";   /* dohrané hry */
+  var KKEY = "farkle-kos-v1";    /* neviditelná záloha přepsaných her */
+  var KOS_MAX = 5;
   function save(){
     try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){}
   }
@@ -591,7 +609,46 @@
         if(S.mode !== "rounds"){ S.mode = "points"; }
       }
     }catch(e){}
+    /* doplnění polí, která ve starším uložení chybí */
+    if(typeof S.roundGoal !== "number" || S.roundGoal < 1){ S.roundGoal = null; }
+    if(typeof S.archivedId !== "string"){ S.archivedId = null; }
     cb();
+  }
+
+  /* ---------- historie her a koš ----------
+     Obojí je pole záznamů; UI k nim přibude v dalších etapách. */
+  function readList(key){
+    try{
+      var d = JSON.parse(localStorage.getItem(key));
+      return Array.isArray(d) ? d : [];
+    }catch(e){ return []; }
+  }
+  function writeList(key, list){
+    try{ localStorage.setItem(key, JSON.stringify(list)); return true; }
+    catch(e){ return false; }
+  }
+  function histAll(){ return readList(HKEY); }
+  function histWrite(list){ return writeList(HKEY, list); }
+  function kosAll(){ return readList(KKEY); }
+  function kosWrite(list){ return writeList(KKEY, list); }
+
+  function newId(){
+    return "h" + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+  }
+  /* otisk rozehrané hry pro historii nebo koš; rozehraný tah se nezapočítává */
+  function makeRecord(id){
+    return {
+      id: id || newId(),
+      savedAt: Date.now(),
+      mode: S.mode,
+      goal: S.goal,
+      roundGoal: S.roundGoal || null,
+      banked: S.banked,
+      turns: S.turns.map(function(t){ return { p:t.p, bust:!!t.bust, d:t.d || "" }; })
+    };
+  }
+  function gameEmpty(){
+    return S.turns.length === 0 && S.rolls.length === 1 && cur().items.length === 0;
   }
 
   /* ---------- bodování ---------- */
@@ -619,9 +676,11 @@
   var elScore=$("score"), elTotal=$("total"), elRest=$("rest"), elRestLabel=$("restlabel"),
       elPot=$("pot"), elTurnNo=$("turnno"), elTurnWord=$("turnword"),
       elRollLine=$("rollline"), elFix=$("fix"),
-      elRollOn=$("rollon"), elBank=$("bank"), elRows=$("rows"), elEmpty=$("empty"),
+      elRollOn=$("rollon"), elBank=$("bank"), elBust=$("bust"), elLock=$("lock"),
+      elRows=$("rows"), elEmpty=$("empty"),
       elTally=$("tally"), elTallyCap=$("tallycap"),
       elModeSel=$("modesel"), elGoalSel=$("goalsel"), elGoalNum=$("goalnum"),
+      elRoundSel=$("roundsel"), elRoundNum=$("roundnum"),
       elPips=$("pips"), elCounts=$("counts"), elAddKind=$("addkind"),
       elMnum=$("mnum"), elMkost=$("mkost"), elMToggle=$("mtoggle"), elManual=$("manualwrap");
 
@@ -640,6 +699,13 @@
     elCounts.appendChild(b);
   });
 
+  /* ---------- konec hry na kola ----------
+     Hlídání je jen pomůcka: zvýšením limitu nebo přepnutím na „neomezeně“
+     se hra zase odemkne. */
+  function locked(){
+    return S.mode === "rounds" && S.roundGoal > 0 && S.turns.length >= S.roundGoal;
+  }
+
   /* ---------- akce ---------- */
   function keep(label, points, diceUsed){
     if(diceUsed > left()) return;
@@ -657,18 +723,22 @@
 
   function bank(){
     var p = potTotal();
-    if(p <= 0) return;
+    if(p <= 0 || locked()) return;
+    S.archivedId = null;
     S.turns.push({p:p, bust:false, d:turnDesc()});
     S.banked += p;
     S.rolls = [{thrown:6, hot:false, items:[]}];
     render();
   }
   function bust(){
+    if(locked()) return;
+    S.archivedId = null;
     S.turns.push({p:potTotal(), bust:true, d:turnDesc()});
     S.rolls = [{thrown:6, hot:false, items:[]}];
     render();
   }
   function undo(){
+    S.archivedId = null;
     if(cur().items.length){ unkeep(cur().items.length - 1); return; }
     if(S.rolls.length > 1){ S.rolls.pop(); render(); return; }
     var t = S.turns.pop();
@@ -677,6 +747,7 @@
   }
   function wipe(){
     S.banked = 0; S.turns = []; S.rolls = [{thrown:6, hot:false, items:[]}];
+    S.archivedId = null;
     render();
   }
   var resetTimer = null;
@@ -688,8 +759,7 @@
   }
   function reset(){
     var b = $("reset");
-    var fresh = S.turns.length === 0 && S.rolls.length === 1 && cur().items.length === 0;
-    if(fresh){ wipe(); return; }
+    if(gameEmpty()){ wipe(); return; }
     if(!resetTimer){
       b.classList.add("warn");
       b.textContent = "Opravdu smazat?";
@@ -702,16 +772,17 @@
 
   /* ---------- vykreslení ---------- */
   function renderKind(){
-    var l = left();
+    var l = left(), lock = locked();
     Array.prototype.forEach.call(elPips.children, function(b){
       b.classList.toggle("sel", Number(b.dataset.value) === selValue);
+      b.disabled = lock;
     });
     Array.prototype.forEach.call(elCounts.children, function(b){
       var c = Number(b.dataset.count);
       b.classList.toggle("sel", c === selCount);
-      b.disabled = c > l;
+      b.disabled = lock || c > l;
     });
-    var ok = selValue !== null && selCount <= l;
+    var ok = selValue !== null && selCount <= l && !lock;
     elAddKind.disabled = !ok;
     elAddKind.textContent = ok ? ("+ " + fmt(kindPoints(selValue, selCount))) : "+ 0";
   }
@@ -722,10 +793,17 @@
 
     if(S.mode === "rounds"){
       var played = S.turns.length;
-      for(i = 0; i < Math.min(40, played); i++){
-        s = document.createElement("i"); s.className = "cut"; elTally.appendChild(s);
+      var kol = S.roundGoal > 0 ? Math.min(40, S.roundGoal) : Math.min(40, played);
+      for(i = 0; i < kol; i++){
+        s = document.createElement("i");
+        if(i < played) s.className = "cut";
+        elTally.appendChild(s);
       }
-      elTallyCap.textContent = played ? ("odehráno kol: " + played) : "zatím žádné kolo";
+      if(S.roundGoal > 0){
+        elTallyCap.textContent = "odehráno kol: " + played + " z " + S.roundGoal;
+      } else {
+        elTallyCap.textContent = played ? ("odehráno kol: " + played) : "zatím žádné kolo";
+      }
       return;
     }
 
@@ -971,11 +1049,15 @@
   function render(){
     var r = cur(), l = left(), pot = potTotal();
 
+    var lock = locked();
+
     elScore.textContent = fmt(S.banked);
-    elTotal.classList.toggle("won", S.mode === "points" && S.banked >= S.goal);
+    elTotal.classList.toggle("won", lock || (S.mode === "points" && S.banked >= S.goal));
     if(S.mode === "rounds"){
       elRestLabel.textContent = "odehráno kol";
-      elRest.textContent = S.turns.length;
+      elRest.textContent = S.roundGoal > 0
+        ? (S.turns.length + " z " + S.roundGoal)
+        : S.turns.length;
     } else {
       var rest = S.goal - S.banked;
       elRestLabel.textContent = rest > 0 ? "zbývá" : "nad cíl";
@@ -988,16 +1070,27 @@
     elRollLine.innerHTML = "Hod " + S.rolls.length + " — házíš <b>" + kostkami(r.thrown) + "</b>" +
       (l < r.thrown ? ' <span style="color:var(--dim)">· zbývá ' + l + '</span>' : "");
 
-    elRollOn.disabled = r.items.length === 0;
-    elRollOn.textContent = r.items.length === 0
-      ? "Nejdřív si z hodu něco odlož"
-      : (l > 0 ? "Házet dál — " + kostkami(l) : "Horké kostky — házet znovu všemi šesti");
+    elRollOn.disabled = lock || r.items.length === 0;
+    elRollOn.textContent = lock ? "Hra skončila"
+      : (r.items.length === 0
+          ? "Nejdřív si z hodu něco odlož"
+          : (l > 0 ? "Házet dál — " + kostkami(l) : "Horké kostky — házet znovu všemi šesti"));
 
-    elBank.disabled = pot <= 0;
+    elBank.disabled = lock || pot <= 0;
     elBank.textContent = pot > 0 ? ("Zapsat " + fmt(pot)) : "Zapsat a předat";
+    elBust.disabled = lock;
 
-    document.querySelectorAll("[data-single]").forEach(function(b){ b.disabled = l < 1; });
-    document.querySelectorAll("[data-str]").forEach(function(b){ b.disabled = STRAIGHTS[b.dataset.str].d > l; });
+    elLock.hidden = !lock;
+    if(lock){
+      elLock.textContent = "Odehráno všech " + S.roundGoal +
+        " kol — hra je u konce. Počet kol se dá změnit v nastavení hry.";
+    }
+
+    document.querySelectorAll("[data-single]").forEach(function(b){ b.disabled = lock || l < 1; });
+    document.querySelectorAll("[data-str]").forEach(function(b){ b.disabled = lock || STRAIGHTS[b.dataset.str].d > l; });
+    [elMToggle, $("mless"), $("mkost"), $("mmore"), $("madd")].forEach(function(b){ b.disabled = lock; });
+    elMnum.disabled = lock;
+    if(lock && !elManual.hidden){ elManual.hidden = true; elMToggle.classList.remove("sel"); }
     if(manualDice > Math.max(1, l)) manualDice = Math.max(1, l);
     elMkost.textContent = manualDice + " kost.";
 
@@ -1048,10 +1141,16 @@
     elModeSel.value = S.mode;
     var rounds = (S.mode === "rounds");
     elGoalSel.hidden = rounds;
+    elRoundSel.hidden = !rounds;
     if(rounds){
       elGoalNum.hidden = true;
+      var limit = S.roundGoal > 0;
+      elRoundSel.value = limit ? "custom" : "none";
+      elRoundNum.hidden = !limit;
+      elRoundNum.value = limit ? S.roundGoal : "";
       return;
     }
+    elRoundNum.hidden = true;
     var preset = PRESETS.indexOf(String(S.goal)) >= 0;
     elGoalSel.value = preset ? String(S.goal) : "custom";
     elGoalNum.hidden = preset;
@@ -1077,6 +1176,24 @@
   elGoalNum.addEventListener("input", function(){
     var v = parseInt(elGoalNum.value, 10);
     if(v && v > 0){ S.goal = v; render(); }
+  });
+  elRoundSel.addEventListener("change", function(){
+    if(elRoundSel.value === "custom"){
+      S.roundGoal = S.roundGoal > 0 ? S.roundGoal : Math.max(10, S.turns.length + 1);
+      elRoundNum.hidden = false;
+      elRoundNum.value = S.roundGoal;
+      elRoundNum.focus();
+      elRoundNum.select();
+      render();
+    } else {
+      S.roundGoal = null;
+      elRoundNum.hidden = true;
+      render();
+    }
+  });
+  elRoundNum.addEventListener("input", function(){
+    var v = parseInt(elRoundNum.value, 10);
+    if(v && v > 0){ S.roundGoal = v; render(); }
   });
 
   /* ---------- start ---------- */
