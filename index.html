@@ -148,7 +148,50 @@
     box-shadow:0 10px 26px rgba(0,0,0,.45);
   }
   .setup[hidden]{display:none}
-  #cog.on{border-color:var(--brass);color:var(--brass)}
+  #gamebtn.on{border-color:var(--brass);color:var(--brass)}
+
+  /* okna: pravidla a nastavení aplikace */
+  .modal{
+    position:fixed;inset:0;z-index:150;display:flex;
+    align-items:flex-end;justify-content:center;
+    background:rgba(0,0,0,.55);
+    padding-top:calc(14px + env(safe-area-inset-top));
+  }
+  html[data-theme="light"] .modal{background:rgba(20,18,15,.32)}
+  .modal[hidden]{display:none}
+  .modalbox{
+    width:100%;max-width:560px;max-height:100%;min-height:0;
+    display:flex;flex-direction:column;
+    background:var(--slate);border:1px solid var(--edge);border-bottom:none;
+    border-radius:var(--r) var(--r) 0 0;
+    box-shadow:0 -12px 32px rgba(0,0,0,.45);
+  }
+  .modalhead{
+    flex:0 0 auto;display:flex;align-items:center;justify-content:space-between;gap:10px;
+    padding:9px 12px;border-bottom:1px solid var(--edge);
+  }
+  .modalhead h2{
+    font-family:"IM Fell English SC",Georgia,serif;font-size:15px;
+    letter-spacing:.16em;color:var(--bone);
+  }
+  .modalx{
+    background:transparent;border:1px solid var(--edge);border-radius:var(--r);
+    color:var(--dim);min-width:38px;min-height:38px;font-size:19px;line-height:1;padding:0;
+  }
+  .modalx:hover{border-color:var(--bone);color:var(--bone)}
+  .modalbody{
+    overflow-y:auto;-webkit-overflow-scrolling:touch;
+    padding:4px 13px calc(14px + env(safe-area-inset-bottom));
+  }
+  .setrow{
+    display:flex;align-items:center;justify-content:space-between;gap:12px;
+    padding:11px 0;border-bottom:1px solid var(--hair);
+  }
+  .setrow:last-child{border-bottom:none}
+  .setrow .t{min-width:0}
+  .setrow b{display:block;font-weight:500;font-size:14.5px}
+  .setrow span{display:block;font-size:12.5px;color:var(--dim)}
+  .setrow .ghost{flex:0 0 auto}
 
   /* přehled na stránce zápisu */
   .stats{display:flex;gap:8px;margin:16px 0 18px}
@@ -417,22 +460,31 @@
 
 <div class="top">
   <div class="wordmark">Kostky</div>
-  <button class="fs" id="cog" type="button" title="Nastavení hry" aria-label="Nastavení hry" aria-expanded="false">
+  <button class="fs" id="gamebtn" type="button" title="Nastavení hry" aria-label="Nastavení hry" aria-expanded="false">
+    <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round">
+      <rect x="3.6" y="3.6" width="16.8" height="16.8" rx="3.2"/>
+      <circle cx="8.6" cy="8.6" r="1.25" fill="currentColor" stroke="none"/>
+      <circle cx="12" cy="12" r="1.25" fill="currentColor" stroke="none"/>
+      <circle cx="15.4" cy="15.4" r="1.25" fill="currentColor" stroke="none"/>
+    </svg>
+  </button>
+  <button class="fs" id="infobtn" type="button" title="Pravidla" aria-label="Pravidla">
+    <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round">
+      <circle cx="12" cy="12" r="9"/>
+      <path d="M12 11.2v5"/>
+      <circle cx="12" cy="7.9" r="1.05" fill="currentColor" stroke="none"/>
+    </svg>
+  </button>
+  <button class="fs" id="setbtn" type="button" title="Nastavení" aria-label="Nastavení">
     <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
       <circle cx="12" cy="12" r="3.1"/>
-      <path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-2.7 1.1v.3a2 2 0 1 1-4 0v-.2a1.6 1.6 0 0 0-2.8-1.1l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1A1.6 1.6 0 0 0 3.5 15H3a2 2 0 1 1 0-4h.2A1.6 1.6 0 0 0 4.3 8.2l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.6 1.6 0 0 0 1.8.3H9a1.6 1.6 0 0 0 1-1.5V4a2 2 0 1 1 4 0v.2a1.6 1.6 0 0 0 2.7 1.1l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0-.3 1.8V10a1.6 1.6 0 0 0 1.5 1h.3a2 2 0 1 1 0 4h-.2a1.6 1.6 0 0 0-1.4 1z"/>
+      <path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-1.8-.3 1.6 1.6 0 0 0-1 1.5v.2a2 2 0 1 1-4 0v-.1a1.6 1.6 0 0 0-1-1.5 1.6 1.6 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.6 1.6 0 0 0 .3-1.8 1.6 1.6 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.6 1.6 0 0 0 1.5-1 1.6 1.6 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.6 1.6 0 0 0 1.8.3H9a1.6 1.6 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.6 1.6 0 0 0 1 1.5 1.6 1.6 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0-.3 1.8V9a1.6 1.6 0 0 0 1.5 1h.2a2 2 0 1 1 0 4h-.1a1.6 1.6 0 0 0-1.5 1z"/>
     </svg>
   </button>
   <button class="fs" id="theme" type="button" title="Světlý režim" aria-label="Světlý režim">
     <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round">
       <g id="thsun" hidden><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M19.1 4.9l-1.4 1.4M6.3 17.7l-1.4 1.4"/></g>
       <path id="thmoon" d="M20 14.5A8.5 8.5 0 1 1 9.5 4a7 7 0 0 0 10.5 10.5z"/>
-    </svg>
-  </button>
-  <button class="fs" id="fs" type="button" title="Celá obrazovka" aria-label="Celá obrazovka">
-    <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round">
-      <path id="fsin" d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/>
-      <path id="fsout" d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" hidden/>
     </svg>
   </button>
 <div class="setup" id="setup" hidden>
@@ -463,7 +515,7 @@
 <div class="tabs" role="tablist">
   <button class="tab" id="tab0" role="tab" aria-selected="true" aria-controls="page0">Počítadlo</button>
   <button class="tab" id="tab1" role="tab" aria-selected="false" aria-controls="page1">Zápis tahů</button>
-  <button class="tab" id="tab2" role="tab" aria-selected="false" aria-controls="page2">Pravidla</button>
+  <button class="tab" id="tab2" role="tab" aria-selected="false" aria-controls="page2">Statistiky</button>
 </div>
 
 <div class="pages" id="pages">
@@ -561,8 +613,21 @@
 <section class="page" id="page2" role="tabpanel" aria-labelledby="tab2">
 
 <section class="hist">
-  <div class="histhead"><h2>Pravidla a bodování</h2></div>
-  <div class="rules">
+  <div class="histhead"><h2>Statistiky</h2></div>
+  <div class="empty">Dlouhodobé statistiky a historie her přibudou v příští etapě.</div>
+</section>
+
+</section>
+</div>
+
+<div class="modal" id="rulesmodal" hidden>
+  <div class="modalbox" role="dialog" aria-modal="true" aria-labelledby="rulestitle">
+    <div class="modalhead">
+      <h2 id="rulestitle">Pravidla a bodování</h2>
+      <button class="modalx" type="button" data-close aria-label="Zavřít">×</button>
+    </div>
+    <div class="modalbody">
+      <div class="rules">
     <p>Hodíš šesti kostkami a odložíš si z hodu aspoň jednu bodující kostku nebo kombinaci. Když hod nedá vůbec nic, je to <b>Farkle</b> — všechno, co máš v tahu na stole, propadá a hraje soupeř.</p>
     <p>Po každém hodu se rozhoduješ: <b>zapsat</b> body a předat tah, nebo <b>házet dál</b> jen těmi kostkami, které jsi neodložil.</p>
     <p>Když odložíš i poslední kostku, přicházejí <b>horké kostky</b> — házíš znovu všemi šesti a body se sčítají dál v tomtéž tahu.</p>
@@ -578,9 +643,26 @@
     <p class="note">Trojice = hodnota × 100 (jedničky 1 000). Každá další kostka navíc hodnotu <b>zdvojnásobí</b>: čtyři pětky 1 000, pět pětek 2 000, šest pětek 4 000. Šest jedniček je 8 000.</p>
     <p class="note">Dvojice ani „skoro trojice“ neboduje — odložit jde jen jednička, pětka, hotová trojice a výš, nebo postupka.</p>
   </div>
-</section>
+    </div>
+  </div>
+</div>
 
-</section>
+<div class="modal" id="setmodal" hidden>
+  <div class="modalbox" role="dialog" aria-modal="true" aria-labelledby="settitle">
+    <div class="modalhead">
+      <h2 id="settitle">Nastavení</h2>
+      <button class="modalx" type="button" data-close aria-label="Zavřít">×</button>
+    </div>
+    <div class="modalbody">
+      <div class="setrow" id="fsrow">
+        <div class="t"><b>Celá obrazovka</b><span>Skryje lišty prohlížeče.</span></div>
+        <button class="ghost" id="fs" type="button">Zapnout</button>
+      </div>
+      <div class="setrow">
+        <div class="t"><span>Obnova smazané hry a záloha historie přibudou v příští etapě.</span></div>
+      </div>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -888,7 +970,7 @@
 
   /* ---------- panel nastavení hry ---------- */
   (function(){
-    var btn = $("cog"), panel = $("setup");
+    var btn = $("gamebtn"), panel = $("setup");
     function open(show){
       panel.hidden = !show;
       btn.classList.toggle("on", show);
@@ -904,6 +986,36 @@
     document.addEventListener("keydown", function(e){
       if(e.key === "Escape" && !panel.hidden) open(false);
     });
+  })();
+
+  /* ---------- okna: pravidla a nastavení ---------- */
+  function modalOpen(){ return !!document.querySelector(".modal:not([hidden])"); }
+  (function(){
+    var otevrene = null, vyvolal = null;
+    function zavri(){
+      if(!otevrene) return;
+      otevrene.hidden = true;
+      var b = vyvolal;
+      otevrene = null; vyvolal = null;
+      if(b && document.contains(b)) b.focus();
+    }
+    function otevri(id, btn){
+      zavri();
+      var m = $(id);
+      if(!m) return;
+      m.hidden = false;
+      otevrene = m; vyvolal = btn || null;
+      var x = m.querySelector(".modalx");
+      if(x) x.focus();
+    }
+    $("infobtn").addEventListener("click", function(){ otevri("rulesmodal", this); });
+    $("setbtn").addEventListener("click", function(){ otevri("setmodal", this); });
+    document.querySelectorAll("[data-close]").forEach(function(b){
+      b.addEventListener("click", zavri);
+    });
+    /* klepnutí na tmavé pozadí mimo panel */
+    document.addEventListener("click", function(e){ if(e.target === otevrene) zavri(); });
+    document.addEventListener("keydown", function(e){ if(e.key === "Escape") zavri(); });
   })();
 
   /* ---------- světlý / tmavý režim ---------- */
@@ -964,18 +1076,19 @@
          matchMedia("(display-mode: standalone)").matches)) ||
         navigator.standalone === true;
 
-    if(!enter || !exit || !allowed || jakoAplikace){ btn.remove(); return; }
+    var radek = $("fsrow");
+    function pryc(){ if(radek) radek.remove(); else btn.remove(); }
+    if(!enter || !exit || !allowed || jakoAplikace){ pryc(); return; }
 
     function active(){ return document.fullscreenElement || document.webkitFullscreenElement || null; }
     function mark(){
       var on = !!active();
-      $("fsin").hidden = on;
-      $("fsout").hidden = !on;
+      btn.textContent = on ? "Vypnout" : "Zapnout";
       var label = on ? "Zpět z celé obrazovky" : "Celá obrazovka";
       btn.title = label;
       btn.setAttribute("aria-label", label);
     }
-    function fail(){ btn.remove(); }   /* volání selhalo: tlačítko je k ničemu */
+    function fail(){ pryc(); }   /* volání selhalo: řádek je k ničemu */
 
     btn.addEventListener("click", function(){
       try{
@@ -1030,6 +1143,7 @@
   document.addEventListener("keydown", function(e){
     var t = e.target.tagName;
     if(t === "INPUT" || t === "SELECT" || t === "TEXTAREA") return;
+    if(modalOpen()) return;
     if(e.key === "ArrowRight") goTo(page + 1);
     if(e.key === "ArrowLeft") goTo(page - 1);
   });
