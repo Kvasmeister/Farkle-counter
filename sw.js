@@ -1,4 +1,4 @@
-const VERZE = "kostky-v12";
+const VERZE = "kostky-v11";
 
 const SOUBORY = [
   "./",
@@ -36,6 +36,18 @@ self.addEventListener("activate", (e) => {
       ))
       .then(() => self.clients.claim())
   );
+});
+
+/* Aplikace si rekne o cislo verze, aby ho nemusela drzet podruhe
+   ve svem kodu — podle nej pozna, ze se ma ukazat navod. */
+self.addEventListener("message", (e) => {
+  if (!e.data || e.data.dotaz !== "verze") return;
+  const odpoved = { verze: VERZE };
+  if (e.ports && e.ports[0]) {
+    e.ports[0].postMessage(odpoved);
+  } else if (e.source) {
+    e.source.postMessage(odpoved);
+  }
 });
 
 self.addEventListener("fetch", (e) => {

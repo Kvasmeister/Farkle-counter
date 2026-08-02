@@ -447,8 +447,19 @@
   .mini.danger{border-color:var(--oxblood);color:var(--danger)}
   .mini.danger:hover{background:var(--oxblood);color:var(--bone)}
 
-  /* pravidla */
+  /* okno s informacemi: dvě karty */
+  .modalbody .seg{margin:10px 0 0}
+  .infocard[hidden]{display:none}
+
+  /* pravidla a návod */
   .rules{font-size:14px;color:var(--body);margin-top:10px}
+  .rules h3{
+    font-family:"IM Fell English SC",Georgia,serif;font-size:12px;letter-spacing:.18em;
+    color:var(--dim);margin:18px 0 7px;font-weight:400;
+  }
+  .rules h3:first-child{margin-top:6px}
+  .rules ul{list-style:none;margin:0 0 9px;padding:0}
+  .rules li{margin:0 0 6px}
   .rules p{margin:0 0 9px}
   .rules table{margin:6px 0 12px}
   .rules td:last-child{text-align:right;color:var(--bone);font-family:"IM Fell English",Georgia,serif;font-size:16px}
@@ -742,11 +753,15 @@
 <div class="modal" id="rulesmodal" hidden>
   <div class="modalbox" role="dialog" aria-modal="true" aria-labelledby="rulestitle">
     <div class="modalhead">
-      <h2 id="rulestitle">Pravidla a bodování</h2>
+      <h2 id="rulestitle">Pravidla a návod</h2>
       <button class="modalx" type="button" data-close aria-label="Zavřít">×</button>
     </div>
     <div class="modalbody">
-      <div class="rules">
+      <div class="seg" id="infoseg">
+        <button type="button" class="on">Pravidla</button>
+        <button type="button">Návod</button>
+      </div>
+      <div class="rules infocard" id="cardrules">
     <p>Hodíš šesti kostkami a odložíš si z hodu aspoň jednu bodující kostku nebo kombinaci. Když hod nedá vůbec nic, je to <b>Farkle</b> — všechno, co máš v kole na stole, propadá a hraje soupeř.</p>
     <p>Po každém hodu se rozhoduješ: <b>zapsat</b> body a předat kolo, nebo <b>házet dál</b> jen těmi kostkami, které jsi neodložil.</p>
     <p>Když odložíš i poslední kostku, přicházejí <b>horké kostky</b> — házíš znovu všemi šesti a body se sčítají dál v tomtéž kole.</p>
@@ -761,6 +776,49 @@
     </table>
     <p class="note">Trojice = hodnota × 100 (jedničky 1 000). Každá další kostka navíc hodnotu <b>zdvojnásobí</b>: čtyři pětky 1 000, pět pětek 2 000, šest pětek 4 000. Šest jedniček je 8 000.</p>
     <p class="note">Dvojice ani „skoro trojice“ neboduje — odložit jde jen jednička, pětka, hotová trojice a výš, nebo postupka.</p>
+  </div>
+
+      <div class="rules infocard" id="cardguide" hidden>
+    <h3>Kolo</h3>
+    <p>Klávesnice zapisuje, co je odložené z hodu. Body se sčítají v řádku <b>na stole</b> a použité kostky ubývají ze zbývajících.</p>
+    <ul>
+      <li><b>Házet dál</b> — otevře nový hod a v popisku ukazuje, kolika kostkami. Po odložení všech šesti nabídne horké kostky a hází se znovu všemi.</li>
+      <li><b>Zapsat</b> — převede body ze stolu do skóre a otevře nové kolo.</li>
+      <li><b>Farkle</b> — body na stole propadnou a v zápise zůstane kolo s nulou.</li>
+    </ul>
+
+    <h3>Klávesnice</h3>
+    <p><b>jednička</b> a <b>pětka</b> přidávají po jedné kostce. <b>Stejné hodnoty</b> mají v prvním řádku počet, ve druhém hodnotu; tlačítko vpravo ukazuje výsledek a přidá ho. <b>Postupky</b> jsou tři pevné kombinace. <b>ručně</b> otevře pole pro body a šipky pro počet kostek.</p>
+    <p class="note">Kombinace, které se nevejdou do zbývajících kostek, jsou zašedlé.</p>
+
+    <h3>Opravy</h3>
+    <p>Přepínač <b>zadat / opravit</b> vedle popisu hodu přepíná vnitřní kartu panelu. Karta <i>opravit</i> ukazuje každou odloženou položku jako tlačítko s křížkem, seskupené po hodech; smazání položky přepočítá i počty kostek v následujících hodech.</p>
+    <p><b>Zpět</b> ubírá po jednom odzadu — nejdřív položky, pak celé hody, nakonec zapsaná kola.</p>
+    <p><b>Opravit</b> v Zápisu kol zapíná křížky u jednotlivých kol. Křížek vyvolá potvrzení; smazané kolo se odečte ze skóre a zbylá kola se přečíslují. Bez odehraných kol je tlačítko schované.</p>
+
+    <h3>Nastavení hry</h3>
+    <p>Ikona kostky otevírá panel s režimem a cílem, a to i uprostřed hry. <b>Do bodů</b> hraje na 2 000 až 10 000 nebo na vlastní číslo a druhý řádek skóre ukazuje, kolik zbývá. <b>Na kola</b> jen počítá kola; volitelný limit hru po posledním kole zamkne.</p>
+
+    <h3>Tři stránky</h3>
+    <p>Záložky nahoře a swipenutí do stran přepínají mezi:</p>
+    <ul>
+      <li><b>Počítadlo</b> — skóre a hraní.</li>
+      <li><b>Zápis kol</b> — čtyři statistiky a tabulka kol, Nová hra a Zapsat do historie.</li>
+      <li><b>Statistiky</b> — přepínač mezi rekordy a seznamem dohraných her. Rekord se rozklikne na žebříček, hra na svůj detail.</li>
+    </ul>
+
+    <h3>Historie</h3>
+    <p>Statistiky vychází jen z her v historii; nezapsaná hra se do rekordů nepromítne.</p>
+    <p><b>Zapsat do historie</b> si vyžádá druhé klepnutí jen tehdy, když jsou na stole nezapsané body. Po uložení se přepne na <b>Uloženo v historii</b> a po dalším hraní na <b>Aktualizovat v historii</b>, což přepíše tentýž záznam místo zakládání nového.</p>
+
+    <h3>Koš</h3>
+    <p><b>Nová hra</b> odkládá smazanou hru do nastavení, do oddílu <i>Obnova rozehrané hry</i> — drží posledních pět. <b>Smazat z historie</b> ukládá hru do oddílu <i>Smazané z historie</i>, kde jich zůstává deset a tlačítko <i>Vrátit</i> je pošle zpátky mezi dohrané.</p>
+
+    <h3>Záloha</h3>
+    <p>Data jsou uložená jen v tomto prohlížeči. <b>Export do souboru</b> vytvoří textový soubor s přehledem her, jehož poslední řádek nese data pro import — bez něj se soubor načíst nedá. <b>Zkopírovat do schránky</b> dává stejný obsah bez stahování. <b>Import ze souboru</b> i <b>Import ze schránky</b> nabídnou volbu mezi přidáním nových her a nahrazením celé historie.</p>
+
+    <h3>Drobnosti</h3>
+    <p>Ikona vpravo nahoře přepíná světlý a tmavý vzhled. <b>Celá obrazovka</b> v nastavení schová lišty prohlížeče; na iPhonu chybí, Safari to neumí. Aplikace běží offline a dá se přidat na plochu.</p>
   </div>
     </div>
   </div>
@@ -1294,7 +1352,7 @@
   }
   /* režim oprav v zápise kol: fixMode zapíná křížky u řádků,
      pendingDel drží index kola, u kterého se právě ptáme na potvrzení.
-     Řádky se tu skládají po prvcích, ne přes rowsHTML — ten zůstává
+     řádky se tu skládají po prvcích, ne přes rowsHTML — ten zůstává
      pro nedotknutelný náhled hry z historie. */
   var fixMode = false, pendingDel = null;
 
@@ -1370,6 +1428,63 @@
     elEmpty.style.display = S.turns.length ? "none" : "block";
   }
 
+  /* ---------- dvě karty v okně s informacemi ---------- */
+  var otevriNavod = null;
+  (function(){
+    var tlac = $("infoseg").children;
+    var karty = [$("cardrules"), $("cardguide")];
+    function vyber(i){
+      karty.forEach(function(k, j){ k.hidden = j !== i; });
+      Array.prototype.forEach.call(tlac, function(b, j){ b.classList.toggle("on", j === i); });
+      var telo = $("rulesmodal").querySelector(".modalbody");
+      if(telo) telo.scrollTop = 0;
+    }
+    Array.prototype.forEach.call(tlac, function(b, i){
+      b.addEventListener("click", function(){ vyber(i); });
+    });
+    $("infobtn").addEventListener("click", function(){ vyber(0); });
+    otevriNavod = function(){
+      vyber(1);
+      if(otevriModal) otevriModal("rulesmodal", null);
+    };
+  })();
+
+  /* ---------- návod při prvním spuštění a po aktualizaci ----------
+     číslo verze drží service worker, aplikace si o něj řekne zprávou —
+     ať je verze jen na jednom místě. Když worker není k dispozici
+     (jiný prohlížeč, otevřeno ze souboru), ukáže se návod jen poprvé. */
+  var NKEY = "farkle-navod-v1";
+  function zjistiVerzi(hotovo){
+    if(!("serviceWorker" in navigator)){ hotovo(null); return; }
+    var vyrizeno = false;
+    function dokonci(v){
+      if(vyrizeno) return;
+      vyrizeno = true;
+      clearTimeout(cas);
+      hotovo(v);
+    }
+    var cas = setTimeout(function(){ dokonci(null); }, 2000);
+    navigator.serviceWorker.ready.then(function(reg){
+      var sw = reg.active;
+      if(!sw){ dokonci(null); return; }
+      var kanal = new MessageChannel();
+      kanal.port1.onmessage = function(e){
+        dokonci(e.data && e.data.verze ? e.data.verze : null);
+      };
+      sw.postMessage({ dotaz: "verze" }, [kanal.port2]);
+    }).catch(function(){ dokonci(null); });
+  }
+  function zkontrolujNavod(){
+    zjistiVerzi(function(verze){
+      var znacka = verze || "bez-verze";
+      var videno = null;
+      try { videno = localStorage.getItem(NKEY); } catch(e){}
+      if(videno === znacka) return;
+      try { localStorage.setItem(NKEY, znacka); } catch(e){}
+      if(otevriNavod) otevriNavod();
+    });
+  }
+
   /* ---------- panel nastavení hry ---------- */
   (function(){
     var btn = $("gamebtn"), panel = $("setup");
@@ -1392,7 +1507,7 @@
 
   /* ---------- okna: pravidla a nastavení ---------- */
   function modalOpen(){ return !!document.querySelector(".modal:not([hidden])"); }
-  var zavriModal = null;
+  var zavriModal = null, otevriModal = null;
   (function(){
     var otevrene = null, vyvolal = null;
     function zavri(){
@@ -1411,7 +1526,7 @@
       var x = m.querySelector(".modalx");
       if(x) x.focus();
     }
-    zavriModal = zavri;
+    zavriModal = zavri; otevriModal = otevri;
     $("infobtn").addEventListener("click", function(){ otevri("rulesmodal", this); });
     $("setbtn").addEventListener("click", function(){ otevri("setmodal", this); });
     document.querySelectorAll("[data-close]").forEach(function(b){
@@ -2204,7 +2319,7 @@
   });
 
   /* ---------- start ---------- */
-  load(function(){ syncGoalUI(); render(); renderP2(); });
+  load(function(){ syncGoalUI(); render(); renderP2(); zkontrolujNavod(); });
 
   /* ---------- offline režim ---------- */
   if("serviceWorker" in navigator){
