@@ -50,6 +50,45 @@ self.addEventListener("message", (e) => {
   }
 });
 
+/* Navigace je network-first, ale bez stropu by aplikace na mrtve nebo
+   prihlasovaci Wi-Fi cekala desitky sekund, misto aby sahla do cache.
+   fetch() se vyresi uz pri hlavickach odpovedi, ne po stazeni celeho tela —
+   strop tedy hlida navazani spojeni a reakci serveru, ne pomalou linku.
+   2,5 s pokryva i velmi spatne, ale funkcni pripojeni.
+
+   Pri vyprseni se fetch NERUSI: dobehne na pozadi a ulozi cerstvy soubor
+   do cache, takze i pomale pripojeni vede k aktualni verzi pri pristim
+   spusteni (aplikace si toho vsimne pres dotaz na verzi). */
+const SIT_STROP = 2500;
+
+/* Jmenovana cache jeste nemusi existovat (prvni spusteni, neuspesna
+   instalace). Starsi implementace v takovem pripade odmitaji, proto catch. */
+function zCache(co) {
+  return caches.match(co, { cacheName: VERZE, ignoreSearch: true })
+    .catch(() => undefined);
+}
+
+function zavodSite(req) {
+  return new Promise((splnit, odmitnout) => {
+    let rozhodnuto = false;
+    const casovac = setTimeout(() => {
+      if (!rozhodnuto) { rozhodnuto = true; odmitnout(new Error("strop")); }
+    }, SIT_STROP);
+
+    fetch(req).then((odp) => {
+      /* Bez teto kontroly by se do cache ulozila i 404 nebo prihlasovaci
+         stranka hotelove Wi-Fi — aplikace by pak byla rozbita i offline. */
+      if (odp && odp.ok && !odp.redirected && odp.type === "basic") {
+        const kopie = odp.clone();
+        caches.open(VERZE).then((c) => c.put("./index.html", kopie));
+      }
+      if (!rozhodnuto) { rozhodnuto = true; clearTimeout(casovac); splnit(odp); }
+    }).catch((chyba) => {
+      if (!rozhodnuto) { rozhodnuto = true; clearTimeout(casovac); odmitnout(chyba); }
+    });
+  });
+}
+
 self.addEventListener("fetch", (e) => {
   const req = e.request;
   if (req.method !== "GET") return;
@@ -57,22 +96,17 @@ self.addEventListener("fetch", (e) => {
 
   if (req.mode === "navigate") {
     e.respondWith(
-      fetch(req)
-        .then((odp) => {
-          const kopie = odp.clone();
-          caches.open(VERZE).then((c) => c.put("./index.html", kopie));
-          return odp;
-        })
-        .catch(() =>
-          caches.match("./index.html", { ignoreSearch: true })
-            .then((ulozene) => ulozene || caches.match("./"))
-        )
+      zavodSite(req).catch(() =>
+        zCache("./index.html").then((ulozene) => ulozene || zCache("./"))
+      )
     );
     return;
   }
 
   e.respondWith(
-    caches.match(req, { ignoreSearch: true }).then((ulozene) => {
+    /* jmenovana cache: mezi install (se skipWaiting) a activate, kde se stare
+       mazou, by caches.match bez ni mohl vratit soubor z predchozi verze */
+    zCache(req).then((ulozene) => {
       if (ulozene) return ulozene;
       return fetch(req).then((odp) => {
         if (odp && odp.status === 200 && odp.type === "basic") {

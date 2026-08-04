@@ -544,7 +544,11 @@
   /* velmi nízké okno: pod 540 px */
   @media (max-height:539px){
     :root{--tap:36px}
-    .rollhead{display:none}            /* počet kostek je i na tlačítku „Házet dál“ */
+    /* mizí jen popis hodu — počet kostek je i na tlačítku „Házet dál“.
+       Záložky zadat/opravit musí zůstat, jinak je režim oprav nedosažitelný.
+       Se single potomkem by je space-between hodilo doleva, proto flex-end. */
+    #rollline{display:none}
+    .rollhead{padding:3px 12px;justify-content:flex-end}
     .score .line b{font-size:25px}
     .chip{font-size:13px}
     .pips .chip{font-size:17px}
@@ -902,19 +906,54 @@
   function save(){
     try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){}
   }
+  /* pozor: níže v souboru je jiná cislo() pro formátování statistik */
+  function naCislo(x, nahrada){ return (typeof x === "number" && isFinite(x)) ? x : nahrada; }
+
+  /* Uložený stav se nekontroluje jen povrchně: chybějící turns nebo items
+     dřív shodily render() a aplikace zůstala bez ovládání, ze kterého se
+     nedalo dostat ani do nastavení a vyexportovat data. Proto se každé pole
+     dorovná na správný typ. Volá se vždy, i pro výchozí stav. */
+  function ozdrav(){
+    S.mode = (S.mode === "rounds") ? "rounds" : "points";
+    S.banked = naCislo(S.banked, 0);
+    S.goal = (typeof S.goal === "number" && S.goal > 0) ? S.goal : 4000;
+    if(typeof S.roundGoal !== "number" || S.roundGoal < 1){ S.roundGoal = null; }
+    if(typeof S.archivedId !== "string"){ S.archivedId = null; }
+    S.dirty = !!S.dirty;
+
+    S.turns = (Array.isArray(S.turns) ? S.turns : []).map(function(t){
+      return { p: naCislo(t && t.p, 0), bust: !!(t && t.bust),
+               d: (t && typeof t.d === "string") ? t.d : "" };
+    });
+
+    S.rolls = (Array.isArray(S.rolls) && S.rolls.length ? S.rolls : [{}]).map(function(r){
+      var thrown = naCislo(r && r.thrown, 6);
+      return {
+        thrown: (thrown >= 1 && thrown <= 6) ? Math.floor(thrown) : 6,
+        hot: !!(r && r.hot),
+        items: (Array.isArray(r && r.items) ? r.items : []).map(function(i){
+          return { l: (i && typeof i.l === "string") ? i.l : "vlastní",
+                   p: naCislo(i && i.p, 0),
+                   d: Math.max(0, Math.floor(naCislo(i && i.d, 0))) };
+        })
+      };
+    });
+  }
   function load(cb){
     try{
       var raw = localStorage.getItem(KEY);
       if(raw){
-        var d = JSON.parse(raw);
-        if(d && typeof d.banked === "number" && d.rolls && d.rolls.length){ S = d; }
-        if(S.mode !== "rounds"){ S.mode = "points"; }
+        var d = null, cele = false;
+        try{ d = JSON.parse(raw); cele = true; }catch(e){}
+        if(cele && d && typeof d.banked === "number" && Array.isArray(d.rolls) && d.rolls.length){
+          S = d;
+        } else if(raw){
+          /* nečitelná data nemažeme potichu — ať se z prohlížeče dají vytáhnout */
+          try{ localStorage.setItem(KEY + "-vadny", raw); }catch(e){}
+        }
       }
     }catch(e){}
-    /* doplnění polí, která ve starším uložení chybí */
-    if(typeof S.roundGoal !== "number" || S.roundGoal < 1){ S.roundGoal = null; }
-    if(typeof S.archivedId !== "string"){ S.archivedId = null; }
-    S.dirty = !!S.dirty;
+    ozdrav();
     cb();
   }
 
@@ -980,6 +1019,13 @@
     return dt(rec.savedAt) + " \u00B7 " + rez + " \u00B7 " + kol + " " + kolSlovo(kol);
   }
   function fmt(n){ return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, "\u202F"); }
+  /* Popisy kol a názvy položek můžou pocházet z cizí zálohy nebo z poškozeného
+     uložení; všude, kde jdou do innerHTML, musí projít tudy. */
+  function esc(s){
+    return String(s == null ? "" : s).replace(/[&<>"]/g, function(c){
+      return c === "&" ? "&amp;" : c === "<" ? "&lt;" : c === ">" ? "&gt;" : "&quot;";
+    });
+  }
   function kostkami(n){ return n === 1 ? "1 kostkou" : n + " kostkami"; }
 
   /* ---------- odvozené ---------- */
@@ -1029,8 +1075,10 @@
   }
 
   /* ---------- akce ---------- */
+  /* diceUsed < 1 by šlo zapisovat donekonečna, aniž by ubývaly kostky —
+     jediná cesta sem je ruční zadání při nule zbývajících kostek */
   function keep(label, points, diceUsed){
-    if(diceUsed > left()) return;
+    if(diceUsed < 1 || diceUsed > left()) return;
     cur().items.push({l:label, p:points, d:diceUsed});
     render();
   }
@@ -1169,7 +1217,7 @@
       row.className = "setrow";
       var t = document.createElement("div");
       t.className = "t";
-      t.innerHTML = "<b>" + fmt(rec.banked || 0) + "</b><span>" + popisHry(rec) + "</span>";
+      t.innerHTML = "<b>" + fmt(rec.banked || 0) + "</b><span>" + esc(popisHry(rec)) + "</span>";
       var b = document.createElement("button");
       b.type = "button"; b.className = "ghost"; b.textContent = "Obnovit";
       b.addEventListener("click", function(){ restore(rec.id); });
@@ -1211,7 +1259,7 @@
       row.className = "setrow";
       var t = document.createElement("div");
       t.className = "t";
-      t.innerHTML = "<b>" + fmt(rec.banked || 0) + "</b><span>" + popisHry(rec) + "</span>";
+      t.innerHTML = "<b>" + fmt(rec.banked || 0) + "</b><span>" + esc(popisHry(rec)) + "</span>";
       var b = document.createElement("button");
       b.type = "button"; b.className = "ghost"; b.textContent = "Vrátit";
       b.addEventListener("click", function(){ vratDoHistorie(rec.id); });
@@ -1333,7 +1381,7 @@
         var b = document.createElement("button");
         b.type = "button";
         b.className = "ent";
-        b.innerHTML = '<span>' + it.l + '</span><b>' + fmt(it.p) + '</b>';
+        b.innerHTML = '<span>' + esc(it.l) + '</span><b>' + fmt(it.p) + '</b>';
         b.title = "Smazat položku";
         b.addEventListener("click", function(){ removeEntry(ri, ii); });
         grp.appendChild(b);
@@ -1349,7 +1397,7 @@
       if(!t.bust) run += t.p;
       out += '<tr' + (t.bust ? ' class="f"' : '') + '>' +
         '<td class="n">' + (i + 1) + '</td>' +
-        '<td class="d">' + (t.bust ? ("farkle" + (t.d ? " — " + t.d : "")) : (t.d || "&nbsp;")) + '</td>' +
+        '<td class="d">' + (t.bust ? ("farkle" + (t.d ? " — " + esc(t.d) : "")) : (esc(t.d) || "&nbsp;")) + '</td>' +
         '<td class="g">' + fmt(t.p || 0) + '</td>' +
         '<td class="s">' + fmt(run) + '</td></tr>';
     });
@@ -1412,7 +1460,7 @@
       if(t.bust) tr.className = "f";
       tr.innerHTML =
         '<td class="n">' + (i + 1) + '</td>' +
-        '<td class="d">' + (t.bust ? ("farkle" + (t.d ? " — " + t.d : "")) : (t.d || "&nbsp;")) + '</td>' +
+        '<td class="d">' + (t.bust ? ("farkle" + (t.d ? " — " + esc(t.d) : "")) : (esc(t.d) || "&nbsp;")) + '</td>' +
         '<td class="g">' + fmt(t.p || 0) + '</td>' +
         '<td class="s">' + fmt(run) + '</td>';
 
@@ -1838,7 +1886,8 @@
           return {
             p: (t && typeof t.p === "number") ? t.p : 0,
             bust: !!(t && t.bust),
-            d: (t && typeof t.d === "string") ? t.d : ""
+            /* legitimní popis kola je do stovky znaků, delší je omyl */
+            d: (t && typeof t.d === "string") ? t.d.slice(0, 300) : ""
           };
         })
       });
@@ -1860,24 +1909,36 @@
       return true;
     }catch(e){ return false; }
   }
-  function doSchranky(text){
+  /* writeText() vrací příslib; když ho prohlížeč odmítne (chybí oprávnění,
+     stránka není zaostřená, iOS mimo gesto), nesmíme hlásit úspěch. Výsledek
+     proto chodí callbackem. Propad na execCommand už běží mimo uživatelské
+     gesto a v části prohlížečů selže taky — pak aspoň hláška nelže. */
+  function doSchranky(text, hotovo){
+    function nouzovka(){
+      try{
+        var ta = document.createElement("textarea");
+        ta.value = text;
+        ta.setAttribute("readonly", "");
+        ta.style.position = "fixed"; ta.style.opacity = "0";
+        document.body.appendChild(ta);
+        ta.select();
+        var ok = document.execCommand("copy");
+        document.body.removeChild(ta);
+        hotovo(!!ok);
+      }catch(e){ hotovo(false); }
+    }
     try{
       if(navigator.clipboard && navigator.clipboard.writeText){
-        navigator.clipboard.writeText(text);
-        return true;
+        var p = navigator.clipboard.writeText(text);
+        if(p && typeof p.then === "function"){
+          p.then(function(){ hotovo(true); }, nouzovka);
+        } else {
+          hotovo(true);   /* starší implementace bez příslibu */
+        }
+        return;
       }
     }catch(e){}
-    try{
-      var ta = document.createElement("textarea");
-      ta.value = text;
-      ta.setAttribute("readonly", "");
-      ta.style.position = "fixed"; ta.style.opacity = "0";
-      document.body.appendChild(ta);
-      ta.select();
-      var ok = document.execCommand("copy");
-      document.body.removeChild(ta);
-      return ok;
-    }catch(e){ return false; }
+    nouzovka();
   }
 
   var elZalMsg=$("zalmsg"), elImpBox=$("impbox"), elImpInfo=$("impinfo"), elImpFile=$("impfile");
@@ -1941,8 +2002,10 @@
     zalMsg(ok ? "Soubor se ukládá." : "Stažení se nepodařilo — zkus kopii do schránky.", !ok);
   });
   $("copybtn").addEventListener("click", function(){
-    var ok = doSchranky(exportText());
-    zalMsg(ok ? "Záloha je ve schránce." : "Do schránky se to nepodařilo zkopírovat.", !ok);
+    doSchranky(exportText(), function(ok){
+      zalMsg(ok ? "Záloha je ve schránce."
+                : "Do schránky se to nepodařilo zkopírovat — zkus Stáhnout soubor.", !ok);
+    });
   });
   $("impbtn").addEventListener("click", function(){
     zalMsg("");
@@ -2208,11 +2271,14 @@
 
     document.querySelectorAll("[data-single]").forEach(function(b){ b.disabled = lock || l < 1; });
     document.querySelectorAll("[data-str]").forEach(function(b){ b.disabled = lock || STRAIGHTS[b.dataset.str].d > l; });
-    [elMToggle, $("mless"), $("mkost"), $("mmore"), $("madd")].forEach(function(b){ b.disabled = lock; });
-    elMnum.disabled = lock;
-    if(lock && !elManual.hidden){ elManual.hidden = true; elMToggle.classList.remove("sel"); }
+    /* při nule kostek se čeká na „Házet dál“ (horké kostky) — ruční zadání
+       se zamyká stejně jako zbytek klávesnice */
+    var manLock = lock || l < 1;
+    [elMToggle, $("mless"), $("mkost"), $("mmore"), $("madd")].forEach(function(b){ b.disabled = manLock; });
+    elMnum.disabled = manLock;
+    if(manLock && !elManual.hidden){ elManual.hidden = true; elMToggle.classList.remove("sel"); }
     if(manualDice > Math.max(1, l)) manualDice = Math.max(1, l);
-    elMkost.textContent = manualDice + " kost.";
+    elMkost.textContent = (l > 0 ? manualDice : 0) + " kost.";
 
     renderKind(); renderFix(); renderRows(); renderStats(); renderTally(); renderArch();
     save();
