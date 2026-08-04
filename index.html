@@ -323,6 +323,7 @@
     padding:8px 11px;font-size:13px;line-height:1.35;text-align:center;
   }
   .lock[hidden]{display:none}
+  .lock.warn{border-color:var(--oxblood);background:var(--dangerbg);color:var(--danger)}
   .acts{display:flex;gap:8px;margin-top:12px}
   .act{flex:1;border-radius:var(--r);min-height:50px;padding:6px 10px;font-size:15px;font-weight:700;border:1px solid}
   .bank{background:var(--verdigris);border-color:var(--verdigris);color:var(--ongreen)}
@@ -706,6 +707,7 @@
 </div>
 
 <div class="lock" id="lock" hidden></div>
+<div class="lock warn" id="nosave" hidden>Ukládání nefunguje — rozehraná hra po zavření prohlížeče zmizí. Historii si zazálohuj v nastavení.</div>
 
 <div class="acts">
   <button class="ghost" id="undo" style="flex:0 0 auto;padding:0 14px">Zpět</button>
@@ -903,8 +905,26 @@
   var KHKEY = "farkle-koshist-v1"; /* hry smazané z historie */
   var KOS_MAX = 5;
   var KOSH_MAX = 10;
+  /* Když ukládání nefunguje (soukromé okno, plné úložiště), uživatel se to dnes
+     dozvěděl až tím, že po zavření prohlížeče byla hra pryč. Příznak se proto
+     zvedne při prvním selhání a pruh v panelu kola zmizí, až se zápis povede.
+     Pruh nastavuje ukazNeukladame() přímo, ne přes render() — render() volá
+     save(), takže by vznikla smyčka. */
+  var neukladame = false;
   function save(){
-    try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){}
+    try{
+      localStorage.setItem(KEY, JSON.stringify(S));
+      if(neukladame){ neukladame = false; ukazNeukladame(); }
+      return true;
+    }catch(e){
+      if(!neukladame){ neukladame = true; ukazNeukladame(); }
+      return false;
+    }
+  }
+  function ukazNeukladame(){
+    var el = document.getElementById("nosave");
+    if(!el) return;
+    el.hidden = !neukladame;
   }
   /* pozor: níže v souboru je jiná cislo() pro formátování statistik */
   function naCislo(x, nahrada){ return (typeof x === "number" && isFinite(x)) ? x : nahrada; }
@@ -1170,16 +1190,32 @@
     elArch.textContent = S.archivedId ? "Aktualizovat v historii" : "Zapsat do historie";
   }
 
+  /* Selhání zápisu se hlásí tam, kde uživatel klepnul: text tlačítka se na
+     čtyři vteřiny změní a pak se vrátí. Stejný idiom jako u Zapsat do historie. */
+  function hlaskaNaTlacitku(btn, text, puvodni){
+    if(!btn) return;
+    btn.disabled = true;
+    btn.classList.add("warn");
+    btn.textContent = text;
+    setTimeout(function(){
+      btn.disabled = false;
+      btn.classList.remove("warn");
+      btn.textContent = puvodni;
+    }, 4000);
+  }
+
   /* ---------- koš ----------
      Nová hra nesmaže rozehranou hru nenávratně: pokud není v historii,
      odloží se sem a jde obnovit v nastavení. */
+  /* Vrací true, když je rozehraná hra v bezpečí — buď je zálohovaná, nebo
+     zálohu nepotřebuje. Volající pak smí teprve mazat. */
   function kosPush(){
-    if(gameEmpty()) return;
-    if(S.archivedId && !S.dirty) return;   /* v historii už je, zálohu netřeba */
+    if(gameEmpty()) return true;
+    if(S.archivedId && !S.dirty) return true;   /* v historii už je, zálohu netřeba */
     var list = kosAll();
     list.unshift(makeRecord(null));
     while(list.length > KOS_MAX){ list.pop(); }
-    kosWrite(list);
+    return kosWrite(list);
   }
   function nactiZaznam(rec){
     fixMode = false; pendingDel = null;
@@ -1193,11 +1229,16 @@
     S.rolls = [{thrown:6, hot:false, items:[]}];
     S.archivedId = null; S.dirty = false;
   }
-  function restore(id){
+  function restore(id, btn){
     var list = kosAll(), i = histIndex(list, id);
     if(i < 0) return;
     var rec = list[i];
-    kosPush();                       /* co je právě rozehrané, taky neztratíme */
+    /* co je právě rozehrané, taky neztratíme — když se to nepovede uložit,
+       obnovu neděláme, jinak by rozehraná hra zmizela */
+    if(!kosPush()){
+      hlaskaNaTlacitku(btn, "Nepodařilo se zálohovat rozehranou hru", "Obnovit");
+      return;
+    }
     list = kosAll().filter(function(x){ return x.id !== id; });
     kosWrite(list);
     nactiZaznam(rec);
@@ -1220,7 +1261,7 @@
       t.innerHTML = "<b>" + fmt(rec.banked || 0) + "</b><span>" + esc(popisHry(rec)) + "</span>";
       var b = document.createElement("button");
       b.type = "button"; b.className = "ghost"; b.textContent = "Obnovit";
-      b.addEventListener("click", function(){ restore(rec.id); });
+      b.addEventListener("click", function(){ restore(rec.id, b); });
       row.appendChild(t); row.appendChild(b);
       elKosList.appendChild(row);
     });
@@ -1229,21 +1270,26 @@
   /* ---------- koš pro hry smazané z historie ----------
      Smazání z historie není nenávratné: záznam se odloží sem
      a tlačítkem se vrátí zpátky mezi dohrané hry. */
+  /* Vrací true, když je kopie skutečně uložená — volající pak teprve smí
+     smazat originál z historie. */
   function kosHistPush(rec){
-    if(!rec) return;
+    if(!rec) return false;
     var list = kosHistAll();
     list.unshift(rec);
     while(list.length > KOSH_MAX){ list.pop(); }
-    kosHistWrite(list);
+    return kosHistWrite(list);
   }
-  function vratDoHistorie(id){
+  function vratDoHistorie(id, btn){
     var list = kosHistAll(), i = histIndex(list, id);
     if(i < 0) return;
     var rec = list[i];
     var hry = histAll();
     /* kdyby se mezitím objevil záznam se stejným id (třeba importem) */
     if(histIndex(hry, rec.id) >= 0){ rec.id = newId(); }
-    if(!histWrite(hry.concat([rec]))) return;
+    if(!histWrite(hry.concat([rec]))){
+      hlaskaNaTlacitku(btn, "Nepodařilo se uložit — došlo místo", "Vrátit");
+      return;
+    }
     kosHistWrite(list.filter(function(x, k){ return k !== i; }));
     renderKosHist(); renderP2(); renderZaloha2();
   }
@@ -1262,13 +1308,13 @@
       t.innerHTML = "<b>" + fmt(rec.banked || 0) + "</b><span>" + esc(popisHry(rec)) + "</span>";
       var b = document.createElement("button");
       b.type = "button"; b.className = "ghost"; b.textContent = "Vrátit";
-      b.addEventListener("click", function(){ vratDoHistorie(rec.id); });
+      b.addEventListener("click", function(){ vratDoHistorie(rec.id, b); });
       row.appendChild(t); row.appendChild(b);
       elKosHistList.appendChild(row);
     });
   }
 
-  var resetTimer = null;
+  var resetTimer = null, resetMsg = false;
   function disarmReset(){
     clearTimeout(resetTimer); resetTimer = null;
     var b = $("reset");
@@ -1277,6 +1323,7 @@
   }
   function reset(){
     var b = $("reset");
+    if(resetMsg) return;            /* dokud svítí hláška, klik nic neznamená */
     if(gameEmpty()){ wipe(); return; }
     if(!resetTimer){
       b.classList.add("warn");
@@ -1285,7 +1332,15 @@
       return;
     }
     disarmReset();
-    kosPush();
+    /* wipe() až po úspěšné záloze — jinak by rozehraná hra zmizela bez
+       možnosti obnovy. Když se nepovede, hra prostě zůstane rozehraná. */
+    if(!kosPush()){
+      resetMsg = true;
+      b.classList.add("warn");
+      b.textContent = "Nepodařilo se zálohovat — hra zůstává";
+      setTimeout(function(){ resetMsg = false; disarmReset(); }, 4000);
+      return;
+    }
     wipe();
   }
 
@@ -2213,8 +2268,19 @@
         return;
       }
       clearTimeout(delTimer); delTimer = null;
-      kosHistPush(rec);
-      histWrite(histAll().filter(function(g){ return g.id !== id; }));
+      /* Dva zápisy za sebou. Když padne první, nemažeme vůbec — kopie v koši
+         je jediná pojistka. Když padne druhý, vracíme i ten první, jinak by
+         hra zůstala v historii i v koši, tedy dvakrát. */
+      var predtim = kosHistAll();
+      if(!kosHistPush(rec)){
+        hlaskaNaTlacitku(db, "Nepodařilo se uložit do koše", "Smazat z historie");
+        return;
+      }
+      if(!histWrite(histAll().filter(function(g){ return g.id !== id; }))){
+        kosHistWrite(predtim);
+        hlaskaNaTlacitku(db, "Nepodařilo se smazat — došlo místo", "Smazat z historie");
+        return;
+      }
       /* rozehraná hra už v historii není, ať jde zapsat znovu */
       if(S.archivedId === id){ S.archivedId = null; S.dirty = false; }
       zpetNaSeznam();
