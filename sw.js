@@ -1,4 +1,4 @@
-const VERZE = "kostky-v16";
+const VERZE = "kostky-v14";
 
 const SOUBORY = [
   "./",
@@ -28,11 +28,18 @@ self.addEventListener("install", (e) => {
   e.waitUntil(naplnCache().then(() => self.skipWaiting()));
 });
 
+/* Na github.io sdilime origin se vsemi ostatnimi repozitari stejneho uctu,
+   takze caches.keys() vraci i cache cizich aplikaci. Bez filtru na vlastni
+   predponu by kazda aktualizace teto aplikace shodila offline rezim vsem
+   ostatnim PWA na stejne adrese. Na vlastni domene uz to nehrozi, spravne
+   je to ale tak jako tak. */
 self.addEventListener("activate", (e) => {
   e.waitUntil(
     caches.keys()
       .then((jmena) => Promise.all(
-        jmena.filter((n) => n !== VERZE).map((n) => caches.delete(n))
+        jmena
+          .filter((n) => n.startsWith("kostky-") && n !== VERZE)
+          .map((n) => caches.delete(n))
       ))
       .then(() => self.clients.claim())
   );
