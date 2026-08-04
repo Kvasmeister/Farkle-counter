@@ -900,6 +900,7 @@
         </div>
       </div>
       <div class="msg" id="zalmsg" hidden></div>
+      <div class="msg" id="mistoinfo" hidden></div>
       <input type="file" id="impfile" accept=".txt,text/plain" hidden>
     </div>
   </div>
@@ -1030,13 +1031,35 @@
   var HIST = [];
   var UKEY  = "farkle-uloziste-v1";   /* "idb", jakmile migrace proběhla */
   var HZAL  = HKEY + "-zaloha";       /* přejmenovaný původní klíč */
-  var IDB_JMENO = "kostky", IDB_VERZE = 1, IDB_POLICE = "hry";
+  var IDB_JMENO = "kostky", IDB_VERZE = 2;
+  var SOUHRNY = "souhrny", DETAILY = "detaily";
   /* Firefox v soukromém okně umí na open() viset donekonečna, proto strop */
   var IDB_STROP = 3000;
 
   var rezim = "ls";            /* "ls" | "idb" */
   var idb = null;
   var historieNedostupna = false;
+
+  /* Souhrn nese všechno, co seznam a statistiky potřebují, bez popisů kol.
+     Deset tisíc souhrnů je v paměti kolem 2 MB, detaily by byly desítky.
+     Staví se na třech místech: při zápisu hry, při migraci a při importu. */
+  function souhrnZ(rec){
+    var kolKCili = gKolKCili(rec);
+    return {
+      id: rec.id, savedAt: rec.savedAt,
+      mode: rec.mode, goal: rec.goal, roundGoal: rec.roundGoal || null,
+      banked: rec.banked || 0,
+      kol: gKol(rec), farklu: gFarkle(rec),
+      nejlepsi: gNejlepsiKolo(rec), nejhorsi: gNejhorsiKolo(rec),
+      serie: gSerie(rec),
+      kolKCili: kolKCili
+    };
+  }
+  function detailZ(rec){
+    return { id: rec.id, turns: (rec.turns || []).map(function(t){
+      return { p: t.p || 0, bust: !!t.bust, d: t.d || "" };
+    }) };
+  }
 
   function otevriIDB(hotovo){
     var rozhodnuto = false;
@@ -1047,11 +1070,26 @@
     var req;
     try{ req = api.open(IDB_JMENO, IDB_VERZE); }catch(e){ konec(null); return; }
     setTimeout(function(){ konec(null); }, IDB_STROP);
+    /* Rozdělení jedné police na dvě běží uvnitř versionchange transakce.
+       Když cokoli selže, transakce se zruší celá a databáze zůstane na
+       předchozí verzi i s původní policí — nevznikne stav napůl. */
     req.onupgradeneeded = function(){
-      var db = req.result;
-      if(!db.objectStoreNames.contains(IDB_POLICE)){
-        db.createObjectStore(IDB_POLICE, { keyPath: "id" });
-      }
+      var db = req.result, tx = req.transaction;
+      if(!db.objectStoreNames.contains(SOUHRNY)) db.createObjectStore(SOUHRNY, { keyPath: "id" });
+      if(!db.objectStoreNames.contains(DETAILY)) db.createObjectStore(DETAILY, { keyPath: "id" });
+      if(!db.objectStoreNames.contains("hry")) return;
+      var kur = tx.objectStore("hry").openCursor();
+      kur.onsuccess = function(){
+        var c = kur.result;
+        if(c){
+          var rec = c.value;
+          tx.objectStore(SOUHRNY).put(souhrnZ(rec));
+          tx.objectStore(DETAILY).put(detailZ(rec));
+          c.continue();
+          return;
+        }
+        db.deleteObjectStore("hry");
+      };
     };
     req.onsuccess = function(){ konec(req.result); };
     req.onerror = function(){ konec(null); };
@@ -1059,12 +1097,13 @@
   }
 
   /* null znamená „nepodařilo se přečíst", ne „nic tam není" — ten rozdíl je
-     zásadní, viz historieNedostupna níž. */
+     zásadní, viz historieNedostupna níž. Načítají se jen souhrny; detail se
+     dotáhne až při rozkliknutí hry. */
   function ctiIDB(db, hotovo){
     var tx;
-    try{ tx = db.transaction(IDB_POLICE, "readonly"); }
+    try{ tx = db.transaction(SOUHRNY, "readonly"); }
     catch(e){ hotovo(null); return; }
-    var st = tx.objectStore(IDB_POLICE), req;
+    var st = tx.objectStore(SOUHRNY), req;
     try{
       req = st.getAll ? st.getAll() : null;
     }catch(e){ hotovo(null); return; }
@@ -1081,12 +1120,28 @@
     kur.onerror = function(){ hotovo(null); };
   }
 
-  /* Police se přepíše celá. Zápisů do historie je pár za hru (zapsání,
-     smazání, obnova, import), takže na tom nezáleží; dávka s rozdělením
-     na souhrny a detaily to zjemní na jednotlivé záznamy. */
-  function zapisIDB(db, list, hotovo){
+  /* Detail jedné hry. hotovo(null) znamená, že se nepovedlo přečíst. */
+  function nactiDetail(id, hotovo){
+    if(rezim !== "idb" || !idb){ hotovo(null); return; }
     var tx;
-    try{ tx = db.transaction(IDB_POLICE, "readwrite"); }
+    try{ tx = idb.transaction(DETAILY, "readonly"); }
+    catch(e){ hotovo(null); return; }
+    var req = tx.objectStore(DETAILY).get(id);
+    req.onsuccess = function(){
+      var d = req.result;
+      hotovo(d && Array.isArray(d.turns) ? d.turns : []);
+    };
+    req.onerror = function(){ hotovo(null); };
+  }
+
+  /* Police souhrnů se přepíše celá — je malá a zápisů do historie je pár za
+     hru. Detaily se sahá jen na ty, které se opravdu mění; přepisovat je
+     všechny by při tisících her bylo to nejdražší, co aplikace dělá.
+     Obě police v jedné transakci, jinak by při selhání uprostřed vznikla
+     hra bez kol nebo kola bez hry. */
+  function zapisIDB(db, souhrny, noveDetaily, smazatDetaily, hotovo){
+    var tx;
+    try{ tx = db.transaction([SOUHRNY, DETAILY], "readwrite"); }
     catch(e){ hotovo(false); return; }
     var hotovoUz = false;
     function konec(v){ if(hotovoUz) return; hotovoUz = true; hotovo(v); }
@@ -1094,9 +1149,11 @@
     tx.onerror = function(){ konec(false); };
     tx.onabort = function(){ konec(false); };
     try{
-      var st = tx.objectStore(IDB_POLICE);
-      st.clear();
-      for(var i = 0; i < list.length; i++){ st.put(list[i]); }
+      var s = tx.objectStore(SOUHRNY), d = tx.objectStore(DETAILY), i;
+      s.clear();
+      for(i = 0; i < souhrny.length; i++){ s.put(souhrny[i]); }
+      for(i = 0; i < smazatDetaily.length; i++){ d.delete(smazatDetaily[i]); }
+      for(i = 0; i < noveDetaily.length; i++){ d.put(noveDetaily[i]); }
     }catch(e){
       try{ tx.abort(); }catch(e2){}
       konec(false);
@@ -1110,7 +1167,8 @@
      historii jako by byla úplná. */
   function migruj(db, hotovo){
     var stare = readList(HKEY);
-    zapisIDB(db, stare, function(ok){
+    var souhrny = stare.map(souhrnZ), detaily = stare.map(detailZ);
+    zapisIDB(db, souhrny, detaily, [], function(ok){
       if(!ok){ hotovo(false); return; }
       var priznak = false;
       try{ localStorage.setItem(UKEY, "idb"); priznak = true; }catch(e){}
@@ -1124,7 +1182,7 @@
           localStorage.removeItem(HKEY);
         }
       }catch(e){}
-      HIST = stare;
+      HIST = souhrny;
       hotovo(true);
     });
   }
@@ -1180,8 +1238,12 @@
      řeší. Asynchronní zápis to mění jen v tom, že výsledek přijde později.
      V režimu ls se hotovo() volá ještě synchronně — chování zůstává přesně
      jako dřív. Paměť se mění optimisticky, ať UI reaguje hned; při selhání
-     se vrátí sama a volající dostane false. */
-  function histWrite(list, hotovo){
+     se vrátí sama a volající dostane false.
+
+     V režimu ls jsou v `list` celé záznamy, v režimu idb souhrny. Volající
+     posílá `zaznamy` — celé hry, které do historie přibývají. Co z historie
+     mizí, se pozná porovnáním id a detail se smaže s nimi. */
+  function histWrite(list, hotovo, zaznamy){
     hotovo = hotovo || function(){};
     var novy = list.slice();
     if(rezim === "ls"){
@@ -1191,13 +1253,27 @@
       return;
     }
     if(!idb){ hotovo(false); return; }   /* pruh o nedostupné historii už visí */
+
+    var je = {}, i;
+    for(i = 0; i < novy.length; i++){ je[novy[i].id] = true; }
+    var smazat = [];
+    for(i = 0; i < HIST.length; i++){
+      if(!je[HIST[i].id]) smazat.push(HIST[i].id);
+    }
+    var detaily = (zaznamy || []).map(detailZ);
+
     var predtim = HIST;
     HIST = novy;
-    zapisIDB(idb, novy, function(ok){
+    zapisIDB(idb, novy, detaily, smazat, function(ok){
       if(!ok) HIST = predtim;
       hotovo(ok);
     });
   }
+
+  /* Do historie se ukládají celé záznamy; co se z nich stane, řeší úložiště.
+     Volající tak nemusí vědět, jestli jede na localStorage nebo na dvou
+     policích. */
+  function proHistorii(rec){ return rezim === "idb" ? souhrnZ(rec) : rec; }
 
   function newId(){
     return "h" + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
@@ -1235,7 +1311,7 @@
   }
   function kolSlovo(n){ return n === 1 ? "kolo" : ((n >= 2 && n < 5) ? "kola" : "kol"); }
   function popisHry(rec){
-    var kol = (rec.turns || []).length;
+    var kol = gKol(rec);
     var rez = rec.mode === "rounds"
       ? ("na kola" + (rec.roundGoal ? " \u00B7 limit " + rec.roundGoal : ""))
       : ("do " + fmt(rec.goal || 0));
@@ -1365,7 +1441,7 @@
     var list = histAll();
     var i = S.archivedId ? histIndex(list, S.archivedId) : -1;
     var rec = makeRecord(i >= 0 ? S.archivedId : null);
-    if(i >= 0){ list[i] = rec; } else { list.push(rec); }
+    if(i >= 0){ list[i] = proHistorii(rec); } else { list.push(proHistorii(rec)); }
 
     histWrite(list, function(ok){
       if(!ok){
@@ -1376,7 +1452,7 @@
       }
       S.archivedId = rec.id; S.dirty = false;
       render(); renderP2();
-    });
+    }, [rec]);
   }
   function renderArch(){
     elArch.classList.remove("warn");
@@ -1491,14 +1567,14 @@
     var hry = histAll();
     /* kdyby se mezitím objevil záznam se stejným id (třeba importem) */
     if(histIndex(hry, rec.id) >= 0){ rec.id = newId(); }
-    histWrite(hry.concat([rec]), function(ok){
+    histWrite(hry.concat([proHistorii(rec)]), function(ok){
       if(!ok){
         hlaskaNaTlacitku(btn, textSelhani("Nepodařilo se uložit — došlo místo"), "Vrátit");
         return;
       }
       kosHistWrite(list.filter(function(x, k){ return k !== i; }));
       renderKosHist(); renderP2(); renderZaloha2();
-    });
+    }, [rec]);
   }
   function renderKosHist(){
     var list = kosHistAll();
@@ -1575,7 +1651,7 @@
     var i, s;
 
     if(rec.mode === "rounds"){
-      var played = (rec.turns || []).length;
+      var played = gKol(rec);
       var kol = rec.roundGoal > 0 ? Math.min(40, rec.roundGoal) : Math.min(40, played);
       for(i = 0; i < kol; i++){
         s = document.createElement("i");
@@ -1984,11 +2060,11 @@
   });
 
   function statsHTML(rec){
-    var turns = rec.turns || [];
-    var scored = turns.filter(function(t){ return !t.bust; });
-    var busts = turns.length - scored.length;
-    var best = scored.reduce(function(a, t){ return Math.max(a, t.p); }, 0);
-    var avg = turns.length ? Math.round((rec.banked || 0) / turns.length) : 0;
+    var busts = gFarkle(rec);
+    var nej = gNejlepsiKolo(rec);
+    var best = nej === null ? 0 : nej;
+    var avg = gPrumer(rec);
+    if(avg === null) avg = 0;
     return '<div><span>celkem</span><b>' + fmt(rec.banked || 0) + '</b></div>' +
            '<div><span>nejlepší</span><b>' + fmt(best) + '</b></div>' +
            '<div><span>průměr</span><b>' + fmt(avg) + '</b></div>' +
@@ -1996,24 +2072,37 @@
   }
   function renderStats(){ $("stats").innerHTML = statsHTML(snapshot()); }
 
-  /* ---------- odvozené údaje o jedné hře ---------- */
-  function gKol(g){ return (g.turns || []).length; }
+  /* ---------- odvozené údaje o jedné hře ----------
+     Každá z nich sáhne nejdřív po předpočítaném čísle ze souhrnu a teprve
+     když ho nemá, projde `turns`. Díky tomu zůstávají STATY, statHodnota(),
+     zebricek() i renderHistList() beze změny a počítají stejně nad souhrny,
+     nad plnými záznamy v propadu na localStorage i nad importovanými daty. */
+  function gKol(g){
+    if(typeof g.kol === "number") return g.kol;
+    return (g.turns || []).length;
+  }
   function gFarkle(g){
+    if(typeof g.farklu === "number") return g.farklu;
     var n = 0;
     (g.turns || []).forEach(function(t){ if(t.bust) n++; });
     return n;
   }
+  /* null je platná hodnota (hra bez jediného bodovaného kola), takže se
+     nedá ptát na pravdivost — jen na to, jestli údaj vůbec je */
   function gNejlepsiKolo(g){
+    if(g.nejlepsi !== undefined) return g.nejlepsi;
     var m = null;
     (g.turns || []).forEach(function(t){ if(!t.bust && (m === null || t.p > m)) m = t.p; });
     return m;
   }
   function gNejhorsiKolo(g){
+    if(g.nejhorsi !== undefined) return g.nejhorsi;
     var m = null;
     (g.turns || []).forEach(function(t){ if(!t.bust && t.p > 0 && (m === null || t.p < m)) m = t.p; });
     return m;
   }
   function gSerie(g){
+    if(typeof g.serie === "number") return g.serie;
     var nej = 0, b = 0;
     (g.turns || []).forEach(function(t){
       if(t.bust){ b = 0; } else { b++; if(b > nej) nej = b; }
@@ -2025,6 +2114,7 @@
     return k ? Math.round((g.banked || 0) / k) : null;
   }
   function gKolKCili(g){
+    if(g.kolKCili !== undefined) return g.kolKCili;
     return (g.mode !== "rounds" && g.goal > 0 && (g.banked || 0) >= g.goal) ? gKol(g) : null;
   }
   function gBody(g){ return g.banked || 0; }
@@ -2103,8 +2193,33 @@
     var d = new Date();
     return d.getFullYear() + "-" + ("0" + (d.getMonth() + 1)).slice(-2) + "-" + ("0" + d.getDate()).slice(-2);
   }
-  function exportText(){
-    var hry = histAll().slice().sort(function(a, b){ return (a.savedAt || 0) - (b.savedAt || 0); });
+  /* Plné záznamy pro zálohu. V režimu ls je má paměť rovnou, v režimu idb
+     se skládají ze souhrnů a detailů. Detaily se čtou kurzorem, ne jedním
+     getAll() přes celou polici — při tisících her by to byl jeden obří
+     objekt navíc k textu zálohy, který se stejně musí složit. */
+  function slozHry(hotovo){
+    var hry = histAll().sort(function(a, b){ return (a.savedAt || 0) - (b.savedAt || 0); });
+    if(rezim !== "idb"){ hotovo(hry); return; }
+    if(!idb){ hotovo(null); return; }
+    var tx;
+    try{ tx = idb.transaction(DETAILY, "readonly"); }
+    catch(e){ hotovo(null); return; }
+    var mapa = {}, kur = tx.objectStore(DETAILY).openCursor();
+    kur.onsuccess = function(){
+      var c = kur.result;
+      if(c){ mapa[c.value.id] = c.value.turns || []; c.continue(); return; }
+      hotovo(hry.map(function(g){
+        return { id: g.id, savedAt: g.savedAt, mode: g.mode, goal: g.goal,
+                 roundGoal: g.roundGoal || null, banked: g.banked || 0,
+                 turns: mapa[g.id] || [] };
+      }));
+    };
+    kur.onerror = function(){ hotovo(null); };
+  }
+
+  /* Formát zálohy se nemění: nahoře čitelný přehled, dole řádek #DATA:.
+     Soubor z dřívější verze musí jít naimportovat i potom. */
+  function exportText(hry){
     var r = [];
     r.push("Kostky \u2014 z\u00E1loha historie her");
     r.push("vytvo\u0159eno " + dt(Date.now()) + ", her: " + hry.length);
@@ -2126,6 +2241,21 @@
        souboru by se leckde zobrazila jako podivný znak */
     return r.join("\n").replace(/\u202F/g, " ") +
            "\n--- data pro import, ne\u0161ahat ---\n" + ZNACKA + JSON.stringify(hry);
+  }
+
+  /* Skládání může chvíli trvat, proto se tlačítko po tu dobu zablokuje. */
+  function sTextemZalohy(btn, puvodni, hotovo){
+    btn.disabled = true;
+    btn.textContent = "Připravuji zálohu\u2026";
+    slozHry(function(hry){
+      btn.disabled = false;
+      btn.textContent = puvodni;
+      if(hry === null){
+        zalMsg("Zálohu se nepodařilo složit — historie teď není dostupná.", true);
+        return;
+      }
+      hotovo(exportText(hry));
+    });
   }
   function parseZaloha(text){
     var i = text.lastIndexOf(ZNACKA);
@@ -2233,6 +2363,53 @@
     zalMsg("");
     zavriImport();
     zavriVlozeni();
+    renderMisto();
+  }
+
+  /* ---------- místo v úložišti a trvalost ----------
+     persist() kvótu nezvětší, jen vyřadí data z automatického úklidu, kterým
+     prohlížeče uvolňují místo. Ptát se smí až po interakci uživatele; v Safari
+     to platí jen pro aplikaci přidanou na plochu. */
+  var trvale = false;
+  function zajistiTrvalost(){
+    var st = null;
+    try{ st = navigator.storage; }catch(e){}
+    if(!st || typeof st.persist !== "function") return;
+    try{
+      if(typeof st.persisted === "function"){
+        st.persisted().then(function(uz){
+          if(uz){ trvale = true; return null; }
+          return st.persist().then(function(v){ trvale = !!v; });
+        }).catch(function(){});
+        return;
+      }
+      st.persist().then(function(v){ trvale = !!v; }).catch(function(){});
+    }catch(e){}
+  }
+  function velikost(b){
+    if(b < 1024) return b + " B";
+    if(b < 1048576) return Math.round(b / 1024) + " kB";
+    if(b < 1073741824) return desetina(b / 1048576) + " MB";
+    return desetina(b / 1073741824) + " GB";
+  }
+  /* estimate() počítá celý původ, tedy na github.io i ostatní aplikace
+     ze stejné adresy — proto „data aplikací", ne „historie". */
+  function renderMisto(){
+    var el = document.getElementById("mistoinfo");
+    if(!el) return;
+    el.hidden = true;
+    var st = null;
+    try{ st = navigator.storage; }catch(e){}
+    if(!st || typeof st.estimate !== "function") return;
+    try{
+      st.estimate().then(function(o){
+        if(!o || typeof o.usage !== "number") return;
+        el.textContent = "Data aplikací z této adresy zabírají " + velikost(o.usage) +
+          (o.quota > 0 ? (" z " + velikost(o.quota) + " dostupných") : "") +
+          (trvale ? ". Prohlížeč je označil za trvalá." : ".");
+        el.hidden = false;
+      }).catch(function(){});
+    }catch(e){}
   }
 
   /* společné pro import ze souboru i ze schránky */
@@ -2259,14 +2436,17 @@
   }
 
   $("expbtn").addEventListener("click", function(){
-    var text = exportText();
-    var ok = stahni("kostky-historie-" + datumProNazev() + ".txt", text);
-    zalMsg(ok ? "Soubor se ukládá." : "Stažení se nepodařilo — zkus kopii do schránky.", !ok);
+    sTextemZalohy($("expbtn"), "Uložit", function(text){
+      var ok = stahni("kostky-historie-" + datumProNazev() + ".txt", text);
+      zalMsg(ok ? "Soubor se ukládá." : "Stažení se nepodařilo — zkus kopii do schránky.", !ok);
+    });
   });
   $("copybtn").addEventListener("click", function(){
-    doSchranky(exportText(), function(ok){
-      zalMsg(ok ? "Záloha je ve schránce."
-                : "Do schránky se to nepodařilo zkopírovat — zkus Stáhnout soubor.", !ok);
+    sTextemZalohy($("copybtn"), "Kopírovat", function(text){
+      doSchranky(text, function(ok){
+        zalMsg(ok ? "Záloha je ve schránce."
+                  : "Do schránky se to nepodařilo zkopírovat — zkus Stáhnout soubor.", !ok);
+      });
     });
   });
   $("impbtn").addEventListener("click", function(){
@@ -2311,7 +2491,7 @@
     if(!nactene) return;
     var nove = novychZ(nactene);
     var pocet = nove.length;
-    histWrite(histAll().concat(nove), function(ok){
+    histWrite(histAll().concat(nove.map(proHistorii)), function(ok){
       if(!ok){
         zalMsg(textSelhani("Nepodařilo se uložit — došlo místo") + ".", true);
         return;
@@ -2321,7 +2501,7 @@
       zalMsg(pocet === 1 ? "Přidána 1 hra."
         : (pocet < 5 ? ("Přidány " + pocet + " hry.") : ("Přidáno " + pocet + " her.")));
       renderP2(); renderZaloha2();
-    });
+    }, nove);
   });
   $("imprep").addEventListener("click", function(){
     if(!nactene) return;
@@ -2333,7 +2513,7 @@
     }
     clearTimeout(repTimer); repTimer = null;
     var pocet = nactene.length;
-    histWrite(nactene.slice(), function(ok){
+    histWrite(nactene.map(proHistorii), function(ok){
       if(!ok){
         zalMsg(textSelhani("Nepodařilo se uložit — došlo místo") + ".", true);
         return;
@@ -2347,7 +2527,7 @@
       zavriVlozeni();
       zalMsg("Historie nahrazena, " + pocet + " " + hrySlovo(pocet) + ".");
       renderP2(); renderZaloha2();
-    });
+    }, nactene);
   });
   /* po zápisu se mění jen zapnutost tlačítek, hlášku necháváme na obrazovce */
   function renderZaloha2(){
@@ -2528,20 +2708,42 @@
     });
   }
 
+  /* Hlavička a přechod na podstránku jsou hned ze souhrnu, tabulka kol až
+     po dotažení detailu. Když má záznam `turns` už v ruce (propad na
+     localStorage), jde všechno naráz a bez čekání. */
   function otevriHru(id){
     var hry = histAll(), i = histIndex(hry, id);
     if(i < 0) return;
-    var rec = hry[i];
-    doDetailu("Hra z " + dt(rec.savedAt));
+    var sou = hry[i];
+    doDetailu("Hra z " + dt(sou.savedAt));
     elDetBody.innerHTML =
       '<div class="tally" id="dtally"></div><div class="tallycap" id="dtallycap"></div>' +
-      '<div class="stats">' + statsHTML(rec) + '</div>' +
-      '<table><tbody>' + rowsHTML(rec.turns) + '</tbody></table>' +
-      (gKol(rec) ? '' : '<div class="empty">V téhle hře není zapsané žádné kolo.</div>') +
-      '<div class="archwrap"><button class="ghost arch" id="delgame" type="button">Smazat z historie</button></div>';
-    tallyInto($("dtally"), $("dtallycap"), rec);
+      '<div class="stats">' + statsHTML(sou) + '</div>' +
+      '<div id="detrows"><div class="empty">Načítám kola\u2026</div></div>' +
+      '<div class="archwrap"><button class="ghost arch" id="delgame" type="button" disabled>Smazat z historie</button></div>';
+    tallyInto($("dtally"), $("dtallycap"), sou);
     var db = $("delgame");
+
+    /* Do koše se ukládá celý záznam, jinak by se z něj vrátila hra bez kol.
+       Dokud detail není v ruce, mazat nejde. */
+    var plny = null;
+    function sKoly(turns){
+      if(turns === null){
+        $("detrows").innerHTML = '<div class="empty">Kola téhle hry se teď nedaří načíst.</div>';
+        return;
+      }
+      plny = { id: sou.id, savedAt: sou.savedAt, mode: sou.mode, goal: sou.goal,
+               roundGoal: sou.roundGoal || null, banked: sou.banked || 0, turns: turns };
+      $("detrows").innerHTML = turns.length
+        ? ('<table><tbody>' + rowsHTML(turns) + '</tbody></table>')
+        : '<div class="empty">V téhle hře není zapsané žádné kolo.</div>';
+      db.disabled = false;
+    }
+    if(Array.isArray(sou.turns)) sKoly(sou.turns);
+    else nactiDetail(id, sKoly);
+
     db.addEventListener("click", function(){
+      if(!plny) return;
       if(!delTimer){
         db.classList.add("warn");
         db.textContent = "Opravdu smazat?";
@@ -2557,7 +2759,7 @@
          je jediná pojistka. Když padne druhý, vracíme i ten první, jinak by
          hra zůstala v historii i v koši, tedy dvakrát. */
       var predtim = kosHistAll();
-      if(!kosHistPush(rec)){
+      if(!kosHistPush(plny)){
         hlaskaNaTlacitku(db, "Nepodařilo se uložit do koše", "Smazat z historie");
         return;
       }
@@ -2743,6 +2945,12 @@
   });
 
   /* ---------- start ---------- */
+  /* o trvalost se říká až po prvním doteku, dřív ji prohlížeče odmítají */
+  document.addEventListener("pointerdown", function jednou(){
+    document.removeEventListener("pointerdown", jednou, true);
+    zajistiTrvalost();
+  }, true);
+
   load(function(){
     syncGoalUI(); render(); zkontrolujNavod();
     /* renderP2() čte historii, takže musí počkat na úložiště. V režimu ls
