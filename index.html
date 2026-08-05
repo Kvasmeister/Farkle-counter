@@ -1125,7 +1125,7 @@
   var HIST = [];
   var UKEY  = "farkle-uloziste-v1";   /* "idb", jakmile migrace proběhla */
   var HZAL  = HKEY + "-zaloha";       /* přejmenovaný původní klíč */
-  var IDB_JMENO = "kostky", IDB_VERZE = 2;
+  var IDB_JMENO = "kostky", IDB_VERZE = 3;
   var SOUHRNY = "souhrny", DETAILY = "detaily";
   /* Firefox v soukromém okně umí na open() viset donekonečna, proto strop */
   var IDB_STROP = 3000;
@@ -1146,7 +1146,8 @@
       kol: gKol(rec), farklu: gFarkle(rec),
       nejlepsi: gNejlepsiKolo(rec), nejhorsi: gNejhorsiKolo(rec),
       serie: gSerie(rec),
-      kolKCili: kolKCili
+      kolKCili: kolKCili,
+      hodu: gNejvicHodu(rec), ztraceno: gZtraceno(rec)
     };
   }
   function detailZ(rec){
@@ -1171,23 +1172,61 @@
       var db = req.result, tx = req.transaction;
       if(!db.objectStoreNames.contains(SOUHRNY)) db.createObjectStore(SOUHRNY, { keyPath: "id" });
       if(!db.objectStoreNames.contains(DETAILY)) db.createObjectStore(DETAILY, { keyPath: "id" });
-      if(!db.objectStoreNames.contains("hry")) return;
-      var kur = tx.objectStore("hry").openCursor();
-      kur.onsuccess = function(){
-        var c = kur.result;
-        if(c){
-          var rec = c.value;
-          tx.objectStore(SOUHRNY).put(souhrnZ(rec));
-          tx.objectStore(DETAILY).put(detailZ(rec));
-          c.continue();
-          return;
-        }
-        db.deleteObjectStore("hry");
-      };
+      if(db.objectStoreNames.contains("hry")){
+        var kur = tx.objectStore("hry").openCursor();
+        kur.onsuccess = function(){
+          var c = kur.result;
+          if(c){
+            var rec = c.value;
+            tx.objectStore(SOUHRNY).put(souhrnZ(rec));
+            tx.objectStore(DETAILY).put(detailZ(rec));
+            c.continue();
+            return;
+          }
+          db.deleteObjectStore("hry");
+        };
+        /* souhrny právě vznikly přes souhrnZ() nad plnými záznamy, nová pole
+           v nich tedy už jsou — dopočítávat není co */
+        return;
+      }
+      dopoctiHody(tx);
     };
     req.onsuccess = function(){ konec(req.result); };
     req.onerror = function(){ konec(null); };
     req.onblocked = function(){ konec(null); };
+  }
+
+  /* Doplnění polí `hodu` a `ztraceno` do souhrnů uložených starší verzí.
+     Běží uvnitř versionchange transakce: když cokoli selže, transakce se zruší
+     celá a databáze zůstane na předchozí verzi — nevznikne stav, kdy má
+     polovina her nová pole a druhá ne. Mapa se staví celá dopředu a teprve
+     pak se sahá na souhrny; dva otevřené kurzory nad dvěma policemi v téže
+     transakci se nemíchají. Na čerstvé instalaci jsou obě police prázdné,
+     takže dopočet nestojí nic. */
+  function dopoctiHody(tx){
+    var mapa = {}, kd = tx.objectStore(DETAILY).openCursor();
+    kd.onsuccess = function(){
+      var c = kd.result;
+      if(c){
+        var d = c.value;
+        mapa[d.id] = { hodu: gNejvicHodu(d), ztraceno: gZtraceno(d) };
+        c.continue();
+        return;
+      }
+      var ks = tx.objectStore(SOUHRNY).openCursor();
+      ks.onsuccess = function(){
+        var s = ks.result;
+        if(!s) return;
+        var v = s.value;
+        if(v.hodu === undefined || v.ztraceno === undefined){
+          var m = mapa[v.id];
+          v.hodu = m ? m.hodu : null;
+          v.ztraceno = m ? m.ztraceno : null;
+          s.update(v);
+        }
+        s.continue();
+      };
+    };
   }
 
   /* null znamená „nepodařilo se přečíst", ne „nic tam není" — ten rozdíl je
@@ -2519,6 +2558,31 @@
       if(t.bust){ b = 0; } else { b++; if(b > nej) nej = b; }
     });
     return nej;
+  }
+  /* Počet hodů se rekonstruuje z popisu kola, protože turns[i] nese jen
+     {p, bust, d}. turnDesc() spojuje hody přes " · " a prázdné hody vyhazuje —
+     u farklu je poslední hod prázdný z definice, proto se u něj přičítá
+     jednička. Sedí to i na farkle prvním hodem: prázdný popis → jeden hod.
+     Math.max(u, 1) je pojistka pro cizí zálohu s prázdným popisem u zapsaného
+     kola; z aplikace takové kolo vzniknout nemůže. */
+  function hodyVKole(t){
+    var u = t.d ? String(t.d).split(" \u00B7 ").length : 0;
+    return t.bust ? u + 1 : Math.max(u, 1);
+  }
+  function gNejvicHodu(g){
+    if(g.hodu !== undefined) return g.hodu;
+    var m = null;
+    (g.turns || []).forEach(function(t){
+      var h = hodyVKole(t);
+      if(m === null || h > m) m = h;
+    });
+    return m;
+  }
+  function gZtraceno(g){
+    if(g.ztraceno !== undefined) return g.ztraceno;
+    var m = null;
+    (g.turns || []).forEach(function(t){ if(t.bust && (m === null || t.p > m)) m = t.p; });
+    return m;
   }
   function gPrumer(g){
     var k = gKol(g);
