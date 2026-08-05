@@ -128,6 +128,12 @@
   }
   .pages::-webkit-scrollbar{display:none}
   .page{flex:0 0 100%;min-width:100%;scroll-snap-align:start;overflow-y:auto;-webkit-overflow-scrolling:touch}
+  /* Svislé posuvníky jsou schované všude, kde se scrolluje. Kreslí se na
+     hraně scrollujícího prvku, ne okna — u vycentrovaného okna nastavení by
+     tedy stejně seděly uvnitř. Stejný idiom už používá .pages a .sheets. */
+  .page,#page0,.modalbody,.fix{scrollbar-width:none;-ms-overflow-style:none}
+  .page::-webkit-scrollbar,#page0::-webkit-scrollbar,
+  .modalbody::-webkit-scrollbar,.fix::-webkit-scrollbar{display:none}
 
   /* Počítadlo: klávesnice a obě skóre mají přednost a nikdy se neořezávají.
      Když se to na velmi nízký displej nevejde, stránka roluje — nic se neztratí. */
@@ -192,6 +198,12 @@
   .setrow b{display:block;font-weight:500;font-size:14.5px}
   .setrow span{display:block;font-size:12.5px;color:var(--dim)}
   .setrow .ghost{flex:0 0 auto}
+  /* Řádky v koši mají dvě tlačítka. Na úzkém displeji se dvojice zalomí pod
+     popis hry, proto flex-basis u .t — bez něj by se popis smrskl na nic
+     a k zalomení by nikdy nedošlo. */
+  .kosrow{flex-wrap:wrap}
+  .kosrow .t{flex:1 1 150px}
+  .setbtns{display:flex;align-items:center;gap:8px;flex:0 0 auto;margin-left:auto}
 
   /* přehled na stránce zápisu */
   .stats{display:flex;gap:8px;margin:16px 0 18px}
@@ -468,10 +480,11 @@
      nemění velikost — kratší pravidla nechají dole prázdno. */
   /* pop-up o uložení
      Nad vším kromě oken (ta mají 150) a překryvu rotace (200), aby ho
-     otevřené nastavení nepřekrylo. */
+     otevřené nastavení nepřekrylo. Sedí půlkou přes hlavičku a půlkou přes
+     karty; ten šev se posouvá, když je rozbalené nastavení hry, takže top
+     dopočítává umistiToast() při každém zobrazení. */
   .toast{
-    position:fixed;z-index:180;left:50%;transform:translateX(-50%);
-    bottom:calc(16px + env(safe-area-inset-bottom));
+    position:fixed;z-index:180;left:50%;top:0;transform:translate(-50%,-50%);
     max-width:calc(100% - 28px);
     display:flex;align-items:center;gap:8px;
     padding:7px 8px 7px 13px;
@@ -883,7 +896,7 @@
     <p><b>Automatické ukládání</b> v nastavení zapíše hru do historie samo, jakmile skončí — po posledním kole nebo po kole, kterým se překročí cíl. Uložení oznámí okénko, které samo zmizí. Hra na neomezený počet kol se takhle uložit nedá, protože nemá konec.</p>
 
     <h3>Koš</h3>
-    <p><b>Nová hra</b> odkládá smazanou hru do nastavení, do oddílu <i>Smazané rozehrané hry</i> — drží posledních pět. <b>Smazat z historie</b> ukládá hru do oddílu <i>Smazané hry z historie</i>, kde jich zůstává deset a tlačítko <i>Vrátit</i> je pošle zpátky mezi dohrané.</p>
+    <p><b>Nová hra</b> odkládá smazanou hru do nastavení, do oddílu <i>Smazané rozehrané hry</i> — drží posledních pět. <b>Smazat z historie</b> ukládá hru do oddílu <i>Smazané hry z historie</i>, kde jich zůstává deset. V obou oddílech vrací hru zpátky tlačítko <i>Obnovit</i>; <i>Trvale smazat</i> ji po potvrzení zahodí nadobro.</p>
     <p>Když hra ještě není v historii, <b>Nová hra</b> se po potvrzení zeptá ještě jednou a nabídne ji rovnou uložit.</p>
 
     <h3>Záloha</h3>
@@ -912,7 +925,7 @@
         <button class="ghost" id="svit" type="button">Vypnuto</button>
       </div>
       <div class="setrow" id="autorow">
-        <div class="t"><b>Automatické ukládání</b><span>Hru zapíše do historie, jakmile skončí. Na neomezený počet kol se neukládá.</span></div>
+        <div class="t"><b>Automatické ukládání</b><span>Hru zapíše do historie, jakmile skončí. Hra na neomezený počet kol se automaticky neukládá.</span></div>
         <button class="ghost" id="auto" type="button">Vypnuto</button>
       </div>
       <details class="setsec" id="seckos">
@@ -959,7 +972,6 @@
             </div>
           </div>
           <div class="msg" id="zalmsg" hidden></div>
-          <div class="msg misto" hidden></div>
         </div>
       </details>
 
@@ -1638,26 +1650,68 @@
     var el = document.getElementById(id);
     if(el) el.textContent = n ? String(n) : "";
   }
+  /* Trvalé smazání se ptá stejným způsobem jako mazání kola: řádek se
+     překlopí na otázku se dvěma tlačítky. Ptáme se vždy jen u jednoho
+     řádku, proto jedno id na koš. */
+  var ptamSeKos = null, ptamSeKosHist = null;
+
+  function kosRadek(rec, ptaSe, akce){
+    var row = document.createElement("div");
+    row.className = "setrow kosrow";
+    var t = document.createElement("div");
+    t.className = "t";
+    var btns = document.createElement("div");
+    btns.className = "setbtns";
+    if(ptaSe){
+      t.innerHTML = "<b>Opravdu trvale smazat?</b><span>" +
+        esc(fmt(rec.banked || 0) + " — " + popisHry(rec)) + "</span>";
+      var ano = document.createElement("button");
+      ano.type = "button"; ano.className = "ghost warn"; ano.textContent = "Smazat";
+      ano.addEventListener("click", function(){ akce.smaz(ano); });
+      var ne = document.createElement("button");
+      ne.type = "button"; ne.className = "ghost"; ne.textContent = "Zrušit";
+      ne.addEventListener("click", akce.zrus);
+      btns.appendChild(ano); btns.appendChild(ne);
+    }else{
+      t.innerHTML = "<b>" + fmt(rec.banked || 0) + "</b><span>" + esc(popisHry(rec)) + "</span>";
+      var ob = document.createElement("button");
+      ob.type = "button"; ob.className = "ghost"; ob.textContent = "Obnovit";
+      ob.addEventListener("click", function(){ akce.obnov(ob); });
+      var tr = document.createElement("button");
+      tr.type = "button"; tr.className = "ghost"; tr.textContent = "Trvale smazat";
+      tr.addEventListener("click", akce.ptejSe);
+      btns.appendChild(ob); btns.appendChild(tr);
+    }
+    row.appendChild(t); row.appendChild(btns);
+    return row;
+  }
+
   function renderKos(){
     renderKosHist();
     var list = kosAll();
     pocetVOddilu("koscnt", list.length);
     elKosList.innerHTML = "";
     if(!list.length){
+      ptamSeKos = null;
       elKosList.innerHTML = '<div class="empty">Zatím není co obnovit. Hra smazaná tlačítkem Nová hra se sem odloží sama.</div>';
       return;
     }
     list.forEach(function(rec){
-      var row = document.createElement("div");
-      row.className = "setrow";
-      var t = document.createElement("div");
-      t.className = "t";
-      t.innerHTML = "<b>" + fmt(rec.banked || 0) + "</b><span>" + esc(popisHry(rec)) + "</span>";
-      var b = document.createElement("button");
-      b.type = "button"; b.className = "ghost"; b.textContent = "Obnovit";
-      b.addEventListener("click", function(){ restore(rec.id, b); });
-      row.appendChild(t); row.appendChild(b);
-      elKosList.appendChild(row);
+      elKosList.appendChild(kosRadek(rec, ptamSeKos === rec.id, {
+        obnov: function(b){ restore(rec.id, b); },
+        ptejSe: function(){ ptamSeKos = rec.id; renderKos(); },
+        zrus: function(){ ptamSeKos = null; renderKos(); },
+        smaz: function(b){
+          /* Když zápis selže, záznam v koši zůstane — hlásíme to na tlačítku
+             a řádek nepřekreslujeme, jinak by hláška hned zmizela. */
+          if(!kosWrite(kosAll().filter(function(x){ return x.id !== rec.id; }))){
+            hlaskaNaTlacitku(b, "Nepodařilo se smazat", "Smazat");
+            return;
+          }
+          ptamSeKos = null;
+          renderKos();
+        }
+      }));
     });
   }
 
@@ -1682,7 +1736,7 @@
     if(histIndex(hry, rec.id) >= 0){ rec.id = newId(); }
     histWrite(hry.concat([proHistorii(rec)]), function(ok){
       if(!ok){
-        hlaskaNaTlacitku(btn, textSelhani("Nepodařilo se uložit — došlo místo"), "Vrátit");
+        hlaskaNaTlacitku(btn, textSelhani("Nepodařilo se uložit — došlo místo"), "Obnovit");
         return;
       }
       kosHistWrite(list.filter(function(x, k){ return k !== i; }));
@@ -1694,20 +1748,24 @@
     pocetVOddilu("koshistcnt", list.length);
     elKosHistList.innerHTML = "";
     if(!list.length){
-      elKosHistList.innerHTML = '<div class="empty">Zatím není co vracet. Hra smazaná z historie se sem odloží sama.</div>';
+      ptamSeKosHist = null;
+      elKosHistList.innerHTML = '<div class="empty">Zatím není co obnovit. Hra smazaná z historie se sem odloží sama.</div>';
       return;
     }
     list.forEach(function(rec){
-      var row = document.createElement("div");
-      row.className = "setrow";
-      var t = document.createElement("div");
-      t.className = "t";
-      t.innerHTML = "<b>" + fmt(rec.banked || 0) + "</b><span>" + esc(popisHry(rec)) + "</span>";
-      var b = document.createElement("button");
-      b.type = "button"; b.className = "ghost"; b.textContent = "Vrátit";
-      b.addEventListener("click", function(){ vratDoHistorie(rec.id, b); });
-      row.appendChild(t); row.appendChild(b);
-      elKosHistList.appendChild(row);
+      elKosHistList.appendChild(kosRadek(rec, ptamSeKosHist === rec.id, {
+        obnov: function(b){ vratDoHistorie(rec.id, b); },
+        ptejSe: function(){ ptamSeKosHist = rec.id; renderKosHist(); },
+        zrus: function(){ ptamSeKosHist = null; renderKosHist(); },
+        smaz: function(b){
+          if(!kosHistWrite(kosHistAll().filter(function(x){ return x.id !== rec.id; }))){
+            hlaskaNaTlacitku(b, "Nepodařilo se smazat", "Smazat");
+            return;
+          }
+          ptamSeKosHist = null;
+          renderKosHist();
+        }
+      }));
     });
   }
 
@@ -1781,13 +1839,23 @@
   try{ autoZap = localStorage.getItem(AUKEY) === "1"; }catch(e){}
 
   var toastTimer = null;
+  /* Šev mezi hlavičkou a kartami. Když měření selže (jsdom nemá layout,
+     rects jsou nuly), zůstane top z minula a nic se nerozbije. */
+  function umistiToast(el){
+    var h = document.querySelector(".top"), k = document.querySelector(".tabs");
+    if(!h || !k) return;
+    var a = h.getBoundingClientRect().bottom, b = k.getBoundingClientRect().top;
+    if(b <= 0) return;
+    el.style.top = Math.round((a + b) / 2) + "px";
+  }
   function toast(text){
     var el = $("toast");
     if(!el) return;
     $("toasttext").textContent = text;
     el.hidden = false;
+    umistiToast(el);
     clearTimeout(toastTimer);
-    toastTimer = setTimeout(schovejToast, 3000);
+    toastTimer = setTimeout(schovejToast, 5000);
   }
   function schovejToast(){
     clearTimeout(toastTimer); toastTimer = null;
@@ -3196,7 +3264,10 @@
       novaHra();
     });
   });
-  $("setbtn").addEventListener("click", function(){ renderKos(); renderZaloha(); });
+  $("setbtn").addEventListener("click", function(){
+    ptamSeKos = null; ptamSeKosHist = null;   /* rozdělaná otázka se nepřenáší */
+    renderKos(); renderZaloha();
+  });
 
   /* režim a cíl hry */
   var PRESETS = ["2000","4000","6000","8000","10000"];
