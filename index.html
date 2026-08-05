@@ -106,7 +106,7 @@
   .wordmark{margin-right:auto}
   .goal{font-size:13px;color:var(--dim);display:flex;align-items:center;gap:6px;flex-wrap:wrap;min-width:0}
   .goal select{min-width:0;max-width:46vw}
-  .goal select,.goal input{font-size:16px;
+  .goal select,.goal input{
     background:transparent;border:1px solid var(--edge);border-radius:var(--r);
     color:var(--bone);font-family:inherit;font-size:16px;padding:0 6px;min-height:40px;
   }
@@ -231,7 +231,6 @@
 
   .rollhead{padding:7px 13px;border-bottom:1px solid var(--edge);display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:nowrap}
   .rollhead .n{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  .sheettabs{flex:0 0 auto}
   .rollhead .n{font-size:15px}
   .rollhead .n b{font-weight:500}
   .rollhead .hot{display:block;font-size:12.5px;color:var(--brass);margin-top:1px}
@@ -273,7 +272,6 @@
   }
   .manual input:focus{outline:none;border-color:var(--brass)}
 
-  /* odložené v tomto hodu */
   /* dvě vnitřní stránky boxu kola: zadávání / opravy */
   .sheettabs{display:flex;gap:4px;flex:0 0 auto}
   .sheettabs button{
@@ -314,17 +312,15 @@
   .rollbtn:hover:not(:disabled){background:var(--brass);color:var(--onbrass)}
   .rollbtn:disabled{border-color:var(--edge);color:var(--dim);cursor:not-allowed}
 
-  /* předchozí hody v kole */
-
   /* akce */
   .lock{
     margin-top:10px;border:1px solid var(--brass);border-radius:var(--r);
     background:var(--selbg);color:var(--brass);
     padding:8px 11px;font-size:13px;line-height:1.35;text-align:center;
   }
-  .lock[hidden]{display:none}
   .lock.warn{border-color:var(--oxblood);background:var(--dangerbg);color:var(--danger)}
-  .acts{display:flex;gap:8px;margin-top:12px}
+  /* margin-top a padding-top řídí #page0 .acts výš — .acts je jen tam */
+  .acts{display:flex;gap:8px}
   .act{flex:1;border-radius:var(--r);min-height:50px;padding:6px 10px;font-size:15px;font-weight:700;border:1px solid}
   .bank{background:var(--verdigris);border-color:var(--verdigris);color:var(--ongreen)}
   .bank:disabled{background:transparent;border-color:var(--edge);color:var(--dim);cursor:not-allowed}
@@ -426,7 +422,6 @@
   .improw{display:flex;gap:8px;margin:8px 0 2px}
   .improw button{flex:1;min-height:44px;font-size:13px}
   #pastebox{margin:8px 0 2px}
-  #pastebox[hidden]{display:none}
   #pastearea{
     display:block;width:100%;box-sizing:border-box;min-height:86px;resize:vertical;
     background:var(--field);border:1px solid var(--edge);border-radius:var(--r);
@@ -470,7 +465,6 @@
 
   /* okno s informacemi: dvě karty */
   .modalbody .seg{margin:10px 0 0}
-  .infocard[hidden]{display:none}
 
   /* pravidla a návod */
   .rules{font-size:14px;color:var(--body);margin-top:10px}
@@ -485,8 +479,6 @@
   .rules table{margin:6px 0 12px}
   .rules td:last-child{text-align:right;color:var(--bone);font-family:"IM Fell English",Georgia,serif;font-size:16px}
   .rules .note{color:var(--dim);font-size:13px}
-  
-
 
   /* ---- hustota podle výšky displeje ----
      Priorita: klávesnice a obě skóre jsou vidět vždy, bez rolování.
@@ -527,7 +519,7 @@
     .cap.gap{margin-top:7px}
     .row,.kind,.pips,.kind .col{gap:5px}
     .rollbtnwrap{padding-top:7px}
-    .acts{gap:6px;padding-top:6px}
+    .acts{gap:6px}
     .act,.rollbtn{min-height:46px;font-size:14.5px}
   }
 
@@ -535,26 +527,22 @@
   @media (max-height:639px){
     :root{--tap:38px}
     body{padding:calc(7px + env(safe-area-inset-top)) calc(12px + env(safe-area-inset-right)) calc(4px + env(safe-area-inset-bottom)) calc(12px + env(safe-area-inset-left))}
-    .top{padding-bottom:6px}
+    .top{padding-bottom:4px}
     .wordmark{font-size:20px}
-    .tab{min-height:33px}
+    .fs{min-height:32px}
+    .tab{min-height:30px}
     .score .sub{display:none}          /* „zbývá“ ustoupí; skóre a kolo zůstávají */
-    .score .line b{font-size:28px}
+    .score .line b{font-size:26px}
     .turn{margin-top:7px}
     .rollhead{padding:4px 12px}
     .rollhead .n{font-size:13px}
+    .sheettabs button{min-height:30px;padding:0 9px;font-size:10px}
     .pad{padding:7px 12px}
     .cap{font-size:10px;letter-spacing:.14em}
     .cap.gap{margin-top:6px}
     .chip .v{font-size:10px}
-    .top{padding-bottom:4px}
-    .fs{min-height:32px}
-    .tab{min-height:30px}
-    .sheettabs button{min-height:30px;padding:0 9px;font-size:10px}
-    .score .line b{font-size:26px}
     .act,.rollbtn{min-height:42px}
     .rollbtnwrap{padding-top:5px}
-    .acts{padding-top:4px}
   }
 
   /* velmi nízké okno: pod 540 px */
@@ -672,8 +660,8 @@
   <div class="rollhead">
     <div class="n" id="rollline"></div>
     <div class="sheettabs" id="sheettabs">
-      <button type="button" data-sheet="0" class="on">zadat</button>
-      <button type="button" data-sheet="1">opravit</button>
+      <button type="button" class="on">zadat</button>
+      <button type="button">opravit</button>
     </div>
   </div>
 
@@ -711,7 +699,6 @@
       <button class="addbtn" id="madd">Přidat</button>
     </div>
   </div>
-
   </div>
   <div class="sheet"><div class="fix" id="fix"></div></div>
   </div>
@@ -759,8 +746,8 @@
 <div id="p2list">
   <div class="lock warn" id="nohist" hidden>Historii se teď nedaří načíst. Nic se neztratilo, jen k ní aplikace zrovna nemá přístup — dohrané hry se proto zatím nezapisují. Zkus aplikaci zavřít a otevřít znovu.</div>
   <div class="seg" id="seg">
-    <button type="button" class="on" data-seg="0">Statistiky</button>
-    <button type="button" data-seg="1">Historie her</button>
+    <button type="button" class="on">Statistiky</button>
+    <button type="button">Historie her</button>
   </div>
   <div id="statlist"></div>
   <div id="histlist" hidden></div>
@@ -984,7 +971,7 @@
         try{ d = JSON.parse(raw); cele = true; }catch(e){}
         if(cele && d && typeof d.banked === "number" && Array.isArray(d.rolls) && d.rolls.length){
           S = d;
-        } else if(raw){
+        } else {
           /* nečitelná data nemažeme potichu — ať se z prohlížeče dají vytáhnout */
           try{ localStorage.setItem(KEY + "-vadny", raw); }catch(e){}
         }
@@ -1523,7 +1510,7 @@
     list = kosAll().filter(function(x){ return x.id !== id; });
     kosWrite(list);
     nactiZaznam(rec);
-    if(zavriModal) zavriModal();
+    zavriModal();
     syncGoalUI(); render(); renderKos();
   }
   function renderKos(){
@@ -1836,7 +1823,7 @@
     $("infobtn").addEventListener("click", function(){ vyber(0); });
     otevriNavod = function(){
       vyber(1);
-      if(otevriModal) otevriModal("rulesmodal", null);
+      otevriModal("rulesmodal", null);
     };
   })();
 
@@ -1872,7 +1859,7 @@
       try { videno = localStorage.getItem(NKEY); } catch(e){}
       if(videno === znacka) return;
       try { localStorage.setItem(NKEY, znacka); } catch(e){}
-      if(otevriNavod) otevriNavod();
+      otevriNavod();
     });
   }
 
@@ -1987,7 +1974,7 @@
         navigator.standalone === true;
 
     var radek = $("fsrow");
-    function pryc(){ if(radek) radek.remove(); else btn.remove(); }
+    function pryc(){ radek.remove(); }
     if(!enter || !exit || !allowed || jakoAplikace){ pryc(); return; }
 
     function active(){ return document.fullscreenElement || document.webkitFullscreenElement || null; }
@@ -2321,12 +2308,7 @@
     }
     try{
       if(navigator.clipboard && navigator.clipboard.writeText){
-        var p = navigator.clipboard.writeText(text);
-        if(p && typeof p.then === "function"){
-          p.then(function(){ hotovo(true); }, nouzovka);
-        } else {
-          hotovo(true);   /* starší implementace bez příslibu */
-        }
+        navigator.clipboard.writeText(text).then(function(){ hotovo(true); }, nouzovka);
         return;
       }
     }catch(e){}
