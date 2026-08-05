@@ -410,8 +410,17 @@
   }
   .back{flex:0 0 auto}
 
-  /* zápis do historie */
-  .archwrap{margin-top:16px}
+  /* zápis do historie a nová hra
+     Dvojice se lepí ke spodní hraně stránky, aby byla vidět i u dlouhé
+     tabulky kol. Rámec pro sticky dělá .page, která má overflow-y:auto;
+     pozadí musí být plné, jinak by pod tlačítky prosvítaly řádky. */
+  .archwrap{
+    position:sticky;bottom:0;z-index:2;
+    margin-top:16px;padding:9px 0 2px;
+    background:var(--soot);border-top:1px solid var(--hair);
+    display:flex;flex-direction:column;gap:8px;
+  }
+  .bigbtn{width:100%;min-height:46px;font-size:14px;padding:6px 10px}
   .arch{
     width:100%;min-height:46px;font-size:14px;padding:6px 10px;
     border-color:var(--brass);color:var(--brass);
@@ -433,12 +442,6 @@
   #pastearea:focus{outline:none;border-color:var(--brass)}
   .msg{font-size:13px;color:var(--bone);padding:8px 0 2px;line-height:1.4}
   .msg.bad{color:var(--danger)}
-
-  /* nadpis oddílu v nastavení */
-  .setcap{
-    font-family:"IM Fell English SC",Georgia,serif;font-size:12px;letter-spacing:.18em;
-    color:var(--dim);margin:16px 0 2px;font-weight:400;
-  }
 
   /* režim oprav v zápise kol */
   .histbtns{display:flex;gap:6px;flex:0 0 auto}
@@ -463,6 +466,48 @@
 
   /* Okno s informacemi drží plnou výšku, ať se při přepnutí karty
      nemění velikost — kratší pravidla nechají dole prázdno. */
+  /* pop-up o uložení
+     Nad vším kromě oken (ta mají 150) a překryvu rotace (200), aby ho
+     otevřené nastavení nepřekrylo. */
+  .toast{
+    position:fixed;z-index:180;left:50%;transform:translateX(-50%);
+    bottom:calc(16px + env(safe-area-inset-bottom));
+    max-width:calc(100% - 28px);
+    display:flex;align-items:center;gap:8px;
+    padding:7px 8px 7px 13px;
+    background:var(--slate);border:1px solid var(--brass);border-radius:var(--r);
+    box-shadow:0 6px 20px rgba(0,0,0,.45);
+    color:var(--bone);font-size:13.5px;line-height:1.3;
+  }
+  .toast[hidden]{display:none}
+  .toastx{
+    flex:0 0 auto;background:transparent;border:none;color:var(--dim);
+    font-size:18px;line-height:1;min-width:30px;min-height:30px;padding:0;
+  }
+  .toastx:hover{color:var(--bone)}
+
+  .newbtns{display:flex;flex-direction:column;gap:8px;margin:12px 0 4px}
+
+  /* okno nastavení: pevná karta jako pravidla, uvnitř harmonika */
+  #setmodal .modalbox{height:100%}
+  #setmodal .modalbody{flex:1 1 auto;min-height:0}
+  .setsec{border-top:1px solid var(--edge)}
+  .setsec summary{
+    display:flex;align-items:center;gap:10px;
+    padding:12px 0;cursor:pointer;list-style:none;
+    font-family:"IM Fell English SC",Georgia,serif;font-size:12px;
+    letter-spacing:.16em;text-transform:uppercase;color:var(--dim);
+  }
+  .setsec summary::-webkit-details-marker{display:none}
+  .setsec summary::after{
+    content:"»";flex:0 0 auto;font-family:inherit;font-size:15px;color:var(--dim);
+    transform:rotate(0deg);transition:transform .18s;
+  }
+  .setsec[open] summary{color:var(--bone)}
+  .setsec[open] summary::after{transform:rotate(90deg)}
+  .setsec summary .cnt{margin-left:auto;font-size:11px;letter-spacing:.1em}
+  .setsec .secbody{padding-bottom:6px}
+
   #rulesmodal .modalbox{height:100%}
   #rulesmodal .modalbody{flex:1 1 auto;min-height:0}
 
@@ -546,6 +591,9 @@
     .chip .v{font-size:10px}
     .act,.rollbtn{min-height:42px}
     .rollbtnwrap{padding-top:5px}
+    /* přilepená dvojice na Zápisu kol nesmí sníst půl obrazovky */
+    .arch,.bigbtn{min-height:42px}
+    .archwrap{padding-top:7px;gap:6px}
   }
 
   /* velmi nízké okno: pod 540 px */
@@ -584,6 +632,11 @@
 <div id="rot">
   <b>Otoč telefon na výšku</b>
   <span>Počítadlo je udělané jen pro svislou obrazovku.</span>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite" hidden>
+  <span id="toasttext"></span>
+  <button class="toastx" id="toastx" type="button" aria-label="Zavřít">×</button>
 </div>
 
 <div class="top">
@@ -733,13 +786,13 @@
     <h2>Zápis kol</h2>
     <div class="histbtns">
       <button class="ghost" id="fixturns" type="button" aria-pressed="false">Opravit</button>
-      <button class="ghost" id="reset">Nová hra</button>
     </div>
   </div>
   <table><tbody id="rows"></tbody></table>
   <div class="empty" id="empty">Zatím žádné kolo. Hoď všemi šesti.</div>
   <div class="archwrap">
     <button class="ghost arch" id="arch" type="button">Zatím není co uložit do historie</button>
+    <button class="ghost bigbtn" id="reset" type="button">Nová hra</button>
   </div>
 </section>
 
@@ -814,7 +867,7 @@
     <p><b>Opravit</b> v Zápisu kol zapíná křížky u jednotlivých kol. Křížek vyvolá potvrzení; smazané kolo se odečte ze skóre a zbylá kola se přečíslují. Bez odehraných kol je tlačítko schované.</p>
 
     <h3>Nastavení hry</h3>
-    <p>Ikona kostky otevírá panel s režimem a cílem, a to i uprostřed hry. <b>Do bodů</b> hraje na 2 000 až 10 000 nebo na vlastní číslo a druhý řádek skóre ukazuje, kolik zbývá. <b>Na kola</b> jen počítá kola; volitelný limit hru po posledním kole zamkne.</p>
+    <p>Ikona kostky otevírá panel s režimem a cílem, a to i uprostřed hry. <b>Do bodů</b> hraje na 2 000 až 10 000 nebo na vlastní číslo a druhý řádek skóre ukazuje, kolik zbývá. Kolo, kterým se cíl překročí, se počítá celé; po jeho zapsání je hra u konce. <b>Na kola</b> jen počítá kola; volitelný limit hru po posledním kole zamkne, bez limitu hra neskončí sama.</p>
 
     <h3>Tři stránky</h3>
     <p>Záložky nahoře a swipenutí do stran přepínají mezi:</p>
@@ -827,9 +880,11 @@
     <h3>Historie</h3>
     <p>Statistiky vychází jen z her v historii; nezapsaná hra se do rekordů nepromítne.</p>
     <p><b>Zapsat do historie</b> si vyžádá druhé klepnutí jen tehdy, když jsou na stole nezapsané body. Po uložení se přepne na <b>Uloženo v historii</b> a po dalším hraní na <b>Aktualizovat v historii</b>, což přepíše tentýž záznam místo zakládání nového.</p>
+    <p><b>Automatické ukládání</b> v nastavení zapíše hru do historie samo, jakmile skončí — po posledním kole nebo po kole, kterým se překročí cíl. Uložení oznámí okénko, které samo zmizí. Hra na neomezený počet kol se takhle uložit nedá, protože nemá konec.</p>
 
     <h3>Koš</h3>
-    <p><b>Nová hra</b> odkládá smazanou hru do nastavení, do oddílu <i>Obnova rozehrané hry</i> — drží posledních pět. <b>Smazat z historie</b> ukládá hru do oddílu <i>Smazané z historie</i>, kde jich zůstává deset a tlačítko <i>Vrátit</i> je pošle zpátky mezi dohrané.</p>
+    <p><b>Nová hra</b> odkládá smazanou hru do nastavení, do oddílu <i>Smazané rozehrané hry</i> — drží posledních pět. <b>Smazat z historie</b> ukládá hru do oddílu <i>Smazané hry z historie</i>, kde jich zůstává deset a tlačítko <i>Vrátit</i> je pošle zpátky mezi dohrané.</p>
+    <p>Když hra ještě není v historii, <b>Nová hra</b> se po potvrzení zeptá ještě jednou a nabídne ji rovnou uložit.</p>
 
     <h3>Záloha</h3>
     <p>Data jsou uložená jen v tomto prohlížeči. <b>Export do souboru</b> vytvoří textový soubor s přehledem her, jehož poslední řádek nese data pro import — bez něj se soubor načíst nedá. <b>Zkopírovat do schránky</b> dává stejný obsah bez stahování. <b>Import ze souboru</b> i <b>Import ze schránky</b> nabídnou volbu mezi přidáním nových her a nahrazením celé historie.</p>
@@ -850,52 +905,83 @@
     <div class="modalbody">
       <div class="setrow" id="fsrow">
         <div class="t"><b>Celá obrazovka</b><span>Skryje lišty prohlížeče.</span></div>
-        <button class="ghost" id="fs" type="button">Zapnout</button>
+        <button class="ghost" id="fs" type="button">Vypnuto</button>
       </div>
       <div class="setrow" id="svitrow">
         <div class="t"><b>Nezhasínat displej</b><span>Displej zůstane svítit, dokud se s aplikací pracuje. Po třech minutách bez doteku se pustí a telefon zhasne jako obvykle.</span></div>
-        <button class="ghost" id="svit" type="button">Zapnout</button>
+        <button class="ghost" id="svit" type="button">Vypnuto</button>
       </div>
-      <h3 class="setcap">Obnova rozehrané hry</h3>
-      <div id="koslist"></div>
+      <div class="setrow" id="autorow">
+        <div class="t"><b>Automatické ukládání</b><span>Hru zapíše do historie, jakmile skončí. Na neomezený počet kol se neukládá.</span></div>
+        <button class="ghost" id="auto" type="button">Vypnuto</button>
+      </div>
+      <details class="setsec" id="seckos">
+        <summary><span>Smazané rozehrané hry</span><span class="cnt" id="koscnt"></span></summary>
+        <div class="secbody"><div id="koslist"></div></div>
+      </details>
 
-      <h3 class="setcap">Smazané z historie</h3>
-      <div id="koshistlist"></div>
+      <details class="setsec" id="seckoshist">
+        <summary><span>Smazané hry z historie</span><span class="cnt" id="koshistcnt"></span></summary>
+        <div class="secbody"><div id="koshistlist"></div></div>
+      </details>
 
-      <h3 class="setcap">Záloha historie</h3>
-      <div class="setrow">
-        <div class="t"><b>Export do souboru</b><span>Textový soubor s přehledem her a daty pro pozdější import.</span></div>
-        <button class="ghost" id="expbtn" type="button">Uložit</button>
-      </div>
-      <div class="setrow">
-        <div class="t"><b>Zkopírovat do schránky</b><span>Pro případ nefunkčního stahování.</span></div>
-        <button class="ghost" id="copybtn" type="button">Kopírovat</button>
-      </div>
-      <div class="setrow">
-        <div class="t"><b>Import ze souboru</b><span>Načte zálohu a nabídne přidání nebo nahrazení.</span></div>
-        <button class="ghost" id="impbtn" type="button">Vybrat soubor</button>
-      </div>
-      <div class="setrow">
-        <div class="t"><b>Import ze schránky</b><span>Vlož text zálohy do pole a načti ho.</span></div>
-        <button class="ghost" id="pastebtn" type="button">Vložit text</button>
-      </div>
-      <div id="pastebox" hidden>
-        <textarea id="pastearea" placeholder="Sem vlož zkopírovanou zálohu"></textarea>
-        <div class="improw">
-          <button class="ghost" id="pasteload" type="button">Načíst</button>
-          <button class="ghost" id="pastecancel" type="button">Zrušit</button>
+      <details class="setsec" id="seczal">
+        <summary><span>Záloha historie</span></summary>
+        <div class="secbody">
+          <div class="setrow">
+            <div class="t"><b>Export do souboru</b><span>Textový soubor s přehledem her a daty pro pozdější import.</span></div>
+            <button class="ghost" id="expbtn" type="button">Uložit</button>
+          </div>
+          <div class="setrow">
+            <div class="t"><b>Zkopírovat do schránky</b><span>Pro případ nefunkčního stahování.</span></div>
+            <button class="ghost" id="copybtn" type="button">Kopírovat</button>
+          </div>
+          <div class="setrow">
+            <div class="t"><b>Import ze souboru</b><span>Načte zálohu a nabídne přidání nebo nahrazení.</span></div>
+            <button class="ghost" id="impbtn" type="button">Vybrat soubor</button>
+          </div>
+          <div class="setrow">
+            <div class="t"><b>Import ze schránky</b><span>Vlož text zálohy do pole a načti ho.</span></div>
+            <button class="ghost" id="pastebtn" type="button">Vložit text</button>
+          </div>
+          <div id="pastebox" hidden>
+            <textarea id="pastearea" placeholder="Sem vlož zkopírovanou zálohu"></textarea>
+            <div class="improw">
+              <button class="ghost" id="pasteload" type="button">Načíst</button>
+              <button class="ghost" id="pastecancel" type="button">Zrušit</button>
+            </div>
+          </div>
+          <div id="impbox" hidden>
+            <div class="msg" id="impinfo"></div>
+            <div class="improw">
+              <button class="ghost" id="impadd" type="button">Přidat nové</button>
+              <button class="ghost warn" id="imprep" type="button">Nahradit vše</button>
+            </div>
+          </div>
+          <div class="msg" id="zalmsg" hidden></div>
+          <div class="msg misto" hidden></div>
         </div>
-      </div>
-      <div id="impbox" hidden>
-        <div class="msg" id="impinfo"></div>
-        <div class="improw">
-          <button class="ghost" id="impadd" type="button">Přidat nové</button>
-          <button class="ghost warn" id="imprep" type="button">Nahradit vše</button>
-        </div>
-      </div>
-      <div class="msg" id="zalmsg" hidden></div>
-      <div class="msg" id="mistoinfo" hidden></div>
+      </details>
+
+      <div class="msg misto" hidden></div>
       <input type="file" id="impfile" accept=".txt,text/plain" hidden>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="newmodal" hidden>
+  <div class="modalbox" role="dialog" aria-modal="true" aria-labelledby="newtitle">
+    <div class="modalhead">
+      <h2 id="newtitle">Hra není uložená</h2>
+      <button class="modalx" type="button" data-close aria-label="Zavřít">×</button>
+    </div>
+    <div class="modalbody">
+      <div class="msg" id="newtext"></div>
+      <div class="newbtns">
+        <button class="ghost arch" id="newsave" type="button">Uložit a začít novou</button>
+        <button class="ghost bigbtn warn" id="newdrop" type="button">Začít novou bez uložení</button>
+        <button class="ghost bigbtn" id="newback" type="button">Zpět</button>
+      </div>
     </div>
   </div>
 </div>
@@ -908,7 +994,8 @@
      rolls = hody v rozehraném kole, poslední je ten, který právě řeším
      roll  = { thrown: kolika kostkami se hází, hot: bool, items: [...] }  */
   var S = { mode:"points", goal:4000, roundGoal:null, banked:0, turns:[],
-            rolls:[{thrown:6, hot:false, items:[]}], archivedId:null, dirty:false };
+            rolls:[{thrown:6, hot:false, items:[]}], archivedId:null, dirty:false,
+            autoUlozeno:false };
 
   var KEY  = "farkle-solo-v3";   /* rozehraná hra */
   var HKEY = "farkle-hist-v1";   /* dohrané hry */
@@ -951,6 +1038,7 @@
     if(typeof S.roundGoal !== "number" || S.roundGoal < 1){ S.roundGoal = null; }
     if(typeof S.archivedId !== "string"){ S.archivedId = null; }
     S.dirty = !!S.dirty;
+    S.autoUlozeno = !!S.autoUlozeno;
 
     S.turns = (Array.isArray(S.turns) ? S.turns : []).map(function(t){
       return { p: naCislo(t && t.p, 0), bust: !!(t && t.bust),
@@ -1360,11 +1448,16 @@
     elCounts.appendChild(b);
   });
 
-  /* ---------- konec hry na kola ----------
-     Hlídání je jen pomůcka: zvýšením limitu nebo přepnutím na „neomezeně“
-     se hra zase odemkne. */
+  /* ---------- konec hry ----------
+     Hlídání je jen pomůcka: zvýšením limitu či cíle nebo přepnutím na
+     „neomezeně“ se hra zase odemkne.
+
+     V bodech stačí ptát se na `banked`, protože ten roste jedině v bank().
+     Zámek tak naskočí až po zapsání kola, kterým se cíl dosáhl nebo překročil
+     — body ležící na stole se do něj nepočítají. */
   function locked(){
-    return S.mode === "rounds" && S.roundGoal > 0 && S.turns.length >= S.roundGoal;
+    if(S.mode === "points") return S.banked >= S.goal;
+    return S.roundGoal > 0 && S.turns.length >= S.roundGoal;
   }
 
   /* ---------- akce ---------- */
@@ -1378,6 +1471,9 @@
   function unkeep(i){ cur().items.splice(i, 1); render(); }
 
   function rollOn(){
+    /* v zámku tlačítko nehází, ale odvede na zápis kol — hra je u konce
+       a další krok je uložit ji nebo si ji prohlédnout */
+    if(locked()){ goTo(1); return; }
     if(cur().items.length === 0) return;
     var rest = left();
     S.rolls.push({ thrown: rest > 0 ? rest : 6, hot: rest === 0, items: [] });
@@ -1392,6 +1488,7 @@
     S.banked += p;
     S.rolls = [{thrown:6, hot:false, items:[]}];
     render();
+    zkusAutoUlozit();
   }
   function bust(){
     if(locked()) return;
@@ -1399,6 +1496,7 @@
     S.turns.push({p:potTotal(), bust:true, d:turnDesc()});
     S.rolls = [{thrown:6, hot:false, items:[]}];
     render();
+    zkusAutoUlozit();
   }
   /* Zpět se drží uvnitř rozehraného kola: ubírá položky, pak celé hody.
      Zapsaná kola nemaže — na ty je Opravit v Zápisu kol. Dřív sahalo i na
@@ -1414,7 +1512,7 @@
   function wipe(){
     fixMode = false; pendingDel = null;
     S.banked = 0; S.turns = []; S.rolls = [{thrown:6, hot:false, items:[]}];
-    S.archivedId = null; S.dirty = false;
+    S.archivedId = null; S.dirty = false; S.autoUlozeno = false;
     render();
   }
   /* ---------- zápis do historie ----------
@@ -1434,21 +1532,30 @@
       return;
     }
     clearTimeout(archTimer); archTimer = null;
-
+    zapisHru(function(ok){ if(!ok) selhalZapis(); });
+  }
+  /* Selhání zápisu do historie hlásí tlačítko v Zápisu kol — ať už klepnutí
+     přišlo od uživatele, nebo zápis pustil automat. */
+  function selhalZapis(){
+    archMsg = textSelhani("Nepodařilo se uložit — došlo místo");
+    setTimeout(function(){ archMsg = ""; renderArch(); }, 4000);
+    renderArch();
+  }
+  /* Samotný zápis bez ptaní a bez hlášení — volá ho tlačítko v Zápisu kol
+     i „Uložit a začít novou“. Callback dostane true teprve tehdy, když je
+     záznam skutečně v úložišti. */
+  function zapisHru(hotovo){
     var list = histAll();
     var i = S.archivedId ? histIndex(list, S.archivedId) : -1;
     var rec = makeRecord(i >= 0 ? S.archivedId : null);
     if(i >= 0){ list[i] = proHistorii(rec); } else { list.push(proHistorii(rec)); }
 
     histWrite(list, function(ok){
-      if(!ok){
-        archMsg = textSelhani("Nepodařilo se uložit — došlo místo");
-        setTimeout(function(){ archMsg = ""; renderArch(); }, 4000);
-        renderArch();
-        return;
+      if(ok){
+        S.archivedId = rec.id; S.dirty = false;
+        render(); renderP2();
       }
-      S.archivedId = rec.id; S.dirty = false;
-      render(); renderP2();
+      if(hotovo) hotovo(ok);
     }, [rec]);
   }
   function renderArch(){
@@ -1505,7 +1612,9 @@
       return { p: t.p || 0, bust: !!t.bust, d: t.d || "" };
     });
     S.rolls = [{thrown:6, hot:false, items:[]}];
-    S.archivedId = null; S.dirty = false;
+    /* obnovená hra v historii není a záznam o automatickém uložení se s ní
+       nepřenáší — jakmile znovu skončí, uloží se */
+    S.archivedId = null; S.dirty = false; S.autoUlozeno = false;
   }
   function restore(id, btn){
     var list = kosAll(), i = histIndex(list, id);
@@ -1523,9 +1632,16 @@
     zavriModal();
     syncGoalUI(); render(); renderKos();
   }
+  /* Počet v hlavičce oddílu: sbalená harmonika by jinak nedala poznat,
+     jestli je uvnitř co obnovovat. */
+  function pocetVOddilu(id, n){
+    var el = document.getElementById(id);
+    if(el) el.textContent = n ? String(n) : "";
+  }
   function renderKos(){
     renderKosHist();
     var list = kosAll();
+    pocetVOddilu("koscnt", list.length);
     elKosList.innerHTML = "";
     if(!list.length){
       elKosList.innerHTML = '<div class="empty">Zatím není co obnovit. Hra smazaná tlačítkem Nová hra se sem odloží sama.</div>';
@@ -1575,6 +1691,7 @@
   }
   function renderKosHist(){
     var list = kosHistAll();
+    pocetVOddilu("koshistcnt", list.length);
     elKosHistList.innerHTML = "";
     if(!list.length){
       elKosHistList.innerHTML = '<div class="empty">Zatím není co vracet. Hra smazaná z historie se sem odloží sama.</div>';
@@ -1601,30 +1718,99 @@
     b.classList.remove("warn");
     b.textContent = "Nová hra";
   }
-  function reset(){
+  /* Společný konec všech cest k nové hře. wipe() až po úspěšné záloze —
+     jinak by rozehraná hra zmizela bez možnosti obnovy. Když se nepovede,
+     hra prostě zůstane rozehraná. */
+  function novaHra(){
     var b = $("reset");
-    if(resetMsg) return;            /* dokud svítí hláška, klik nic neznamená */
-    if(gameEmpty()){ wipe(); return; }
-    if(!resetTimer){
-      b.classList.add("warn");
-      b.textContent = "Opravdu smazat?";
-      resetTimer = setTimeout(disarmReset, 4000);
-      return;
-    }
-    disarmReset();
-    /* wipe() až po úspěšné záloze — jinak by rozehraná hra zmizela bez
-       možnosti obnovy. Když se nepovede, hra prostě zůstane rozehraná. */
     if(!kosPush()){
       resetMsg = true;
       b.classList.add("warn");
       b.textContent = "Nepodařilo se zálohovat — hra zůstává";
       setTimeout(function(){ resetMsg = false; disarmReset(); }, 4000);
-      return;
+      return false;
     }
     wipe();
+    goTo(0);
+    return true;
+  }
+  /* Neuložená hra si vyžádá ještě okno se třemi cestami ven. Hra, která
+     v historii je a od té doby se nehrálo, projde rovnou. */
+  function neulozena(){
+    return !gameEmpty() && (!S.archivedId || S.dirty);
+  }
+  function reset(){
+    var b = $("reset");
+    if(resetMsg) return;            /* dokud svítí hláška, klik nic neznamená */
+    if(gameEmpty()){ wipe(); goTo(0); return; }
+    if(!resetTimer){
+      b.classList.add("warn");
+      b.textContent = "Opravdu nová?";
+      resetTimer = setTimeout(disarmReset, 4000);
+      return;
+    }
+    disarmReset();
+    if(neulozena()){ otevriNovaModal(b); return; }
+    novaHra();
+  }
+  function otevriNovaModal(btn){
+    var pot = potTotal();
+    var t = "Tahle hra zatím není v historii, takže se nezapočítá do statistik. " +
+            "Nová hra ji odloží do nastavení, mezi smazané rozehrané hry — drží se jich posledních pět.";
+    if(pot > 0) t += " Na stole je " + fmt(pot) + " a propadne.";
+    $("newtext").textContent = t;
+    otevriModal("newmodal", btn);
   }
 
   /* ---------- vykreslení ---------- */
+  /* ---------- automatické ukládání ----------
+     Hra se po skončení zapíše do historie sama. Vypnuté ve výchozím stavu.
+     Volba žije v localStorage vedle motivu a nezhasínání — je to jediný
+     boolean, který se čte při startu a nikdy nepovyroste.
+
+     Pouští se z bank(), bust() a ze změny cíle či limitu, tedy ze tří míst,
+     kde se stav zámku může změnit. Ne z render(): ten běží i při startu
+     a při obnově z koše, takže by se dohraná hra ukládala sama i tam, kde
+     o to nikdo nežádal.
+
+     S.autoUlozeno hlídá, aby se totéž nedělalo znovu po každém překreslení
+     a po reloadu. render() ho nuluje, jakmile zámek přestane platit — po
+     smazání kola se tak dá hra dohrát znovu a záznam se aktualizuje. */
+  var AUKEY = "farkle-autoulozeni-v1";
+  var autoZap = false, autoBezi = false;
+  try{ autoZap = localStorage.getItem(AUKEY) === "1"; }catch(e){}
+
+  var toastTimer = null;
+  function toast(text){
+    var el = $("toast");
+    if(!el) return;
+    $("toasttext").textContent = text;
+    el.hidden = false;
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(schovejToast, 3000);
+  }
+  function schovejToast(){
+    clearTimeout(toastTimer); toastTimer = null;
+    var el = $("toast");
+    if(el) el.hidden = true;
+  }
+
+  function zkusAutoUlozit(){
+    if(!autoZap || autoBezi) return;
+    if(!locked() || gameEmpty() || S.autoUlozeno) return;
+    /* hra v historii je a od té doby se nehrálo: není co zapisovat */
+    if(S.archivedId && !S.dirty){ S.autoUlozeno = true; save(); return; }
+    var aktualizace = !!S.archivedId;
+    autoBezi = true;
+    zapisHru(function(ok){
+      autoBezi = false;
+      if(!ok){ selhalZapis(); return; }   /* pop-up jen po potvrzeném zápisu */
+      S.autoUlozeno = true;
+      save();
+      toast(aktualizace ? "Záznam v historii aktualizován" : "Hra uložena do historie");
+    });
+  }
+
   function renderKind(){
     var l = left(), lock = locked();
     Array.prototype.forEach.call(elPips.children, function(b){
@@ -1893,6 +2079,20 @@
     });
   })();
 
+  /* ---------- harmonika v nastavení ----------
+     Nativní <details> kvůli klávesnici a čtečce; výlučnost (jen jeden oddíl
+     otevřený) si hlídáme sami, protože atribut name na <details> je v
+     prohlížečích čerstvý a bez něj by zůstaly otevřené všechny.
+     Při otevření okna se všechny zavřou, aby karta začínala vždycky stejně. */
+  var setSekce = Array.prototype.slice.call(document.querySelectorAll("#setmodal .setsec"));
+  setSekce.forEach(function(sec){
+    sec.addEventListener("toggle", function(){
+      if(!sec.open) return;
+      setSekce.forEach(function(x){ if(x !== sec) x.open = false; });
+    });
+  });
+  function zavriSekce(){ setSekce.forEach(function(x){ x.open = false; }); }
+
   /* ---------- okna: pravidla a nastavení ---------- */
   function modalOpen(){ return !!document.querySelector(".modal:not([hidden])"); }
   var zavriModal = null, otevriModal = null;
@@ -1916,7 +2116,7 @@
     }
     zavriModal = zavri; otevriModal = otevri;
     $("infobtn").addEventListener("click", function(){ otevri("rulesmodal", this); });
-    $("setbtn").addEventListener("click", function(){ otevri("setmodal", this); });
+    $("setbtn").addEventListener("click", function(){ zavriSekce(); otevri("setmodal", this); });
     document.querySelectorAll("[data-close]").forEach(function(b){
       b.addEventListener("click", zavri);
     });
@@ -1988,9 +2188,12 @@
     if(!enter || !exit || !allowed || jakoAplikace){ pryc(); return; }
 
     function active(){ return document.fullscreenElement || document.webkitFullscreenElement || null; }
+    /* Tlačítko hlásí stav, ne akci — „Zapnuto“ se čte líp než „Vypnout“.
+       Co klik udělá, zůstává v title a aria-label. */
     function mark(){
       var on = !!active();
-      btn.textContent = on ? "Vypnout" : "Zapnout";
+      btn.textContent = on ? "Zapnuto" : "Vypnuto";
+      btn.classList.toggle("on", on);
       var label = on ? "Zpět z celé obrazovky" : "Celá obrazovka";
       btn.title = label;
       btn.setAttribute("aria-label", label);
@@ -2031,7 +2234,8 @@
     try{ zapnuto = localStorage.getItem(SKEY) === "1"; }catch(e){}
 
     function mark(){
-      btn.textContent = zapnuto ? "Vypnout" : "Zapnout";
+      btn.textContent = zapnuto ? "Zapnuto" : "Vypnuto";
+      btn.classList.toggle("on", zapnuto);
       var label = zapnuto ? "Nechat displej zhasínat" : "Nezhasínat displej";
       btn.title = label;
       btn.setAttribute("aria-label", label);
@@ -2478,19 +2682,22 @@
   /* estimate() počítá celý původ, tedy na github.io i ostatní aplikace
      ze stejné adresy — proto „data aplikací", ne „historie". */
   function renderMisto(){
-    var el = document.getElementById("mistoinfo");
-    if(!el) return;
-    el.hidden = true;
+    var pole = document.querySelectorAll(".misto");
+    if(!pole.length) return;
+    Array.prototype.forEach.call(pole, function(el){ el.hidden = true; });
     var st = null;
     try{ st = navigator.storage; }catch(e){}
     if(!st || typeof st.estimate !== "function") return;
     try{
       st.estimate().then(function(o){
         if(!o || typeof o.usage !== "number") return;
-        el.textContent = "Data aplikací z této adresy zabírají " + velikost(o.usage) +
+        var t = "Data aplikací z této adresy zabírají " + velikost(o.usage) +
           (o.quota > 0 ? (" z " + velikost(o.quota) + " dostupných") : "") +
           (trvale ? ". Prohlížeč je označil za trvalá." : ".");
-        el.hidden = false;
+        Array.prototype.forEach.call(pole, function(el){
+          el.textContent = t;
+          el.hidden = false;
+        });
       }).catch(function(){});
     }catch(e){}
   }
@@ -2872,9 +3079,12 @@
     var r = cur(), l = left(), pot = potTotal();
 
     var lock = locked();
+    /* odemčená hra čeká na nové skončení — po smazání kola se automatické
+       uložení pustí znovu a záznam v historii se aktualizuje */
+    if(!lock && S.autoUlozeno){ S.autoUlozeno = false; }
 
     elScore.textContent = fmt(S.banked);
-    elTotal.classList.toggle("won", lock || (S.mode === "points" && S.banked >= S.goal));
+    elTotal.classList.toggle("won", lock);
     if(S.mode === "rounds"){
       elRestLabel.textContent = "odehráno kol";
       elRest.textContent = S.roundGoal > 0
@@ -2891,8 +3101,9 @@
     elRollLine.innerHTML = "Hod " + S.rolls.length + " — házíš <b>" + kostkami(r.thrown) + "</b>" +
       (l < r.thrown ? ' <span style="color:var(--dim)">· zbývá ' + l + '</span>' : "");
 
-    elRollOn.disabled = lock || r.items.length === 0;
-    elRollOn.textContent = lock ? "Hra skončila"
+    /* v zámku tlačítko zůstává živé, protože vede na zápis kol */
+    elRollOn.disabled = !lock && r.items.length === 0;
+    elRollOn.textContent = lock ? "Hra skončila — zobrazit zápis kol"
       : (r.items.length === 0
           ? "Nejdřív si z hodu něco odlož"
           : (l > 0 ? "Házet dál — " + kostkami(l) : "Horké kostky — házet znovu všemi šesti"));
@@ -2904,8 +3115,10 @@
 
     elLock.hidden = !lock;
     if(lock){
-      elLock.textContent = "Odehráno všech " + S.roundGoal +
-        " kol — hra je u konce. Počet kol se dá změnit v nastavení hry.";
+      elLock.textContent = S.mode === "points"
+        ? ("Cíl " + fmt(S.goal) + " je dosažený — hra je u konce. Cíl se dá změnit v nastavení hry.")
+        : ("Odehráno všech " + S.roundGoal +
+           " kol — hra je u konce. Počet kol se dá změnit v nastavení hry.");
     }
 
     document.querySelectorAll("[data-single]").forEach(function(b){ b.disabled = lock || l < 1; });
@@ -2965,6 +3178,24 @@
   });
   $("reset").addEventListener("click", reset);
   elArch.addEventListener("click", archive);
+  $("newback").addEventListener("click", function(){ zavriModal(); });
+  $("newdrop").addEventListener("click", function(){ zavriModal(); novaHra(); });
+  /* Uložit a začít novou: wipe() teprve po potvrzeném zápisu, jinak by se
+     hra ztratila v domnění, že je v historii. Po zápisu má S.archivedId
+     hodnotu a kosPush() uvnitř novaHra() už zálohu nepotřebuje. */
+  $("newsave").addEventListener("click", function(){
+    var b = this;
+    b.disabled = true;
+    zapisHru(function(ok){
+      b.disabled = false;
+      if(!ok){
+        hlaskaNaTlacitku(b, textSelhani("Nepodařilo se uložit — došlo místo"), "Uložit a začít novou");
+        return;
+      }
+      zavriModal();
+      novaHra();
+    });
+  });
   $("setbtn").addEventListener("click", function(){ renderKos(); renderZaloha(); });
 
   /* režim a cíl hry */
@@ -2988,10 +3219,13 @@
     elGoalNum.hidden = preset;
     elGoalNum.value = S.goal;
   }
+  /* Změna cíle, režimu i limitu může hru zamknout — a zamknutá hra je
+     dohraná, takže se sem spouštěč patří stejně jako za bank() a bust(). */
   elModeSel.addEventListener("change", function(){
     S.mode = elModeSel.value;
     syncGoalUI();
     render();
+    zkusAutoUlozit();
   });
   elGoalSel.addEventListener("change", function(){
     if(elGoalSel.value === "custom"){
@@ -3003,11 +3237,12 @@
       S.goal = Number(elGoalSel.value);
       elGoalNum.hidden = true;
       render();
+      zkusAutoUlozit();
     }
   });
   elGoalNum.addEventListener("input", function(){
     var v = parseInt(elGoalNum.value, 10);
-    if(v && v > 0){ S.goal = v; render(); }
+    if(v && v > 0){ S.goal = v; render(); zkusAutoUlozit(); }
   });
   elRoundSel.addEventListener("change", function(){
     if(elRoundSel.value === "custom"){
@@ -3017,6 +3252,7 @@
       elRoundNum.focus();
       elRoundNum.select();
       render();
+      zkusAutoUlozit();
     } else {
       S.roundGoal = null;
       elRoundNum.hidden = true;
@@ -3025,8 +3261,26 @@
   });
   elRoundNum.addEventListener("input", function(){
     var v = parseInt(elRoundNum.value, 10);
-    if(v && v > 0){ S.roundGoal = v; render(); }
+    if(v && v > 0){ S.roundGoal = v; render(); zkusAutoUlozit(); }
   });
+
+  $("toastx").addEventListener("click", schovejToast);
+  (function(){
+    var btn = $("auto");
+    function mark(){
+      btn.textContent = autoZap ? "Zapnuto" : "Vypnuto";
+      btn.classList.toggle("on", autoZap);
+      var label = autoZap ? "Vypnout automatické ukládání" : "Zapnout automatické ukládání";
+      btn.title = label;
+      btn.setAttribute("aria-label", label);
+    }
+    btn.addEventListener("click", function(){
+      autoZap = !autoZap;
+      try{ localStorage.setItem(AUKEY, autoZap ? "1" : "0"); }catch(e){}
+      mark();
+    });
+    mark();
+  })();
 
   /* ---------- start ---------- */
   /* o trvalost se říká až po prvním doteku, dřív ji prohlížeče odmítají */
