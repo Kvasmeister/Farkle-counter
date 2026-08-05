@@ -280,12 +280,14 @@
     padding:0 11px;min-height:34px;
   }
   .sheettabs button.on{color:var(--bone);border-color:var(--edge);background:var(--press)}
+  /* overflow-x:hidden vypíná posun prstem i kolečkem, ale scrollTo() z
+     goSheet() funguje dál — karty se přepínají výhradně tlačítky. */
   .sheets{
-    display:flex;overflow-x:auto;overscroll-behavior-x:contain;
-    scroll-snap-type:x mandatory;scroll-behavior:smooth;scrollbar-width:none;
+    display:flex;overflow-x:hidden;overscroll-behavior-x:contain;
+    scroll-behavior:smooth;scrollbar-width:none;
   }
   .sheets::-webkit-scrollbar{display:none}
-  .sheet{flex:0 0 100%;min-width:100%;scroll-snap-align:start;position:relative}
+  .sheet{flex:0 0 100%;min-width:100%;position:relative}
   .fix{position:absolute;inset:0;overflow-y:auto;padding:11px 13px}
   .fix .lbl{
     font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--dim);
@@ -332,8 +334,9 @@
   .histhead{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
   .histhead h2{font-family:"IM Fell English SC",Georgia,serif;font-size:13px;letter-spacing:.18em;color:var(--dim)}
   .ghost{background:transparent;border:1px solid var(--edge);border-radius:var(--r);color:var(--dim);font-size:12px;padding:0 12px;min-height:40px}
-  .ghost:hover{border-color:var(--bone);color:var(--bone)}
+  .ghost:hover:not(:disabled){border-color:var(--bone);color:var(--bone)}
   .ghost.warn{border-color:var(--oxblood);color:var(--danger)}
+  #undo:disabled{opacity:.35;cursor:not-allowed}
   table{width:100%;border-collapse:collapse;font-size:14px}
   td{padding:6px 0;border-bottom:1px solid var(--hair);vertical-align:baseline}
   td.n{width:34px;color:var(--dim);font-family:"IM Fell English",Georgia,serif;font-size:15px}
@@ -628,8 +631,8 @@
     </select>
     <input id="goalnum" type="number" inputmode="numeric" min="100" step="100" hidden>
     <select id="roundsel" hidden>
-      <option value="none" selected>neomezeně kol</option>
-      <option value="custom">vlastní počet kol…</option>
+      <option value="none" selected>neomezeně</option>
+      <option value="custom">vlastní…</option>
     </select>
     <input id="roundnum" type="number" inputmode="numeric" min="1" step="1" hidden>
   </label>
@@ -807,7 +810,7 @@
 
     <h3>Opravy</h3>
     <p>Přepínač <b>zadat / opravit</b> vedle popisu hodu přepíná vnitřní kartu panelu. Karta <i>opravit</i> ukazuje každou odloženou položku jako tlačítko s křížkem, seskupené po hodech; smazání položky přepočítá i počty kostek v následujících hodech.</p>
-    <p><b>Zpět</b> ubírá po jednom odzadu — nejdřív položky, pak celé hody, nakonec zapsaná kola.</p>
+    <p><b>Zpět</b> ubírá po jednom odzadu v rozehraném kole — nejdřív položky, pak celé hody. Na zapsaná kola nesahá; jakmile v kole nic nezbývá, tlačítko zšedne.</p>
     <p><b>Opravit</b> v Zápisu kol zapíná křížky u jednotlivých kol. Křížek vyvolá potvrzení; smazané kolo se odečte ze skóre a zbylá kola se přečíslují. Bez odehraných kol je tlačítko schované.</p>
 
     <h3>Nastavení hry</h3>
@@ -1330,7 +1333,7 @@
   var elScore=$("score"), elTotal=$("total"), elRest=$("rest"), elRestLabel=$("restlabel"),
       elPot=$("pot"), elTurnNo=$("turnno"),
       elRollLine=$("rollline"), elFix=$("fix"),
-      elRollOn=$("rollon"), elBank=$("bank"), elBust=$("bust"), elLock=$("lock"),
+      elRollOn=$("rollon"), elBank=$("bank"), elBust=$("bust"), elUndo=$("undo"), elLock=$("lock"),
       elRows=$("rows"), elEmpty=$("empty"), elArch=$("arch"), elKosList=$("koslist"), elKosHistList=$("koshistlist"),
       elTally=$("tally"), elTallyCap=$("tallycap"),
       elModeSel=$("modesel"), elGoalSel=$("goalsel"), elGoalNum=$("goalnum"),
@@ -1393,12 +1396,15 @@
     S.rolls = [{thrown:6, hot:false, items:[]}];
     render();
   }
+  /* Zpět se drží uvnitř rozehraného kola: ubírá položky, pak celé hody.
+     Zapsaná kola nemaže — na ty je Opravit v Zápisu kol. Dřív sahalo i na
+     ně a jedno klepnutí navíc tak umazalo kolo, o které uživatel nežádal. */
+  function jdeZpet(){ return cur().items.length > 0 || S.rolls.length > 1; }
   function undo(){
+    if(!jdeZpet()) return;
     S.dirty = true;
     if(cur().items.length){ unkeep(cur().items.length - 1); return; }
-    if(S.rolls.length > 1){ S.rolls.pop(); render(); return; }
-    var t = S.turns.pop();
-    if(t && !t.bust){ S.banked -= t.p; }
+    S.rolls.pop();
     render();
   }
   function wipe(){
@@ -2001,10 +2007,11 @@
 
   /* ---------- vnitřní stránky boxu kola ---------- */
   var elSheets = $("sheets"), sheetBtns = Array.prototype.slice.call($("sheettabs").children), sheet = 0;
-  function goSheet(i){
+  function goSheet(i, smooth){
     sheet = Math.max(0, Math.min(sheetBtns.length - 1, i));
     var x = sheet * elSheets.clientWidth;
-    if(typeof elSheets.scrollTo === "function"){ elSheets.scrollTo({left:x, behavior:"smooth"}); }
+    var behavior = (smooth === false) ? "auto" : "smooth";
+    if(typeof elSheets.scrollTo === "function"){ elSheets.scrollTo({left:x, behavior:behavior}); }
     else { elSheets.scrollLeft = x; }
     markSheets();
   }
@@ -2037,7 +2044,8 @@
     var i = Math.round(elPages.scrollLeft / Math.max(1, elPages.clientWidth));
     if(i !== page){ page = i; markTabs(); }
   }, {passive:true});
-  window.addEventListener("resize", function(){ goTo(page, false); });
+  /* bez scroll-snapu si posun po změně šířky okna nikdo nesrovná sám */
+  window.addEventListener("resize", function(){ goTo(page, false); goSheet(sheet, false); });
   document.addEventListener("keydown", function(e){
     var t = e.target.tagName;
     if(t === "INPUT" || t === "SELECT" || t === "TEXTAREA") return;
@@ -2799,6 +2807,7 @@
     elBank.disabled = lock || pot <= 0;
     elBank.textContent = pot > 0 ? ("Zapsat " + fmt(pot)) : "Zapsat a předat";
     elBust.disabled = lock;
+    elUndo.disabled = !jdeZpet();
 
     elLock.hidden = !lock;
     if(lock){
