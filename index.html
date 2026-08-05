@@ -835,7 +835,7 @@
     <p>Data jsou uložená jen v tomto prohlížeči. <b>Export do souboru</b> vytvoří textový soubor s přehledem her, jehož poslední řádek nese data pro import — bez něj se soubor načíst nedá. <b>Zkopírovat do schránky</b> dává stejný obsah bez stahování. <b>Import ze souboru</b> i <b>Import ze schránky</b> nabídnou volbu mezi přidáním nových her a nahrazením celé historie.</p>
 
     <h3>Drobnosti</h3>
-    <p>Ikona vpravo nahoře přepíná světlý a tmavý vzhled. <b>Celá obrazovka</b> v nastavení schová lišty prohlížeče; na iPhonu chybí, Safari to neumí. Aplikace běží offline a dá se přidat na plochu.</p>
+    <p>Ikona vpravo nahoře přepíná světlý a tmavý vzhled. <b>Celá obrazovka</b> v nastavení schová lišty prohlížeče; na iPhonu chybí, Safari to neumí. <b>Nezhasínat displej</b> tamtéž drží obrazovku rozsvícenou, dokud se hraje; po třech minutách bez doteku se pustí a telefon zhasne jako obvykle. Aplikace běží offline a dá se přidat na plochu.</p>
   </div>
     </div>
   </div>
@@ -851,6 +851,10 @@
       <div class="setrow" id="fsrow">
         <div class="t"><b>Celá obrazovka</b><span>Skryje lišty prohlížeče.</span></div>
         <button class="ghost" id="fs" type="button">Zapnout</button>
+      </div>
+      <div class="setrow" id="svitrow">
+        <div class="t"><b>Nezhasínat displej</b><span>Displej zůstane svítit, dokud se s aplikací pracuje. Po třech minutách bez doteku se pustí a telefon zhasne jako obvykle.</span></div>
+        <button class="ghost" id="svit" type="button">Zapnout</button>
       </div>
       <h3 class="setcap">Obnova rozehrané hry</h3>
       <div id="koslist"></div>
@@ -2003,6 +2007,95 @@
       document.addEventListener(ev, mark);
     });
     mark();
+  })();
+
+  /* ---------- nezhasínat displej ----------
+     Zámek drží displej rozsvícený, ale jas ovlivnit neumí — API na to není.
+     Po třech minutách bez doteku se proto zámek pustí a dál se o zhasnutí
+     i zamčení stará systémový časovač, na který stránka nedosáhne.
+
+     Prohlížeč zámek pouští sám pokaždé, když se stránka schová (zhasnutí,
+     přepnutí do jiné aplikace, zamčení telefonu). Obsluha visibilitychange
+     ho po návratu bere znovu, takže po odemčení telefonu nezhasínání naskočí
+     samo — přepínač v nastavení se přitom nemění, ten žije v localStorage. */
+  (function(){
+    var radek = $("svitrow"), btn = $("svit");
+    var SKEY = "farkle-svit-v1";
+    var NECINNOST = 180000;   /* 3 minuty */
+
+    if(!navigator.wakeLock || typeof navigator.wakeLock.request !== "function"){ radek.remove(); return; }
+
+    /* zadame hlídá rozjetou žádost: request je asynchronní, takže dva doteky
+       těsně po sobě by jinak vzaly dva zámky a pustil by se jen jeden */
+    var zapnuto = false, zamek = null, casovac = null, cekaNaDotek = false, zadame = false;
+    try{ zapnuto = localStorage.getItem(SKEY) === "1"; }catch(e){}
+
+    function mark(){
+      btn.textContent = zapnuto ? "Vypnout" : "Zapnout";
+      var label = zapnuto ? "Nechat displej zhasínat" : "Nezhasínat displej";
+      btn.title = label;
+      btn.setAttribute("aria-label", label);
+    }
+    /* Podle specifikace stačí viditelná stránka, gesto se nevyžaduje. Když
+       ho prohlížeč přesto chce, request spadne a zkusí se po prvním doteku. */
+    function poDoteku(){
+      if(cekaNaDotek) return;
+      cekaNaDotek = true;
+      document.addEventListener("pointerdown", function jednou(){
+        document.removeEventListener("pointerdown", jednou, true);
+        cekaNaDotek = false;
+        vezmi();
+      }, true);
+    }
+    function vezmi(){
+      if(!zapnuto || zamek || zadame || document.hidden) return;
+      var p;
+      try{ p = navigator.wakeLock.request("screen"); }
+      catch(e){ poDoteku(); return; }
+      if(!p || typeof p.then !== "function"){ poDoteku(); return; }
+      zadame = true;
+      p.then(function(z){
+        zadame = false;
+        if(!zapnuto){ try{ z.release(); }catch(e){} return; }
+        zamek = z;
+        if(z && typeof z.addEventListener === "function"){
+          z.addEventListener("release", function(){ if(zamek === z) zamek = null; });
+        }
+      }, function(){ zadame = false; poDoteku(); });
+    }
+    function pust(){
+      if(!zamek) return;
+      var z = zamek;
+      zamek = null;
+      try{ z.release(); }catch(e){}
+    }
+    function odpocet(){
+      clearTimeout(casovac); casovac = null;
+      if(!zapnuto || document.hidden) return;
+      casovac = setTimeout(pust, NECINNOST);
+    }
+    function aktivita(){
+      if(!zapnuto) return;
+      vezmi();
+      odpocet();
+    }
+
+    btn.addEventListener("click", function(){
+      zapnuto = !zapnuto;
+      try{ localStorage.setItem(SKEY, zapnuto ? "1" : "0"); }catch(e){}
+      mark();
+      if(zapnuto){ vezmi(); odpocet(); }
+      else { clearTimeout(casovac); casovac = null; pust(); }
+    });
+    document.addEventListener("visibilitychange", function(){
+      if(document.hidden){ clearTimeout(casovac); casovac = null; }
+      else { vezmi(); odpocet(); }
+    });
+    document.addEventListener("pointerdown", aktivita, true);
+    document.addEventListener("keydown", aktivita, true);
+
+    mark();
+    if(zapnuto){ vezmi(); odpocet(); }
   })();
 
   /* ---------- vnitřní stránky boxu kola ---------- */
