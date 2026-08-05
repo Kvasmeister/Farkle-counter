@@ -892,8 +892,8 @@
 
     <h3>Historie</h3>
     <p>Statistiky vychází jen z her v historii; nezapsaná hra se do rekordů nepromítne.</p>
-    <p><b>Zapsat do historie</b> si vyžádá druhé klepnutí jen tehdy, když jsou na stole nezapsané body. Po uložení se přepne na <b>Uloženo v historii</b> a po dalším hraní na <b>Aktualizovat v historii</b>, což přepíše tentýž záznam místo zakládání nového.</p>
-    <p><b>Automatické ukládání</b> v nastavení zapíše hru do historie samo, jakmile skončí — po posledním kole nebo po kole, kterým se překročí cíl. Uložení oznámí okénko, které samo zmizí. Hra na neomezený počet kol se takhle uložit nedá, protože nemá konec.</p>
+    <p><b>Zapsat do historie</b> si vyžádá druhé klepnutí jen tehdy, když jsou na stole nezapsané body. Po uložení se přepne na <b>Uloženo v historii</b> a po dalším hraní na <b>Aktualizovat v historii</b>, což přepíše tentýž záznam místo zakládání nového. Když se ta hra mezitím smaže z historie, nabídne tlačítko <b>Vrátit do historie</b> — vrátí týž záznam z koše, takže se hra nikdy nezapíše dvakrát.</p>
+    <p><b>Automatické ukládání</b> v nastavení zapíše hru do historie samo, jakmile skončí — po posledním kole nebo po kole, kterým se překročí cíl. Uložení oznámí okénko, které samo zmizí. Hra na neomezený počet kol se takhle uložit nedá, protože nemá konec. Co bylo z historie smazané ručně, automat sám nevrací.</p>
 
     <h3>Koš</h3>
     <p><b>Nová hra</b> odkládá smazanou hru do nastavení, do oddílu <i>Smazané rozehrané hry</i> — drží posledních pět. <b>Smazat z historie</b> ukládá hru do oddílu <i>Smazané hry z historie</i>, kde jich zůstává deset. V obou oddílech vrací hru zpátky tlačítko <i>Obnovit</i>; <i>Trvale smazat</i> ji po potvrzení zahodí nadobro.</p>
@@ -1535,6 +1535,16 @@
     for(var i = 0; i < list.length; i++){ if(list[i].id === id) return i; }
     return -1;
   }
+  /* Kde leží záznam, na který je rozehraná hra navázaná: v historii, v koši
+     smazaných z historie, nebo nikde. Stav se odvozuje, neukládá — jinak by
+     ho rozešlo trvalé smazání z koše i vypadnutí přes strop deseti her.
+     Do koše se sahá jen tehdy, když záznam v historii není, takže běžný
+     průběh hry nestojí nic navíc. */
+  function kdeZaznam(){
+    if(!S.archivedId) return "nikde";
+    if(histIndex(HIST, S.archivedId) >= 0) return "historie";
+    return histIndex(kosHistAll(), S.archivedId) >= 0 ? "kos" : "nikde";
+  }
   function archive(){
     if(gameEmpty()) return;
     /* nezapsané kolo propadne — na to se ptáme, jinde potvrzení není */
@@ -1557,15 +1567,33 @@
      i „Uložit a začít novou“. Callback dostane true teprve tehdy, když je
      záznam skutečně v úložišti. */
   function zapisHru(hotovo){
+    var kde = kdeZaznam();
     var list = histAll();
-    var i = S.archivedId ? histIndex(list, S.archivedId) : -1;
-    var rec = makeRecord(i >= 0 ? S.archivedId : null);
+    var i = (kde === "historie") ? histIndex(list, S.archivedId) : -1;
+    var rec = makeRecord(kde === "nikde" ? null : S.archivedId);
     if(i >= 0){ list[i] = proHistorii(rec); } else { list.push(proHistorii(rec)); }
+
+    /* Návrat z koše jsou dva zápisy za sebou. Nejdřív se záznam z koše
+       odebere, teprve pak se zapisuje do historie — kdyby druhý zápis padl,
+       koš se vrátí do stavu před tím. Ztratit se nemůže nic: po celou tu
+       dobu je hra živá v Zápisu kol. Opačné pořadí by při selhání nechalo
+       tutéž hru v historii i v koši, tedy dvakrát. */
+    var kosPredtim = null;
+    if(kde === "kos"){
+      kosPredtim = kosHistAll();
+      if(!kosHistWrite(kosPredtim.filter(function(x){ return x.id !== S.archivedId; }))){
+        if(hotovo) hotovo(false);
+        return;
+      }
+    }
 
     histWrite(list, function(ok){
       if(ok){
         S.archivedId = rec.id; S.dirty = false;
         render(); renderP2();
+      }else if(kosPredtim){
+        kosHistWrite(kosPredtim);
+        renderKos();
       }
       if(hotovo) hotovo(ok);
     }, [rec]);
@@ -1580,11 +1608,17 @@
       elArch.textContent = "Na stole je " + fmt(potTotal()) + " a propadne — zapsat?";
       return;
     }
-    if(S.archivedId && !S.dirty){
+    var kde = kdeZaznam();
+    /* Záznam smazaný z historie se z tlačítka vrací zpátky, a to pod stejným
+       id — proto tady nevzniká nová hra ani při rozehrané úpravě. */
+    if(kde === "kos"){
+      elArch.disabled = false; elArch.textContent = "Vrátit do historie"; return;
+    }
+    if(kde === "historie" && !S.dirty){
       elArch.disabled = true; elArch.textContent = "Uloženo v historii"; return;
     }
     elArch.disabled = false;
-    elArch.textContent = S.archivedId ? "Aktualizovat v historii" : "Zapsat do historie";
+    elArch.textContent = (kde === "historie") ? "Aktualizovat v historii" : "Zapsat do historie";
   }
 
   /* Selhání zápisu se hlásí tam, kde uživatel klepnul: text tlačítka se na
@@ -1608,9 +1642,14 @@
      zálohu nepotřebuje. Volající pak smí teprve mazat. */
   function kosPush(){
     if(gameEmpty()) return true;
-    if(S.archivedId && !S.dirty) return true;   /* v historii už je, zálohu netřeba */
+    /* záznam někde existuje a od té doby se nehrálo: zálohu netřeba */
+    if(kdeZaznam() !== "nikde" && !S.dirty) return true;
     var list = kosAll();
-    list.unshift(makeRecord(null));
+    var rec = makeRecord(null);
+    /* Vazba na původní záznam jde do koše s hrou. Bez ní by se obnovená hra
+       dala zapsat jako nová a v historii by pak byla dvakrát. */
+    if(S.archivedId) rec.puvodni = S.archivedId;
+    list.unshift(rec);
     while(list.length > KOS_MAX){ list.pop(); }
     return kosWrite(list);
   }
@@ -1624,9 +1663,12 @@
       return { p: t.p || 0, bust: !!t.bust, d: t.d || "" };
     });
     S.rolls = [{thrown:6, hot:false, items:[]}];
-    /* obnovená hra v historii není a záznam o automatickém uložení se s ní
-       nepřenáší — jakmile znovu skončí, uloží se */
-    S.archivedId = null; S.dirty = false; S.autoUlozeno = false;
+    /* Obnovená hra se hlásí ke svému původnímu záznamu, pokud si ho koš
+       zapamatoval — jinak by šla zapsat podruhé. Do koše se ukládá jen hra
+       s neuloženými změnami, takže rozdíl proti záznamu je jistý: dirty.
+       Záznam o automatickém uložení se s hrou nepřenáší. */
+    var puvodni = (rec && typeof rec.puvodni === "string") ? rec.puvodni : null;
+    S.archivedId = puvodni; S.dirty = !!puvodni; S.autoUlozeno = false;
   }
   function restore(id, btn){
     var list = kosAll(), i = histIndex(list, id);
@@ -1740,7 +1782,9 @@
         return;
       }
       kosHistWrite(list.filter(function(x, k){ return k !== i; }));
-      renderKosHist(); renderP2(); renderZaloha2();
+      /* render() kvůli tlačítku v Zápisu kol: mohl se vrátit zrovna ten
+         záznam, na který je rozehraná hra navázaná */
+      render(); renderKosHist(); renderP2(); renderZaloha2();
     }, [rec]);
   }
   function renderKosHist(){
@@ -1763,7 +1807,9 @@
             return;
           }
           ptamSeKosHist = null;
-          renderKosHist();
+          /* render() kvůli tlačítku v Zápisu kol: rozehraná hra se mohla
+             vázat zrovna na tenhle záznam a teď už nemá kam */
+          render(); renderKosHist();
         }
       }));
     });
@@ -1792,10 +1838,11 @@
     goTo(0);
     return true;
   }
-  /* Neuložená hra si vyžádá ještě okno se třemi cestami ven. Hra, která
-     v historii je a od té doby se nehrálo, projde rovnou. */
+  /* Neuložená hra si vyžádá ještě okno se třemi cestami ven. Hra, jejíž
+     záznam někde je — v historii nebo v koši smazaných z historie — a od té
+     doby se nehrálo, projde rovnou: ztratit se nemá co. */
   function neulozena(){
-    return !gameEmpty() && (!S.archivedId || S.dirty);
+    return !gameEmpty() && (kdeZaznam() === "nikde" || S.dirty);
   }
   function reset(){
     var b = $("reset");
@@ -1866,9 +1913,13 @@
   function zkusAutoUlozit(){
     if(!autoZap || autoBezi) return;
     if(!locked() || gameEmpty() || S.autoUlozeno) return;
+    var kde = kdeZaznam();
+    /* Co bylo smazané ručně, se ručně i vrací. Automat záznam z koše
+       nevytahuje, jinak by rušil rozhodnutí, které uživatel udělal. */
+    if(kde === "kos"){ S.autoUlozeno = true; save(); return; }
     /* hra v historii je a od té doby se nehrálo: není co zapisovat */
-    if(S.archivedId && !S.dirty){ S.autoUlozeno = true; save(); return; }
-    var aktualizace = !!S.archivedId;
+    if(kde === "historie" && !S.dirty){ S.autoUlozeno = true; save(); return; }
+    var aktualizace = (kde === "historie");
     autoBezi = true;
     zapisHru(function(ok){
       autoBezi = false;
@@ -2876,11 +2927,9 @@
         zalMsg(textSelhani("Nepodařilo se uložit — došlo místo") + ".", true);
         return;
       }
-      /* rozehraná hra se mohla vázat na záznam, který už neexistuje */
-      if(S.archivedId && histIndex(histAll(), S.archivedId) < 0){
-        S.archivedId = null; S.dirty = false;
-        render();
-      }
+      /* rozehraná hra se mohla vázat na záznam, který import smetl —
+         kdeZaznam() to pozná sám, stačí překreslit */
+      render();
       zavriImport();
       zavriVlozeni();
       zalMsg("Historie nahrazena, " + pocet + " " + hrySlovo(pocet) + ".");
@@ -3127,8 +3176,10 @@
           hlaskaNaTlacitku(db, textSelhani("Nepodařilo se smazat — došlo místo"), "Smazat z historie");
           return;
         }
-        /* rozehraná hra už v historii není, ať jde zapsat znovu */
-        if(S.archivedId === id){ S.archivedId = null; S.dirty = false; }
+        /* Vazba rozehrané hry na záznam se nepřetrhává: hra ví, že její
+           záznam leží v koši, a tlačítko v Zápisu kol nabídne návrat. Kdyby
+           se vazba zrušila, hra by vypadala jako nikdy neuložená a Nová hra
+           by z ní udělala druhou kopii v koši rozehraných. */
         zpetNaSeznam();
         render();
       });
