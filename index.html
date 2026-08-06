@@ -355,6 +355,11 @@
   td.d{color:var(--dim);font-size:12.5px;padding-right:8px}
   td.g{text-align:right;width:76px;font-family:"IM Fell English",Georgia,serif;font-size:18px}
   td.s{text-align:right;width:70px;color:var(--dim);font-size:13px}
+  /* klikatelný řádek žebříčku — šipka je jediné, co proklik prozradí */
+  td.c{width:18px;text-align:right;color:var(--dim);font-size:15px;line-height:1;padding-left:6px}
+  tr.klik{cursor:pointer}
+  tr.klik:hover td.d,tr.klik:hover td.c{color:var(--brass)}
+  tr.klik:focus-visible{outline:1px solid var(--brass);outline-offset:-1px}
   tr.f td.g{color:var(--danger);text-decoration:line-through;text-decoration-thickness:1px}
   .empty{color:var(--dim);font-size:13.5px;font-style:italic;padding:6px 0}
 
@@ -368,6 +373,30 @@
   }
   .seg button:hover{border-color:var(--brass);color:var(--brass)}
   .seg button.on{background:var(--brass);border-color:var(--brass);color:var(--onbrass)}
+
+  /* lišta filtrů pod přepínačem. Mřížka 2 × 2 unese i čtyři tlačítka pozdějších
+     dávek; se dvěma se sama složí na jeden řádek. Zvolený filtr nese třídu on
+     a s ní mosazný rám — stejný idiom jako přepínače v nastavení. */
+  .fbar{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:10px 0 2px}
+  /* Popisek se v krajním případě (rozsah přes rok) zalomí do dvou řádků.
+     Ořez by z filtru udělal hádanku, výška mřížky roste u obou tlačítek
+     stejně a pár pixelů navíc nic nerozbije. */
+  .fbar .ghost{
+    min-height:44px;padding:5px 8px;
+    font-family:"IM Fell English SC",Georgia,serif;
+    font-size:12px;letter-spacing:.14em;line-height:1.3;
+  }
+  .fbar .ghost:hover{border-color:var(--brass);color:var(--brass)}
+
+  /* řádek okna výběru data. Nativní <input type="date"> si vykreslí systémové
+     písmo i kalendář — ořez fontu se ho netýká. */
+  .daterow{display:flex;align-items:center;gap:10px;margin:10px 0 0}
+  .daterow label{flex:0 0 46px;font-size:13px;color:var(--dim)}
+  .daterow input,.daterow select{
+    flex:1;min-width:0;min-height:44px;box-sizing:border-box;
+    background:var(--field);border:1px solid var(--edge);border-radius:var(--r);
+    color:var(--bone);font-size:15px;padding:0 10px;
+  }
 
   /* řádek statistiky */
   .strow{
@@ -398,6 +427,20 @@
     flex:0 0 auto;font-family:"IM Fell English",Georgia,serif;font-weight:400;
     font-size:20px;line-height:1;
   }
+
+  /* dělící čára v seznamu her: hry z jednoho dne pod jednou hlavičkou.
+     Nad první z nich se čára nekreslí — seznam by jí začínal zbytečně. */
+  .dsep{
+    border-top:1px solid var(--edge);
+    margin-top:12px;padding:11px 1px 3px;
+    font-family:"IM Fell English SC",Georgia,serif;
+    font-size:12px;letter-spacing:.16em;color:var(--dim);
+  }
+  .dsep:first-child{border-top:none;margin-top:0;padding-top:2px}
+  /* Poslední hra dne má vlastní vlasovou linku a hned za ní by přišla linka
+     oddělovače — dvě čáry pod sebou. Kde prohlížeč umí :has(), ta první
+     zmizí; kde ne, zůstane navíc jedna vlasová linka a nic se neděje. */
+  .grow:has(+ .dsep){border-bottom:none}
 
   /* značka pod seznamem: tlačítko „Zobrazit dalších…" a zároveň bod,
      na kterém IntersectionObserver dolije další dávku */
@@ -454,6 +497,11 @@
   #pastearea:focus{outline:none;border-color:var(--brass)}
   .msg{font-size:13px;color:var(--bone);padding:8px 0 2px;line-height:1.4}
   .msg.bad{color:var(--danger)}
+  /* údaj o místě: řádek s tlačítkem drží linku nahoře jako oddíly harmoniky,
+     dolní čáru nemá, aby výpis pod ním patřil viditelně k němu */
+  .mistorow{border-top:1px solid var(--edge);border-bottom:none}
+  .misto .ml{color:var(--dim);padding:1px 0}
+  .misto .ml b{font-weight:500;color:var(--bone)}
 
   /* režim oprav v zápise kol */
   .histbtns{display:flex;gap:6px;flex:0 0 auto}
@@ -499,7 +547,11 @@
   }
   .toastx:hover{color:var(--bone)}
 
-  .newbtns{display:flex;flex-direction:column;gap:8px;margin:12px 0 4px}
+  .newbtns,.datebtns{display:flex;flex-direction:column;gap:8px;margin:12px 0 4px}
+  /* Nabídka řazení je čtyři cíle na dotek pod sebou — stejná výška jako
+     Použít a Zpět v ostatních oknech, ne nižší základní .ghost. */
+  #sortbtns .ghost{width:100%;min-height:46px;font-size:14px;padding:6px 10px}
+  #sortbtns .ghost.on{border-color:var(--brass);color:var(--brass)}
 
   /* okno nastavení: pevná karta jako pravidla, uvnitř harmonika */
   #setmodal .modalbox{height:100%}
@@ -818,6 +870,12 @@
     <button type="button" class="on">Statistiky</button>
     <button type="button">Historie her</button>
   </div>
+  <div class="fbar" id="fbar" hidden>
+    <button class="ghost" type="button" id="fdatum">Datum</button>
+    <button class="ghost" type="button" id="ftyp" hidden>Typ hry</button>
+    <button class="ghost" type="button" id="frazeni" hidden>Řazení</button>
+    <button class="ghost" type="button" id="freset">Zrušit filtr</button>
+  </div>
   <div id="statlist"></div>
   <div id="histlist" hidden></div>
 </div>
@@ -892,7 +950,7 @@
 
     <h3>Historie</h3>
     <p>Statistiky vychází jen z her v historii; nezapsaná hra se do rekordů nepromítne.</p>
-    <p><b>Zapsat do historie</b> si vyžádá druhé klepnutí jen tehdy, když jsou na stole nezapsané body. Po uložení se přepne na <b>Uloženo v historii</b> a po dalším hraní na <b>Aktualizovat v historii</b>, což přepíše tentýž záznam místo zakládání nového. Když se ta hra mezitím smaže z historie, nabídne tlačítko <b>Vrátit do historie</b> — vrátí týž záznam z koše, takže se hra nikdy nezapíše dvakrát.</p>
+    <p><b>Zapsat do historie</b> si vyžádá druhé klepnutí jen tehdy, když jsou na stole nezapsané body. Po uložení se přepne na <b>Uloženo v historii</b> a po dalším hraní na <b>Aktualizovat v historii</b>, což přepíše tentýž záznam místo zakládání nového. Když se ta hra mezitím smaže z historie, nabídne tlačítko <b>Obnovit do historie</b> — vrátí týž záznam z koše, takže se hra nikdy nezapíše dvakrát.</p>
     <p><b>Automatické ukládání</b> v nastavení zapíše hru do historie samo, jakmile skončí — po posledním kole nebo po kole, kterým se překročí cíl. Uložení oznámí okénko, které samo zmizí. Hra na neomezený počet kol se takhle uložit nedá, protože nemá konec. Co bylo z historie smazané ručně, automat sám nevrací.</p>
 
     <h3>Koš</h3>
@@ -975,8 +1033,80 @@
         </div>
       </details>
 
+      <div class="setrow mistorow" id="mistorow">
+        <div class="t"><b>Zabrané místo</b><span>Spočítá se až na povel — u velké historie to chvíli trvá.</span></div>
+        <button class="ghost" id="mistobtn" type="button">Spočítat</button>
+      </div>
       <div class="msg misto" hidden></div>
       <input type="file" id="impfile" accept=".txt,text/plain" hidden>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="datemodal" hidden>
+  <div class="modalbox" role="dialog" aria-modal="true" aria-labelledby="datetitle">
+    <div class="modalhead">
+      <h2 id="datetitle">Filtr podle data</h2>
+      <button class="modalx" type="button" data-close aria-label="Zavřít">×</button>
+    </div>
+    <div class="modalbody">
+      <div class="seg" id="dateseg">
+        <button type="button" class="on">Jeden den</button>
+        <button type="button">Rozsah</button>
+      </div>
+      <div class="daterow">
+        <label for="dateod" id="dateodl">Den</label>
+        <input type="date" id="dateod">
+      </div>
+      <div class="daterow" id="datedorow" hidden>
+        <label for="datedo">Do</label>
+        <input type="date" id="datedo">
+      </div>
+      <div class="datebtns">
+        <button class="ghost arch" id="dateok" type="button">Použít</button>
+        <button class="ghost bigbtn" id="datezpet" type="button">Zpět</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="typmodal" hidden>
+  <div class="modalbox" role="dialog" aria-modal="true" aria-labelledby="typtitle">
+    <div class="modalhead">
+      <h2 id="typtitle">Filtr podle typu hry</h2>
+      <button class="modalx" type="button" data-close aria-label="Zavřít">×</button>
+    </div>
+    <div class="modalbody">
+      <div class="seg" id="typseg">
+        <button type="button" class="on">Vše</button>
+        <button type="button">Na body</button>
+        <button type="button">Na kola</button>
+      </div>
+      <div class="daterow" id="typvalrow" hidden>
+        <label for="typval" id="typvall">Cíl</label>
+        <select id="typval"></select>
+      </div>
+      <div class="datebtns">
+        <button class="ghost arch" id="typok" type="button">Použít</button>
+        <button class="ghost bigbtn" id="typzpet" type="button">Zpět</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="sortmodal" hidden>
+  <div class="modalbox" role="dialog" aria-modal="true" aria-labelledby="sorttitle">
+    <div class="modalhead">
+      <h2 id="sorttitle">Řazení historie</h2>
+      <button class="modalx" type="button" data-close aria-label="Zavřít">×</button>
+    </div>
+    <div class="modalbody">
+      <div class="datebtns" id="sortbtns">
+        <button class="ghost" type="button" data-podle="datum" data-smer="desc">Od nejnovějších</button>
+        <button class="ghost" type="button" data-podle="datum" data-smer="asc">Od nejstarších</button>
+        <button class="ghost" type="button" data-podle="body" data-smer="desc">Od nejvíc bodů</button>
+        <button class="ghost" type="button" data-podle="body" data-smer="asc">Od nejmíň bodů</button>
+      </div>
     </div>
   </div>
 </div>
@@ -1362,6 +1492,88 @@
 
   function histAll(){ return HIST.slice(); }
 
+  /* ---------- filtry a řazení ----------
+     Stav drží jen paměť, žádný localStorage: po zavření aplikace se resetuje,
+     aby se nikdo nedíval na osekanou historii a nevěděl proč. Přepnutí karet
+     ani odchod na jinou stránku ho ale neruší.
+
+     histView() jsou jediné dveře k datům pro zobrazení — na ni se ptá seznam
+     her, seznam statistik i žebříčky. Neptá se přes ni export, zápis ani
+     mazání: záloha veze vždycky všechny hry, i když je filtr zapnutý. */
+  var FILTR  = { od: null, do: null, typ: null, hodnota: null };
+  var RAZENI = { podle: "datum", smer: "desc" };
+
+  function filtrZapnut(){
+    return FILTR.od !== null || FILTR.do !== null || FILTR.typ !== null;
+  }
+  /* Starý nebo cizí záznam nemusí mít mode vůbec; všechno, co není „rounds",
+     je hra na body — stejné pravidlo jako všude jinde v aplikaci. */
+  function rezimHry(g){ return g.mode === "rounds" ? "rounds" : "points"; }
+  /* Cíl hry jedním číslem: u her na kola je nula „bez limitu". Nula je tu
+     platná hodnota, na rozdíl od null, které v FILTR.hodnota znamená
+     „všechny". */
+  function cilHry(g){
+    return g.mode === "rounds" ? (g.roundGoal > 0 ? g.roundGoal : 0) : (g.goal || 0);
+  }
+  /* Nabídka se skládá z dat, ne z pevného seznamu — a vždycky z celé
+     historie, ne z vyfiltrované. Jinak by se po zapnutí filtru data nabídka
+     smrskla a nešlo by ji rozšířit zpátky. */
+  function hodnotyTypu(typ){
+    var v = [], bezLimitu = false;
+    histAll().forEach(function(g){
+      if(rezimHry(g) !== typ) return;
+      var x = cilHry(g);
+      if(typ === "rounds" && x === 0){ bezLimitu = true; return; }
+      if(v.indexOf(x) < 0) v.push(x);
+    });
+    v.sort(function(a, b){ return a - b; });
+    if(bezLimitu) v.push(0);
+    return v;
+  }
+  function zrusFiltr(){
+    FILTR.od = null; FILTR.do = null; FILTR.typ = null; FILTR.hodnota = null;
+    RAZENI.podle = "datum"; RAZENI.smer = "desc";
+  }
+  /* Poslední milisekunda dne, ve kterém ms leží. Přes konstruktor Date, ne
+     přičtením 24 hodin — kolem přechodu na letní čas den 24 hodin nemá. */
+  function konecDne(ms){
+    var d = new Date(ms);
+    return new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1).getTime() - 1;
+  }
+  /* Filtr typu hry platí jen tam, kde je vidět jeho tlačítko, tedy na kartě
+     Historie — proto se o něj volající musí říct. Na kartě Statistiky by
+     půlka položek („hra na body", „hra na kola") zůstala prázdná a nic by
+     nenapovědělo proč; statistiky si režim řeší samy. Filtr data se naopak
+     uplatňuje všude. */
+  function histView(sTypem){
+    var v = histAll();
+    if(FILTR.od !== null || FILTR.do !== null){
+      v = v.filter(function(g){
+        var t = g.savedAt || 0;
+        if(FILTR.od !== null && t < FILTR.od) return false;
+        if(FILTR.do !== null && t > FILTR.do) return false;
+        return true;
+      });
+    }
+    if(sTypem && FILTR.typ !== null){
+      v = v.filter(function(g){
+        if(rezimHry(g) !== FILTR.typ) return false;
+        if(FILTR.hodnota === null) return true;
+        return cilHry(g) === FILTR.hodnota;
+      });
+    }
+    var smer = RAZENI.smer === "asc" ? 1 : -1;
+    v.sort(function(a, b){
+      if(RAZENI.podle === "body"){
+        var r = ((a.banked || 0) - (b.banked || 0)) * smer;
+        if(r) return r;
+        return (b.savedAt || 0) - (a.savedAt || 0);
+      }
+      return ((a.savedAt || 0) - (b.savedAt || 0)) * smer;
+    });
+    return v;
+  }
+
   /* Když se historie nedá načíst, není chyba v místě — hlášky by lhaly. */
   function textSelhani(zaklad){
     return historieNedostupna ? "Historie teď není dostupná" : zaklad;
@@ -1442,13 +1654,23 @@
     return d.getDate() + ". " + (d.getMonth() + 1) + ". " + d.getFullYear() +
            " \u00B7 " + d.getHours() + ":" + ("0" + d.getMinutes()).slice(-2);
   }
+  /* pro údaje, které nepatří jedné hře, ale celému dni */
+  function dtDen(ms){
+    var d = new Date(ms);
+    return d.getDate() + ". " + (d.getMonth() + 1) + ". " + d.getFullYear();
+  }
   function kolSlovo(n){ return n === 1 ? "kolo" : ((n >= 2 && n < 5) ? "kola" : "kol"); }
-  function popisHry(rec){
-    var kol = gKol(rec);
-    var rez = rec.mode === "rounds"
+  /* Jediné místo, kde se skládá text režimu hry. Používá ho popis hry
+     v Zápisu kol, řádek historie, podřádek statistiky i řádek žebříčku —
+     dřív se stejný výraz psal dvakrát zvlášť. */
+  function popisRezimu(rec){
+    return rec.mode === "rounds"
       ? ("na kola" + (rec.roundGoal ? " \u00B7 limit " + rec.roundGoal : ""))
       : ("do " + fmt(rec.goal || 0));
-    return dt(rec.savedAt) + " \u00B7 " + rez + " \u00B7 " + kol + " " + kolSlovo(kol);
+  }
+  function popisHry(rec){
+    var kol = gKol(rec);
+    return dt(rec.savedAt) + " \u00B7 " + popisRezimu(rec) + " \u00B7 " + kol + " " + kolSlovo(kol);
   }
   function fmt(n){ return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, "\u202F"); }
   /* Popisy kol a názvy položek můžou pocházet z cizí zálohy nebo z poškozeného
@@ -1651,7 +1873,7 @@
     /* Záznam smazaný z historie se z tlačítka vrací zpátky, a to pod stejným
        id — proto tady nevzniká nová hra ani při rozehrané úpravě. */
     if(kde === "kos"){
-      elArch.disabled = false; elArch.textContent = "Vrátit do historie"; return;
+      elArch.disabled = false; elArch.textContent = "Obnovit do historie"; return;
     }
     if(kde === "historie" && !S.dirty){
       elArch.disabled = true; elArch.textContent = "Uloženo v historii"; return;
@@ -2482,7 +2704,12 @@
   /* ---------- stránky ---------- */
   var elPages = $("pages"), tabs = [$("tab0"), $("tab1"), $("tab2")], page = 0;
   function goTo(i, smooth){
-    page = Math.max(0, Math.min(tabs.length - 1, i));
+    var novy = Math.max(0, Math.min(tabs.length - 1, i));
+    /* Odchod na jinou stránku ruší návrat do žebříčku. Srovnává se se
+       stávající stránkou, protože goTo se volá i po změně velikosti okna
+       se stejným číslem — a to návrat rušit nemá. */
+    if(novy !== page) zrusNav();
+    page = novy;
     if(page === 2) renderP2();
     var reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     var behavior = (smooth === false || reduce) ? "auto" : "smooth";
@@ -2497,7 +2724,7 @@
   tabs.forEach(function(t, i){ t.addEventListener("click", function(){ goTo(i); }); });
   elPages.addEventListener("scroll", function(){
     var i = Math.round(elPages.scrollLeft / Math.max(1, elPages.clientWidth));
-    if(i !== page){ page = i; markTabs(); }
+    if(i !== page){ page = i; zrusNav(); markTabs(); }
   }, {passive:true});
   /* bez scroll-snapu si posun po změně šířky okna nikdo nesrovná sám */
   window.addEventListener("resize", function(){ goTo(page, false); goSheet(sheet, false); });
@@ -2578,10 +2805,15 @@
     });
     return m;
   }
+  /* Farkle, při kterém na stole nic neleželo, je nula — platná hodnota
+     odlišná od null, která by v žebříčku ležela dole jako řada nul. Do téhle
+     statistiky nepatří, takže nula a null splývají. Test na pravdivost je tu
+     proto záměrný, na rozdíl od ostatních g*: souhrny uložené dřív nesou nulu
+     a i ty se musí překlopit při čtení. */
   function gZtraceno(g){
-    if(g.ztraceno !== undefined) return g.ztraceno;
+    if(g.ztraceno !== undefined) return g.ztraceno || null;
     var m = null;
-    (g.turns || []).forEach(function(t){ if(t.bust && (m === null || t.p > m)) m = t.p; });
+    (g.turns || []).forEach(function(t){ if(t.bust && t.p > 0 && (m === null || t.p > m)) m = t.p; });
     return m;
   }
   function gPrumer(g){
@@ -2602,22 +2834,48 @@
      s: omezení na režim, m: hodnota jedné hry, a: způsob shrnutí,
      f: formát, dir: směr žebříčku, kol: dopsat do žebříčku počet kol */
   var STATY = [
+    { n:"Odehráno her",                 a:"pocet",      f:cislo },
+    { n:"Celkem nasbíráno bodů",        a:"soucet",     f:fmt,      num:gBody },
     { n:"Nejvíc bodů za hru",           m:gBody,        a:"max",   f:fmt,      kol:true },
     { n:"Nejvíc bodů — hra na body",    m:gBody,        a:"max",   f:fmt,      s:"points" },
     { n:"Nejvíc bodů — hra na kola",    m:gBody,        a:"max",   f:fmt,      s:"rounds", kol:true },
-    { n:"Nejlepší kolo",                m:gNejlepsiKolo,a:"max",   f:fmt },
-    { n:"Nejhorší kolo bez farklu",     m:gNejhorsiKolo,a:"min",   f:fmt },
-    { n:"Nejvíc farklů za hru",         m:gFarkle,      a:"max",   f:cislo,    kol:true },
-    { n:"Nejdelší série bez farklu",    m:gSerie,       a:"max",   f:cislo,    kol:true },
-    { n:"Nejméně kol k dosažení cíle",  m:gKolKCili,    a:"min",   f:cislo,    s:"points" },
-    { n:"Nejvíc kol v jedné hře",       m:gKol,         a:"max",   f:cislo },
     { n:"Celkový průměr na kolo",       m:gPrumer,      a:"pomer", f:fmtR,     num:gBody, den:gKol },
     { n:"Průměr na kolo — hra na body", m:gPrumer,      a:"pomer", f:fmtR,     num:gBody, den:gKol, s:"points" },
     { n:"Průměr na kolo — hra na kola", m:gPrumer,      a:"pomer", f:fmtR,     num:gBody, den:gKol, s:"rounds" },
+    { n:"Nejvíc hodů v jednom kole",    m:gNejvicHodu,  a:"max",   f:cislo,    kol:true },
+    /* Obě „kola v jedné hře na body“ stojí na gKolKCili(), která u nedokončené
+       hry vrací null — tím se počítají jen hry, které cíle doopravdy dosáhly,
+       a žádný zvláštní výběr her k tomu není potřeba. */
+    { n:"Nejméně kol v jedné hře na body", m:gKolKCili, a:"min",   f:cislo,    s:"points" },
+    { n:"Nejvíc kol v jedné hře na body",  m:gKolKCili, a:"max",   f:cislo,    s:"points" },
+    { n:"Nejlepší kolo",                m:gNejlepsiKolo,a:"max",   f:fmt },
+    { n:"Nejhorší kolo bez farklu",     m:gNejhorsiKolo,a:"min",   f:fmt },
+    { n:"Nejvíc farklů za hru",         m:gFarkle,      a:"max",   f:cislo,    kol:true },
+    { n:"Nejvíc bodů ztraceno farklem", m:gZtraceno,    a:"max",   f:fmt,      kol:true },
+    { n:"Nejdelší série bez farklu",    m:gSerie,       a:"max",   f:cislo,    kol:true },
     { n:"Farklů na hru",                m:gFarkle,      a:"pomer", f:desetina, num:gFarkle, den:function(){ return 1; }, dir:"asc" },
-    { n:"Odehráno her",                 a:"pocet",      f:cislo },
-    { n:"Celkem nasbíráno bodů",        a:"soucet",     f:fmt,      num:gBody }
+    { n:"Nejvíc her za den",            a:"denMax",     f:cislo }
   ];
+
+  /* ---------- seskupení po dnech ----------
+     Den se bere z místního času, ne z UTC: hra dohraná v půl jedné v noci
+     patří do dne, kdy ji hráč hrál. Vrací se pole dnů seřazené sestupně podle
+     počtu her, při shodě od nejnovějšího dne. */
+  function denKlic(d){
+    return d.getFullYear() + "-" + ("0" + (d.getMonth() + 1)).slice(-2) +
+           "-" + ("0" + d.getDate()).slice(-2);
+  }
+  function dnyPodleHer(hry){
+    var mapa = {};
+    hry.forEach(function(g){
+      var d = new Date(g.savedAt || 0), k = denKlic(d);
+      if(!mapa[k]) mapa[k] = { den:k, kdy:new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime(), pocet:0 };
+      mapa[k].pocet++;
+    });
+    var v = Object.keys(mapa).map(function(k){ return mapa[k]; });
+    v.sort(function(a, b){ return b.pocet - a.pocet || b.kdy - a.kdy; });
+    return v;
+  }
 
   function vyberHry(def, hry){
     if(!def.s) return hry;
@@ -2633,6 +2891,12 @@
       v.forEach(function(g){ sc += def.num(g); });
       return v.length ? { txt: def.f(sc) } : null;
     }
+    /* jediná statistika, která neshrnuje hry, ale dny — datum se proto ukazuje
+       bez času, žádná konkrétní hra za ním nestojí */
+    if(def.a === "denMax"){
+      var dny = dnyPodleHer(v);
+      return dny.length ? { txt: def.f(dny[0].pocet), kdy: dny[0].kdy, den: true } : null;
+    }
     if(def.a === "pomer"){
       var a = 0, b = 0;
       v.forEach(function(g){
@@ -2647,9 +2911,12 @@
       if(x === null || x === undefined) return;
       if(!nej || (def.a === "max" ? x > nej.x : x < nej.x)) nej = { x:x, g:g };
     });
-    return nej ? { txt: def.f(nej.x), kdy: nej.g.savedAt } : null;
+    /* vedle času se vrací i celý záznam — podřádek v seznamu statistik z něj
+       skládá režim hry, jinak by ho musel dohledávat podruhé */
+    return nej ? { txt: def.f(nej.x), kdy: nej.g.savedAt, g: nej.g } : null;
   }
   function zebricek(def, hry){
+    if(def.a === "denMax") return dnyPodleHer(vyberHry(def, hry));
     var dir = def.dir || (def.a === "min" ? "asc" : "desc");
     var v = vyberHry(def, hry).map(function(g){ return { g:g, x:def.m(g) }; })
       .filter(function(r){ return r.x !== null && r.x !== undefined; });
@@ -2833,7 +3100,7 @@
     zalMsg("");
     zavriImport();
     zavriVlozeni();
-    renderMisto();
+    resetMisto();
   }
 
   /* ---------- místo v úložišti a trvalost ----------
@@ -2862,27 +3129,120 @@
     if(b < 1073741824) return desetina(b / 1048576) + " MB";
     return desetina(b / 1073741824) + " GB";
   }
-  /* estimate() počítá celý původ, tedy na github.io i ostatní aplikace
-     ze stejné adresy — proto „data aplikací", ne „historie". */
-  function renderMisto(){
-    var pole = document.querySelectorAll(".misto");
-    if(!pole.length) return;
-    Array.prototype.forEach.call(pole, function(el){ el.hidden = true; });
+  /* ---------- údaj o zabraném místě ----------
+     Tři čísla místo jedné věty. Poslední z nich je estimate(), které počítá
+     celý původ — na github.io tedy i ostatní aplikace ze stejné adresy;
+     proto „celkem z této adresy", ne „historie".
+
+     Počítá se až po klepnutí na tlačítko. Při otevření nastavení by to u velké
+     historie znamenalo pokaždé projít vzorek detailů zbytečně. */
+  var VZOREK = 50;
+
+  /* localStorage se měří přesně: klíč i hodnota se počítají a UTF-16 dává
+     dva bajty na znak, což je i to, co si prohlížeč započítává do kvóty. */
+  function lsBajtu(klice){
+    var s = 0, i, v;
+    try{
+      for(i = 0; i < klice.length; i++){
+        v = localStorage.getItem(klice[i]);
+        if(v === null) continue;
+        s += (klice[i].length + v.length) * 2;
+      }
+    }catch(e){ return null; }
+    return s;
+  }
+
+  /* Velikost historie: v režimu ls přesně z jednoho klíče, v režimu idb
+     odhadem. IndexedDB velikost police nehlásí a přečíst všechny detaily
+     stojí tolik co export, takže se souhrny sečtou celé (leží v paměti)
+     a detaily se vzorkují prvními padesáti záznamy. */
+  function velikostHistorie(hotovo){
+    var pocet = histAll().length;
+    if(rezim !== "idb" || !idb){
+      hotovo({ pocet: pocet, bajtu: lsBajtu([HKEY]), presne: true });
+      return;
+    }
+    var souhrnu = 0;
+    try{
+      HIST.forEach(function(g){ souhrnu += JSON.stringify(g).length; });
+    }catch(e){ souhrnu = 0; }
+    function vzdat(){ hotovo({ pocet: pocet, bajtu: null, presne: false }); }
+    var tx, kur;
+    try{ tx = idb.transaction(DETAILY, "readonly"); }catch(e){ vzdat(); return; }
+    try{ kur = tx.objectStore(DETAILY).openCursor(); }catch(e){ vzdat(); return; }
+    var n = 0, delka = 0;
+    kur.onsuccess = function(){
+      var c = kur.result;
+      if(c && n < VZOREK){
+        try{ delka += JSON.stringify(c.value).length; }catch(e){}
+        n++;
+        c.continue();
+        return;
+      }
+      hotovo({ pocet: pocet, presne: false,
+               bajtu: souhrnu + (n ? Math.round(delka / n * pocet) : 0) });
+    };
+    kur.onerror = vzdat;
+  }
+
+  function odhadMista(hotovo){
     var st = null;
     try{ st = navigator.storage; }catch(e){}
-    if(!st || typeof st.estimate !== "function") return;
+    if(!st || typeof st.estimate !== "function"){ hotovo(null); return; }
     try{
       st.estimate().then(function(o){
-        if(!o || typeof o.usage !== "number") return;
-        var t = "Data aplikací z této adresy zabírají " + velikost(o.usage) +
-          (o.quota > 0 ? (" z " + velikost(o.quota) + " dostupných") : "") +
-          (trvale ? ". Prohlížeč je označil za trvalá." : ".");
-        Array.prototype.forEach.call(pole, function(el){
-          el.textContent = t;
-          el.hidden = false;
-        });
-      }).catch(function(){});
-    }catch(e){}
+        hotovo(o && typeof o.usage === "number" ? o : null);
+      }).catch(function(){ hotovo(null); });
+    }catch(e){ hotovo(null); }
+  }
+
+  /* Plní všechny prvky s třídou misto, ne jedno id — kdyby se údaj někdy
+     objevil i jinde, není co dopisovat. Skládá se z uzlů, ne z innerHTML. */
+  function ukazMisto(radky){
+    var pole = document.querySelectorAll(".misto");
+    Array.prototype.forEach.call(pole, function(el){
+      el.textContent = "";
+      if(!radky || !radky.length){ el.hidden = true; return; }
+      radky.forEach(function(r){
+        var d = document.createElement("div"), b = document.createElement("b");
+        d.className = "ml";
+        b.textContent = r.k;
+        d.appendChild(b);
+        d.appendChild(document.createTextNode(" " + r.v));
+        el.appendChild(d);
+      });
+      el.hidden = false;
+    });
+  }
+  function resetMisto(){
+    var b = document.getElementById("mistobtn");
+    if(b){ b.disabled = false; b.textContent = "Spočítat"; }
+    ukazMisto(null);
+  }
+  function spoctiMisto(){
+    var b = document.getElementById("mistobtn");
+    if(b){ b.disabled = true; b.textContent = "Počítám\u2026"; }
+    velikostHistorie(function(h){
+      odhadMista(function(o){
+        var radky = [];
+        radky.push({ k: "Historie:", v: h.pocet
+          ? (h.pocet + " " + hrySlovo(h.pocet) + ", " + (h.bajtu === null
+              ? "velikost se nedaří zjistit"
+              : ((h.presne ? "" : "přibližně ") + velikost(h.bajtu))))
+          : "zatím žádná hra" });
+        var mimo = lsBajtu([KEY, KKEY, KHKEY]);
+        radky.push({ k: "Rozehraná hra a koše:",
+                     v: mimo === null ? "nedá se změřit" : velikost(mimo) });
+        if(o){
+          radky.push({ k: "Celkem z této adresy:",
+            v: velikost(o.usage) +
+               (o.quota > 0 ? (" z " + velikost(o.quota) + " dostupných") : "") +
+               (trvale ? ". Prohlížeč je označil za trvalá." : "") });
+        }
+        ukazMisto(radky);
+        if(b){ b.disabled = false; b.textContent = "Přepočítat"; }
+      });
+    });
   }
 
   /* společné pro import ze souboru i ze schránky */
@@ -2941,6 +3301,7 @@
     };
     fr.readAsText(f, "utf-8");
   });
+  $("mistobtn").addEventListener("click", spoctiMisto);
   $("pastebtn").addEventListener("click", function(){
     zalMsg("");
     zavriImport();
@@ -3013,8 +3374,19 @@
       elP2List=$("p2list"), elP2Detail=$("p2detail"),
       elDetTitle=$("dettitle"), elDetBody=$("detbody");
 
+  /* Podstránka detailu je jedna, ale dá se do ní přijít dvěma cestami: ze
+     seznamu her, nebo ze žebříčku statistiky. Zásobník je proto jednoúrovňový
+     — víc úrovní vzniknout nemůže, protože z detailu hry se dál nikam nejde. */
+  var navZpet = null;   // null | { statIdx: i }
+  function zrusNav(){ navZpet = null; }
   function zpetNaSeznam(){
     clearTimeout(delTimer); delTimer = null;
+    if(navZpet){
+      var i = navZpet.statIdx;
+      navZpet = null;
+      otevriZebricek(i);
+      return;
+    }
     elP2Detail.hidden = true;
     elP2List.hidden = false;
     renderP2();
@@ -3101,21 +3473,23 @@
 
   function renderP2(){
     odpojPozorovatele();
-    var hry = histAll();
-    hry.sort(function(a, b){ return (b.savedAt || 0) - (a.savedAt || 0); });
+    var hry = histView(segIdx === 1);
     elStatList.hidden = segIdx !== 0;
     elHistList.hidden = segIdx !== 1;
     Array.prototype.forEach.call(elSeg.children, function(b, i){
       b.classList.toggle("on", i === segIdx);
     });
+    renderFiltry();
     if(segIdx === 0) renderStatList(hry); else renderHistList(hry);
   }
 
   function renderStatList(hry){
     elStatList.innerHTML = "";
     if(!hry.length){
-      elStatList.innerHTML = '<div class="empty">Zatím žádná dohraná hra. ' +
-        'Hru zapíšeš do historie tlačítkem dole v Zápisu kol.</div>';
+      elStatList.innerHTML = histAll().length
+        ? '<div class="empty">Tomuhle filtru neodpovídá žádná hra.</div>'
+        : '<div class="empty">Zatím žádná dohraná hra. ' +
+          'Hru zapíšeš do historie tlačítkem dole v Zápisu kol.</div>';
       return;
     }
     STATY.forEach(function(def, i){
@@ -3127,7 +3501,9 @@
       b.disabled = !lze;
       b.innerHTML =
         '<span class="sn">' + def.n +
-          (h && h.kdy ? '<span class="sd">' + dt(h.kdy) + '</span>' : '') +
+          (h && h.kdy ? '<span class="sd">' + (h.den
+              ? dtDen(h.kdy)
+              : dt(h.kdy) + (h.g ? ' \u00B7 ' + esc(popisRezimu(h.g)) : '')) + '</span>' : '') +
         '</span>' +
         '<b class="sv">' + (h ? h.txt : "\u2014") + '</b>' +
         (lze ? '<span class="chev">\u00BB</span>' : '');
@@ -3139,43 +3515,112 @@
   }
 
   function otevriZebricek(i){
-    var def = STATY[i], hry = histAll(), v = zebricek(def, hry);
+    var def = STATY[i], hry = histView(false), v = zebricek(def, hry);
+    navZpet = null;
     doDetailu(def.n);
     if(!v.length){
       elDetBody.innerHTML = '<div class="empty">Pro tuhle statistiku zatím nejsou data.</div>';
       return;
     }
     elDetBody.innerHTML = '<table><tbody></tbody></table>';
-    vypisDavku(elDetBody.querySelector("tbody"), elDetBody, v, 0, function(r, k){
+    vypisDavku(elDetBody.querySelector("tbody"), elDetBody, v, 0,
+               def.a === "denMax" ? radekDne(def) : radekHry(def, i));
+  }
+  /* Stavitel se vybírá napřed, ne uvnitř šablony — žebříček dnů nese jiná
+     data než žebříček her a míchat obojí v jednom innerHTML by bylo horší
+     ke čtení než dvě krátké funkce. */
+  function radekHry(def, statIdx){
+    return function(r, k){
       var tr = document.createElement("tr");
+      tr.className = "klik";
+      tr.tabIndex = 0;
+      tr.setAttribute("role", "button");
       tr.innerHTML =
         '<td class="n">' + (k + 1) + '</td>' +
-        '<td class="d">' + dt(r.g.savedAt) +
+        '<td class="d">' + dt(r.g.savedAt) + ' \u00B7 ' + esc(popisRezimu(r.g)) +
           (def.kol ? ' \u00B7 ' + gKol(r.g) + ' ' + kolSlovo(gKol(r.g)) : '') + '</td>' +
-        '<td class="g">' + def.f(r.x) + '</td>';
+        '<td class="g">' + def.f(r.x) + '</td>' +
+        '<td class="c">\u00BB</td>';
+      function jdi(){
+        navZpet = { statIdx: statIdx };
+        otevriHru(r.g.id);
+      }
+      tr.addEventListener("click", jdi);
+      /* <tr> není tlačítko, Enter ani mezerník si sám neobslouží */
+      tr.addEventListener("keydown", function(e){
+        if(e.key === "Enter" || e.key === " " || e.key === "Spacebar"){
+          e.preventDefault();
+          jdi();
+        }
+      });
       return tr;
-    });
+    };
+  }
+  /* Jediné místo, kde se karta přepíná sama. Na rozdíl od prokliku do detailu
+     hry je to tady smysl akce: chci vidět ty hry, ne jejich počet. */
+  function radekDne(def){
+    return function(r, k){
+      var tr = document.createElement("tr");
+      tr.className = "klik";
+      tr.tabIndex = 0;
+      tr.setAttribute("role", "button");
+      tr.innerHTML =
+        '<td class="n">' + (k + 1) + '</td>' +
+        '<td class="d">' + dtDen(r.kdy) + '</td>' +
+        '<td class="g">' + def.f(r.pocet) + '</td>' +
+        '<td class="c">\u00BB</td>';
+      function jdi(){
+        FILTR.od = r.kdy;
+        FILTR.do = konecDne(r.kdy);
+        segIdx = 1;
+        zrusNav();
+        zpetNaSeznam();
+      }
+      tr.addEventListener("click", jdi);
+      tr.addEventListener("keydown", function(e){
+        if(e.key === "Enter" || e.key === " " || e.key === "Spacebar"){
+          e.preventDefault();
+          jdi();
+        }
+      });
+      return tr;
+    };
   }
 
   function renderHistList(hry){
     elHistList.innerHTML = "";
     if(!hry.length){
-      elHistList.innerHTML = '<div class="empty">Historie je prázdná. ' +
-        'Dohranou hru do ní zapíšeš tlačítkem dole v Zápisu kol.</div>';
+      elHistList.innerHTML = histAll().length
+        ? '<div class="empty">Tomuhle filtru neodpovídá žádná hra.</div>'
+        : '<div class="empty">Historie je prázdná. ' +
+          'Dohranou hru do ní zapíšeš tlačítkem dole v Zápisu kol.</div>';
       return;
     }
-    vypisDavku(elHistList, elHistList, hry, 0, function(rec){
+    /* Den se porovnává se skutečně předchozí položkou v poli, ne s poslední
+       vykreslenou — díky tomu čára správně vyjde i na hranici dávky po
+       padesáti položkách, kde se stavitel spouští znovu od nuly. */
+    vypisDavku(elHistList, elHistList, hry, 0, function(rec, i){
+      var frag = document.createDocumentFragment();
+      var pred = i > 0 ? hry[i - 1] : null;
+      /* Při řazení podle bodů se čáry nekreslí vůbec — dny už v seznamu
+         nejdou po sobě a čára by nad každou hrou hlásila jiné datum. */
+      if(RAZENI.podle === "datum" &&
+         (!pred || denKlic(new Date(pred.savedAt || 0)) !== denKlic(new Date(rec.savedAt || 0)))){
+        var s = document.createElement("div");
+        s.className = "dsep";
+        s.textContent = dtDen(rec.savedAt);
+        frag.appendChild(s);
+      }
       var b = document.createElement("button");
       b.type = "button";
       b.className = "grow";
       b.innerHTML = '<span class="gn"><b>' + dt(rec.savedAt) + '</b>' +
-        (rec.mode === "rounds"
-          ? ("na kola" + (rec.roundGoal ? " \u00B7 limit " + rec.roundGoal : ""))
-          : ("do " + fmt(rec.goal || 0))) +
+        esc(popisRezimu(rec)) +
         ' \u00B7 ' + gKol(rec) + ' ' + kolSlovo(gKol(rec)) + ' \u00B7 ' + gFarkle(rec) + '\u00D7 farkle</span>' +
         '<b class="gv">' + fmt(rec.banked || 0) + '</b>';
       b.addEventListener("click", function(){ otevriHru(rec.id); });
-      return b;
+      frag.appendChild(b);
+      return frag;
     });
   }
 
@@ -3244,15 +3689,211 @@
            záznam leží v koši, a tlačítko v Zápisu kol nabídne návrat. Kdyby
            se vazba zrušila, hra by vypadala jako nikdy neuložená a Nová hra
            by z ní udělala druhou kopii v koši rozehraných. */
+        /* žebříček by po smazání ukazoval hru, která už neexistuje */
+        zrusNav();
         zpetNaSeznam();
         render();
       });
     });
   }
 
+  /* ---------- lišta filtrů ----------
+     Popisek nese zvolený filtr, ať je vidět i bez otevření okna. Datum se
+     píše co nejúsporněji: shodné části rozsahu se neopakují. */
+  var elFbar = $("fbar"), elFdatum = $("fdatum"),
+      elFtyp = $("ftyp"), elFraz = $("frazeni");
+  function popisDatumu(){
+    if(FILTR.od === null || FILTR.do === null) return "Datum";
+    var a = new Date(FILTR.od), b = new Date(FILTR.do);
+    if(denKlic(a) === denKlic(b)) return dtDen(FILTR.od);
+    if(a.getFullYear() !== b.getFullYear()) return dtDen(FILTR.od) + " \u2013 " + dtDen(FILTR.do);
+    if(a.getMonth() !== b.getMonth())
+      return a.getDate() + ". " + (a.getMonth() + 1) + ". \u2013 " + dtDen(FILTR.do);
+    return a.getDate() + ".\u2013" + dtDen(FILTR.do);
+  }
+  function popisTypu(){
+    if(FILTR.typ === null) return "Typ hry";
+    if(FILTR.typ === "points")
+      return FILTR.hodnota === null ? "na body" : ("do " + fmt(FILTR.hodnota));
+    if(FILTR.hodnota === null) return "na kola";
+    return "na kola \u00B7 " + (FILTR.hodnota === 0 ? "bez limitu" : FILTR.hodnota);
+  }
+  /* Popisky řazení jsou jen tady — z nich se plní nabídka i tlačítko, aby
+     se stejný text nepsal dvakrát. Výchozí řazení se na tlačítko nepíše;
+     tam zůstává holé „Řazení" bez mosazného rámu. */
+  var RAZ_POPIS = {
+    "datum:desc": "Od nejnovějších",
+    "datum:asc":  "Od nejstarších",
+    "body:desc":  "Od nejvíc bodů",
+    "body:asc":   "Od nejmíň bodů"
+  };
+  function popisRazeni(){
+    var k = RAZENI.podle + ":" + RAZENI.smer;
+    return k === "datum:desc" ? "Řazení" : (RAZ_POPIS[k] || "Řazení");
+  }
+  function renderFiltry(){
+    var jsou = histAll().length > 0;
+    elFbar.hidden = !jsou;
+    if(!jsou) return;
+    var txt = popisDatumu();
+    elFdatum.textContent = txt;
+    elFdatum.classList.toggle("on", txt !== "Datum");
+    /* Typ hry a řazení dávají smysl jen nad seznamem her. Skrytá tlačítka
+       z mřížky vypadnou úplně, takže se se dvěma zbylými složí na jeden
+       řádek sama. */
+    var vSeznamu = segIdx === 1;
+    elFtyp.hidden = !vSeznamu;
+    elFraz.hidden = !vSeznamu;
+    var tt = popisTypu();
+    elFtyp.textContent = tt;
+    elFtyp.classList.toggle("on", tt !== "Typ hry");
+    var tr = popisRazeni();
+    elFraz.textContent = tr;
+    elFraz.classList.toggle("on", tr !== "Řazení");
+  }
+
+  $("freset").addEventListener("click", function(){
+    zrusFiltr();
+    renderP2();
+  });
+
+  /* Okno výběru data. Rozsah je včetně obou krajních dnů; obrácené zadání se
+     prohodí, místo aby se hlásila chyba. Prázdná pole filtr zruší. */
+  (function(){
+    var rezimDne = "den",
+        elSegD = $("dateseg"), elOd = $("dateod"), elDo = $("datedo"),
+        elDoRow = $("datedorow"), elOdL = $("dateodl");
+
+    function isoDne(ms){ return ms === null ? "" : denKlic(new Date(ms)); }
+    function zIso(s){
+      var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s || "");
+      return m ? new Date(+m[1], +m[2] - 1, +m[3]).getTime() : null;
+    }
+    function nastavRezim(r){
+      rezimDne = r;
+      Array.prototype.forEach.call(elSegD.children, function(b, i){
+        b.classList.toggle("on", (i === 0) === (r === "den"));
+      });
+      elDoRow.hidden = r === "den";
+      elOdL.textContent = r === "den" ? "Den" : "Od";
+    }
+    Array.prototype.forEach.call(elSegD.children, function(b, i){
+      b.addEventListener("click", function(){ nastavRezim(i === 0 ? "den" : "rozsah"); });
+    });
+
+    elFdatum.addEventListener("click", function(){
+      var min = null, max = null;
+      histAll().forEach(function(g){
+        var t = g.savedAt || 0;
+        if(min === null || t < min) min = t;
+        if(max === null || t > max) max = t;
+      });
+      elOd.min = elDo.min = isoDne(min);
+      elOd.max = elDo.max = isoDne(max);
+      var jedenDen = FILTR.od !== null && FILTR.do !== null &&
+                     denKlic(new Date(FILTR.od)) === denKlic(new Date(FILTR.do));
+      nastavRezim(FILTR.od !== null && !jedenDen ? "rozsah" : "den");
+      elOd.value = isoDne(FILTR.od);
+      elDo.value = isoDne(FILTR.do);
+      otevriModal("datemodal", this);
+    });
+
+    $("datezpet").addEventListener("click", function(){ zavriModal(); });
+    $("dateok").addEventListener("click", function(){
+      var od = zIso(elOd.value),
+          konec = rezimDne === "den" ? od : zIso(elDo.value);
+      if(od === null && konec === null){
+        FILTR.od = null; FILTR.do = null;
+      }else{
+        if(od === null) od = konec;
+        if(konec === null) konec = od;
+        if(konec < od){ var p = od; od = konec; konec = p; }
+        FILTR.od = od;
+        FILTR.do = konecDne(konec);
+      }
+      zavriModal();
+      renderP2();
+    });
+  })();
+
+  /* Okno výběru typu hry. Výběr je dvoustupňový: nejdřív typ, teprve pak
+     hodnota. První políčko přepínače je „Vše" — bez něj by šel filtr typu
+     zapnout, ale ne vypnout jinak než tlačítkem Zrušit filtr, které by
+     s ním shodilo i datum. */
+  (function(){
+    var typVolba = null,
+        elSegT = $("typseg"), elVal = $("typval"),
+        elValRow = $("typvalrow"), elValL = $("typvall");
+
+    function typZIndexu(i){ return i === 0 ? null : (i === 1 ? "points" : "rounds"); }
+
+    function nastavTyp(t, hodnota){
+      typVolba = t;
+      Array.prototype.forEach.call(elSegT.children, function(b, i){
+        b.classList.toggle("on", typZIndexu(i) === t);
+      });
+      elValRow.hidden = t === null;
+      if(t === null){ elVal.innerHTML = ""; return; }
+      elValL.textContent = t === "points" ? "Cíl" : "Limit";
+      var s = '<option value="">Všechny</option>';
+      hodnotyTypu(t).forEach(function(x){
+        s += '<option value="' + x + '">' +
+          (t === "rounds"
+            ? (x === 0 ? "bez limitu" : x + " " + kolSlovo(x))
+            : fmt(x)) +
+          '</option>';
+      });
+      elVal.innerHTML = s;
+      /* Hodnota z vypnutého filtru v nabídce být nemusí (hra mezitím zmizela
+         z historie) — pak se spadne zpátky na „Všechny". */
+      elVal.value = (hodnota === null || hodnota === undefined) ? "" : String(hodnota);
+      if(elVal.selectedIndex < 0) elVal.value = "";
+    }
+
+    Array.prototype.forEach.call(elSegT.children, function(b, i){
+      b.addEventListener("click", function(){ nastavTyp(typZIndexu(i), null); });
+    });
+
+    elFtyp.addEventListener("click", function(){
+      nastavTyp(FILTR.typ, FILTR.hodnota);
+      otevriModal("typmodal", this);
+    });
+
+    $("typzpet").addEventListener("click", function(){ zavriModal(); });
+    $("typok").addEventListener("click", function(){
+      FILTR.typ = typVolba;
+      FILTR.hodnota = (typVolba === null || elVal.value === "") ? null : +elVal.value;
+      zavriModal();
+      renderP2();
+    });
+  })();
+
+  /* Okno řazení. Nemá Použít — klepnutí na možnost je samo o sobě volba,
+     další potvrzení by bylo jen krok navíc. */
+  (function(){
+    var tlac = Array.prototype.slice.call($("sortbtns").children);
+    elFraz.addEventListener("click", function(){
+      tlac.forEach(function(b){
+        b.classList.toggle("on", b.getAttribute("data-podle") === RAZENI.podle &&
+                                 b.getAttribute("data-smer") === RAZENI.smer);
+      });
+      otevriModal("sortmodal", this);
+    });
+    tlac.forEach(function(b){
+      b.textContent = RAZ_POPIS[b.getAttribute("data-podle") + ":" + b.getAttribute("data-smer")];
+      b.addEventListener("click", function(){
+        RAZENI.podle = b.getAttribute("data-podle");
+        RAZENI.smer  = b.getAttribute("data-smer");
+        zavriModal();
+        renderP2();
+      });
+    });
+  })();
+
   Array.prototype.forEach.call(elSeg.children, function(b, i){
     b.addEventListener("click", function(){
       segIdx = i;
+      zrusNav();
       zpetNaSeznam();
     });
   });
@@ -3291,7 +3932,12 @@
           ? "Nejdřív si z hodu něco odlož"
           : (l > 0 ? "Házet dál — " + kostkami(l) : "Horké kostky — házet znovu všemi šesti"));
 
-    elBank.disabled = lock || pot <= 0;
+    /* Zapsat nad rozehraným hodem, ze kterého se nic neodložilo, nejde: takové
+       kolo by v popisu neslo o jeden hod míň, než kolika se doopravdy házelo,
+       a statistika nejvíc hodů v kole by to nepoznala. V Farkle se po hodu
+       stejně vždycky buď boduje, nebo farkluje — ven vedou Farkle a Zpět.
+       Na prvním hodu kola se nic nemění, tam už tlačítko drží pot <= 0. */
+    elBank.disabled = lock || pot <= 0 || r.items.length === 0;
     elBank.textContent = pot > 0 ? ("Zapsat " + fmt(pot)) : "Zapsat a předat";
     elBust.disabled = lock;
     elUndo.disabled = !jdeZpet();
