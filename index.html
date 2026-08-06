@@ -70,6 +70,12 @@
   }
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
   html{overscroll-behavior:none}
+  /* Atribut hidden vypíná prohlížeč pravidlem [hidden]{display:none} ve svém
+     výchozím stylu. Jakékoli autorské pravidlo s display ho ale přebije bez
+     ohledu na specificitu — a tříd s display:flex nebo grid je tu dost.
+     Jedno pravidlo s !important to sjednotí a nedovolí to znovu. */
+  [hidden]{display:none!important}
+
   html,body{margin:0;padding:0}
   body{
     background:var(--soot);
@@ -374,17 +380,16 @@
   .seg button:hover{border-color:var(--brass);color:var(--brass)}
   .seg button.on{background:var(--brass);border-color:var(--brass);color:var(--onbrass)}
 
-  /* lišta filtrů pod přepínačem. Mřížka 2 × 2 unese i čtyři tlačítka pozdějších
-     dávek; se dvěma se sama složí na jeden řádek. Zvolený filtr nese třídu on
-     a s ní mosazný rám — stejný idiom jako přepínače v nastavení. */
-  .fbar{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:10px 0 2px}
-  /* Popisek se v krajním případě (rozsah přes rok) zalomí do dvou řádků.
-     Ořez by z filtru udělal hádanku, výška mřížky roste u obou tlačítek
-     stejně a pár pixelů navíc nic nerozbije. */
+  /* lišta filtrů pod přepínačem. Všechna tlačítka na jednom řádku, stejně
+     široká. Popisky jsou krátké a stálé, zvolený filtr prozradí třída on
+     a s ní mosazný rám — stejný idiom jako přepínače v nastavení.
+     Proti přepínači nad ní se drží záměrně jinak: nižší, bez prostrkání
+     a základním bezpatkovým písmem, aby si ty dvě lišty nekonkurovaly. */
+  .fbar{display:flex;gap:6px;margin:10px 0 2px}
   .fbar .ghost{
-    min-height:44px;padding:5px 8px;
-    font-family:"IM Fell English SC",Georgia,serif;
-    font-size:12px;letter-spacing:.14em;line-height:1.3;
+    flex:1 1 0;min-width:0;min-height:38px;padding:0 6px;
+    font-size:12.5px;line-height:1.2;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
   }
   .fbar .ghost:hover{border-color:var(--brass);color:var(--brass)}
 
@@ -872,9 +877,9 @@
   </div>
   <div class="fbar" id="fbar" hidden>
     <button class="ghost" type="button" id="fdatum">Datum</button>
-    <button class="ghost" type="button" id="ftyp" hidden>Typ hry</button>
+    <button class="ghost" type="button" id="ftyp" hidden>Typ</button>
     <button class="ghost" type="button" id="frazeni" hidden>Řazení</button>
-    <button class="ghost" type="button" id="freset">Zrušit filtr</button>
+    <button class="ghost" type="button" id="freset" aria-label="Zrušit filtr">Zrušit</button>
   </div>
   <div id="statlist"></div>
   <div id="histlist" hidden></div>
@@ -1034,8 +1039,8 @@
       </details>
 
       <div class="setrow mistorow" id="mistorow">
-        <div class="t"><b>Zabrané místo</b><span>Spočítá se až na povel — u velké historie to chvíli trvá.</span></div>
-        <button class="ghost" id="mistobtn" type="button">Spočítat</button>
+        <div class="t"><b>Zabrané místo</b><span id="mistocelkem">Zjišťuji&#8230;</span></div>
+        <button class="ghost" id="mistobtn" type="button">Detail</button>
       </div>
       <div class="msg misto" hidden></div>
       <input type="file" id="impfile" accept=".txt,text/plain" hidden>
@@ -3130,12 +3135,12 @@
     return desetina(b / 1073741824) + " GB";
   }
   /* ---------- údaj o zabraném místě ----------
-     Tři čísla místo jedné věty. Poslední z nich je estimate(), které počítá
-     celý původ — na github.io tedy i ostatní aplikace ze stejné adresy;
-     proto „celkem z této adresy", ne „historie".
+     Dvě úrovně. Celek se plní sám při otevření nastavení: estimate() je
+     jediné volání a nesahá na historii. Rozpis stojí víc — vzorek detailů
+     z IndexedDB a projití cache — a počítá se až po rozbalení tlačítkem.
 
-     Počítá se až po klepnutí na tlačítko. Při otevření nastavení by to u velké
-     historie znamenalo pokaždé projít vzorek detailů zbytečně. */
+     estimate() měří celý původ, na github.io tedy i ostatní aplikace ze
+     stejné adresy; proto „celkem z této adresy", ne „historie". */
   var VZOREK = 50;
 
   /* localStorage se měří přesně: klíč i hodnota se počítají a UTF-16 dává
@@ -3185,6 +3190,40 @@
     kur.onerror = vzdat;
   }
 
+  /* Velikost samotné aplikace: součet těl všech odpovědí v cache, které si
+     drží servisní pracovník. Filtr na kostky- je tu ze stejného důvodu jako
+     při úklidu — na github.io leží v Cache API i cizí aplikace a započítat
+     je pod „Aplikace" by byla lež. Chybějící nebo nečitelná odpověď se počítá
+     jako nula; celý rozpis je odhad, ne účetnictví. */
+  function velikostAppky(hotovo){
+    var c = null;
+    try{ c = window.caches; }catch(e){}
+    if(!c || typeof c.keys !== "function"){ hotovo(null); return; }
+    try{
+      c.keys().then(function(jmena){
+        var moje = jmena.filter(function(n){ return n.indexOf("kostky-") === 0; });
+        if(!moje.length){ hotovo(0); return null; }
+        return Promise.all(moje.map(function(jmeno){
+          return c.open(jmeno).then(function(cache){
+            return cache.keys().then(function(reqs){
+              return Promise.all(reqs.map(function(r){
+                return cache.match(r).then(function(resp){
+                  if(!resp || !resp.blob) return 0;
+                  return resp.blob().then(function(b){ return b.size || 0; },
+                                          function(){ return 0; });
+                }, function(){ return 0; });
+              }));
+            });
+          }, function(){ return []; });
+        })).then(function(pole){
+          var s = 0;
+          pole.forEach(function(kus){ kus.forEach(function(x){ s += x; }); });
+          hotovo(s);
+        });
+      }).catch(function(){ hotovo(null); });
+    }catch(e){ hotovo(null); }
+  }
+
   function odhadMista(hotovo){
     var st = null;
     try{ st = navigator.storage; }catch(e){}
@@ -3214,35 +3253,74 @@
       el.hidden = false;
     });
   }
+  function celkemText(o){
+    if(!o) return "Velikost se nedaří zjistit.";
+    return velikost(o.usage) +
+           (o.quota > 0 ? (" z " + velikost(o.quota) + " dostupných") : "");
+  }
+  /* Celek nad tlačítkem. Volá se při každém otevření nastavení — čísla se
+     mezi otevřeními mění a zastaralý údaj by mátl víc než chvilkové „Zjišťuji". */
+  function celekMista(){
+    var el = document.getElementById("mistocelkem");
+    if(!el) return;
+    el.textContent = "Zjišťuji\u2026";
+    odhadMista(function(o){ el.textContent = celkemText(o); });
+  }
+  /* Zavřený stav: rozpis schovaný, tlačítko holé. Volá se i při otevření
+     nastavení, aby karta začínala vždycky stejně. */
   function resetMisto(){
     var b = document.getElementById("mistobtn");
-    if(b){ b.disabled = false; b.textContent = "Spočítat"; }
+    if(b){
+      b.disabled = false;
+      b.textContent = "Detail";
+      b.classList.remove("on");
+      b.setAttribute("aria-expanded", "false");
+    }
     ukazMisto(null);
+    celekMista();
   }
   function spoctiMisto(){
     var b = document.getElementById("mistobtn");
     if(b){ b.disabled = true; b.textContent = "Počítám\u2026"; }
     velikostHistorie(function(h){
-      odhadMista(function(o){
-        var radky = [];
-        radky.push({ k: "Historie:", v: h.pocet
-          ? (h.pocet + " " + hrySlovo(h.pocet) + ", " + (h.bajtu === null
-              ? "velikost se nedaří zjistit"
-              : ((h.presne ? "" : "přibližně ") + velikost(h.bajtu))))
-          : "zatím žádná hra" });
-        var mimo = lsBajtu([KEY, KKEY, KHKEY]);
-        radky.push({ k: "Rozehraná hra a koše:",
-                     v: mimo === null ? "nedá se změřit" : velikost(mimo) });
-        if(o){
-          radky.push({ k: "Celkem z této adresy:",
-            v: velikost(o.usage) +
-               (o.quota > 0 ? (" z " + velikost(o.quota) + " dostupných") : "") +
-               (trvale ? ". Prohlížeč je označil za trvalá." : "") });
-        }
-        ukazMisto(radky);
-        if(b){ b.disabled = false; b.textContent = "Přepočítat"; }
+      velikostAppky(function(appka){
+        odhadMista(function(o){
+          var radky = [];
+          radky.push({ k: "Historie:", v: h.pocet
+            ? (h.pocet + " " + hrySlovo(h.pocet) + ", " + (h.bajtu === null
+                ? "velikost se nedaří zjistit"
+                : ((h.presne ? "" : "přibližně ") + velikost(h.bajtu))))
+            : "zatím žádná hra" });
+          var mimo = lsBajtu([KEY, KKEY, KHKEY]);
+          radky.push({ k: "Rozehraná hra a koše:",
+                       v: mimo === null ? "nedá se změřit" : velikost(mimo) });
+          radky.push({ k: "Aplikace:",
+                       v: appka === null
+                          ? "nedá se změřit"
+                          : (velikost(appka) + ", uložená pro běh offline") });
+          /* Když estimate() není, řádek se vynechá — selhání hlásí podtitulek
+             nad tlačítkem a psát totéž dvakrát pod sebe nemá smysl. */
+          if(o){
+            radky.push({ k: "Celkem z této adresy:",
+              v: celkemText(o) + (trvale ? ". Prohlížeč je označil za trvalá." : "") });
+          }
+          ukazMisto(radky);
+          if(b){
+            b.disabled = false;
+            b.textContent = "Detail";
+            b.classList.add("on");
+            b.setAttribute("aria-expanded", "true");
+          }
+        });
       });
     });
+  }
+  /* Tlačítko rozbaluje a zabaluje. Při rozbalení se rozpis pokaždé počítá
+     znovu — jinak by po smazání her ukazoval stará čísla. */
+  function prepniMisto(){
+    var v = document.querySelector(".misto");
+    if(v && !v.hidden){ resetMisto(); return; }
+    spoctiMisto();
   }
 
   /* společné pro import ze souboru i ze schránky */
@@ -3301,7 +3379,7 @@
     };
     fr.readAsText(f, "utf-8");
   });
-  $("mistobtn").addEventListener("click", spoctiMisto);
+  $("mistobtn").addEventListener("click", prepniMisto);
   $("pastebtn").addEventListener("click", function(){
     zalMsg("");
     zavriImport();
@@ -3731,25 +3809,25 @@
     var k = RAZENI.podle + ":" + RAZENI.smer;
     return k === "datum:desc" ? "Řazení" : (RAZ_POPIS[k] || "Řazení");
   }
+  /* Na tlačítku zůstává krátký stálý popisek, aby se všechna vešla na jeden
+     řádek; zvolený filtr nese mosazný rám. Plné znění jde do aria-label —
+     čtečka ho přečte a testy mají co kontrolovat. */
+  function popisTlacitka(el, txt, holy){
+    el.setAttribute("aria-label", txt);
+    el.classList.toggle("on", txt !== holy);
+  }
   function renderFiltry(){
     var jsou = histAll().length > 0;
     elFbar.hidden = !jsou;
     if(!jsou) return;
-    var txt = popisDatumu();
-    elFdatum.textContent = txt;
-    elFdatum.classList.toggle("on", txt !== "Datum");
+    popisTlacitka(elFdatum, popisDatumu(), "Datum");
     /* Typ hry a řazení dávají smysl jen nad seznamem her. Skrytá tlačítka
-       z mřížky vypadnou úplně, takže se se dvěma zbylými složí na jeden
-       řádek sama. */
+       z řádku vypadnou úplně a zbylá dvě se o jeho šířku podělí sama. */
     var vSeznamu = segIdx === 1;
     elFtyp.hidden = !vSeznamu;
     elFraz.hidden = !vSeznamu;
-    var tt = popisTypu();
-    elFtyp.textContent = tt;
-    elFtyp.classList.toggle("on", tt !== "Typ hry");
-    var tr = popisRazeni();
-    elFraz.textContent = tr;
-    elFraz.classList.toggle("on", tr !== "Řazení");
+    popisTlacitka(elFtyp, popisTypu(), "Typ hry");
+    popisTlacitka(elFraz, popisRazeni(), "Řazení");
   }
 
   $("freset").addEventListener("click", function(){
