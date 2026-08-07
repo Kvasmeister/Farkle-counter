@@ -879,7 +879,7 @@
     <button class="ghost" type="button" id="fdatum">Datum</button>
     <button class="ghost" type="button" id="ftyp" hidden>Typ</button>
     <button class="ghost" type="button" id="frazeni" hidden>Řazení</button>
-    <button class="ghost" type="button" id="freset" aria-label="Zrušit filtr">Zrušit</button>
+    <button class="ghost" type="button" id="freset" aria-label="Resetovat filtry">Reset</button>
   </div>
   <div id="statlist"></div>
   <div id="histlist" hidden></div>
@@ -1238,10 +1238,18 @@
     try{ localStorage.setItem(key, JSON.stringify(list)); return true; }
     catch(e){ return false; }
   }
+  /* Prázdný koš se z úložiště rovnou maže. Jinak by tam zůstalo dvouznakové
+     "[]" a v rozpisu zabraného místa by to vypadalo, že v koši něco leží.
+     Historie touhle cestou nechodí — na jejím klíči stojí migrace do
+     IndexedDB a zmizet nesmí. */
+  function kosZapis(key, list){
+    if(list && list.length) return writeList(key, list);
+    try{ localStorage.removeItem(key); return true; }catch(e){ return false; }
+  }
   function kosAll(){ return readList(KKEY); }
-  function kosWrite(list){ return writeList(KKEY, list); }
+  function kosWrite(list){ return kosZapis(KKEY, list); }
   function kosHistAll(){ return readList(KHKEY); }
-  function kosHistWrite(list){ return writeList(KHKEY, list); }
+  function kosHistWrite(list){ return kosZapis(KHKEY, list); }
 
   /* ---------- úložiště historie ----------
      localStorage má strop kolem 5 MB, tedy zhruba tři tisíce her. Historie
@@ -2303,7 +2311,7 @@
       if(!t.bust) run += t.p;
       out += '<tr' + (t.bust ? ' class="f"' : '') + '>' +
         '<td class="n">' + (i + 1) + '</td>' +
-        '<td class="d">' + (t.bust ? ("farkle" + (t.d ? " — " + esc(t.d) : "")) : (esc(t.d) || "&nbsp;")) + '</td>' +
+        '<td class="d">' + (t.bust ? (t.d ? esc(t.d) + " · farkle" : "farkle") : (esc(t.d) || "&nbsp;")) + '</td>' +
         '<td class="g">' + fmt(t.p || 0) + '</td>' +
         '<td class="s">' + fmt(run) + '</td></tr>';
     });
@@ -2366,7 +2374,7 @@
       if(t.bust) tr.className = "f";
       tr.innerHTML =
         '<td class="n">' + (i + 1) + '</td>' +
-        '<td class="d">' + (t.bust ? ("farkle" + (t.d ? " — " + esc(t.d) : "")) : (esc(t.d) || "&nbsp;")) + '</td>' +
+        '<td class="d">' + (t.bust ? (t.d ? esc(t.d) + " · farkle" : "farkle") : (esc(t.d) || "&nbsp;")) + '</td>' +
         '<td class="g">' + fmt(t.p || 0) + '</td>' +
         '<td class="s">' + fmt(run) + '</td>';
 
@@ -2513,11 +2521,19 @@
   /* ---------- světlý / tmavý režim ---------- */
   (function(){
     var btn = $("theme"), root = document.documentElement, TKEY = "farkle-theme";
+    /* Vlastnost .hidden je jen na HTML prvcích — na potomcích <svg> zápis
+       nic neudělá a atribut zůstane, jak byl v kódu. Slunce proto mělo
+       hidden napořád a měsíc nikdy, takže tlačítko ukazovalo měsíc ve všech
+       stavech. Atribut se tu proto přepíná ručně. */
+    function vrstva(id, videt){
+      var el = $(id);
+      if(videt) el.removeAttribute("hidden"); else el.setAttribute("hidden", "");
+    }
     function apply(mode){
       root.setAttribute("data-theme", mode);
       var light = mode === "light";
-      $("thsun").hidden = light;
-      $("thmoon").hidden = !light;
+      vrstva("thsun", !light);
+      vrstva("thmoon", light);
       var label = light ? "Tmavý režim" : "Světlý režim";
       btn.title = label;
       btn.setAttribute("aria-label", label);
@@ -2840,6 +2856,7 @@
      f: formát, dir: směr žebříčku, kol: dopsat do žebříčku počet kol */
   var STATY = [
     { n:"Odehráno her",                 a:"pocet",      f:cislo },
+    { n:"Nejvíc her za den",            a:"denMax",     f:cislo },
     { n:"Celkem nasbíráno bodů",        a:"soucet",     f:fmt,      num:gBody },
     { n:"Nejvíc bodů za hru",           m:gBody,        a:"max",   f:fmt,      kol:true },
     { n:"Nejvíc bodů — hra na body",    m:gBody,        a:"max",   f:fmt,      s:"points" },
@@ -2858,8 +2875,7 @@
     { n:"Nejvíc farklů za hru",         m:gFarkle,      a:"max",   f:cislo,    kol:true },
     { n:"Nejvíc bodů ztraceno farklem", m:gZtraceno,    a:"max",   f:fmt,      kol:true },
     { n:"Nejdelší série bez farklu",    m:gSerie,       a:"max",   f:cislo,    kol:true },
-    { n:"Farklů na hru",                m:gFarkle,      a:"pomer", f:desetina, num:gFarkle, den:function(){ return 1; }, dir:"asc" },
-    { n:"Nejvíc her za den",            a:"denMax",     f:cislo }
+    { n:"Farklů na hru",                m:gFarkle,      a:"pomer", f:desetina, num:gFarkle, den:function(){ return 1; }, dir:"asc" }
   ];
 
   /* ---------- seskupení po dnech ----------
@@ -2979,8 +2995,11 @@
       var run = 0;
       (rec.turns || []).forEach(function(t, k){
         if(!t.bust) run += t.p;
-        r.push("   " + (k + 1) + ". " + (t.bust ? "farkle" : fmt(t.p || 0)) +
-               (t.d ? "  (" + t.d + ")" : "") + "   celkem " + fmt(run));
+        /* Farkle stojí na konci závorky jako poslední hod, stejně jako
+           v tabulce kol; ve sloupci bodů je nula, protože kolo nic nedalo. */
+        var popis = t.bust ? ((t.d ? t.d + " \u00B7 " : "") + "farkle") : (t.d || "");
+        r.push("   " + (k + 1) + ". " + fmt(t.bust ? 0 : (t.p || 0)) +
+               (popis ? "  (" + popis + ")" : "") + "   celkem " + fmt(run));
       });
       r.push("");
     });
@@ -3157,6 +3176,26 @@
     return s;
   }
 
+  /* Zbytek localStorage: všechno pod prefixem farkle-, co si nebere žádný
+     jiný řádek rozpisu. Průchodem přes klíče, ne pevným seznamem — jinak
+     rozpis mlčky přehlédne klíč, který někdo časem přidá. Nejtučnější
+     položkou tu bývá farkle-hist-v1-zaloha, přejmenovaná původní historie,
+     kterou po migraci do IndexedDB držíme jako pojistku. */
+  function lsZbytek(krome){
+    var s = 0, i, k, v;
+    try{
+      for(i = 0; i < localStorage.length; i++){
+        k = localStorage.key(i);
+        if(!k || k.indexOf("farkle-") !== 0) continue;
+        if(krome.indexOf(k) !== -1) continue;
+        v = localStorage.getItem(k);
+        if(v === null) continue;
+        s += (k.length + v.length) * 2;
+      }
+    }catch(e){ return null; }
+    return s;
+  }
+
   /* Velikost historie: v režimu ls přesně z jednoho klíče, v režimu idb
      odhadem. IndexedDB velikost police nehlásí a přečíst všechny detaily
      stojí tolik co export, takže se souhrny sečtou celé (leží v paměti)
@@ -3291,9 +3330,23 @@
                 ? "velikost se nedaří zjistit"
                 : ((h.presne ? "" : "přibližně ") + velikost(h.bajtu))))
             : "zatím žádná hra" });
-          var mimo = lsBajtu([KEY, KKEY, KHKEY]);
-          radky.push({ k: "Rozehraná hra a koše:",
-                       v: mimo === null ? "nedá se změřit" : velikost(mimo) });
+          var hra = lsBajtu([KEY]);
+          radky.push({ k: "Rozehraná hra:",
+                       v: hra === null ? "nedá se změřit" : velikost(hra) });
+          /* Prázdný koš v úložišti pořád leží, jen jako dvojznakové "[]" —
+             pár desítek bajtů, které vypadají jako by v koši něco bylo.
+             Když je prázdný, řekne se to rovnou. */
+          var vKosi = kosAll().length + kosHistAll().length;
+          var kose = lsBajtu([KKEY, KHKEY]);
+          radky.push({ k: "Koše:",
+                       v: !vKosi ? "prázdné"
+                          : (vKosi + " " + hrySlovo(vKosi) +
+                             (kose === null ? "" : ", " + velikost(kose))) });
+          /* Historie v režimu ls sedí pod svým vlastním řádkem, dvakrát se
+             počítat nesmí. V režimu idb pod tímhle klíčem nic není. */
+          var zbytek = lsZbytek(rezim === "idb" ? [KEY, KKEY, KHKEY] : [KEY, KKEY, KHKEY, HKEY]);
+          radky.push({ k: "Nastavení a starší data:",
+                       v: zbytek === null ? "nedá se změřit" : velikost(zbytek) });
           radky.push({ k: "Aplikace:",
                        v: appka === null
                           ? "nedá se změřit"
