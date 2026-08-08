@@ -1,4 +1,4 @@
-const VERZE = "kostky-v31";
+const VERZE = "kostky-v32";
 
 const SOUBORY = [
   "./",
