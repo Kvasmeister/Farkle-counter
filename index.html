@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-title" content="Kostky">
 <meta name="theme-color" content="#14120F" media="(prefers-color-scheme: dark)">
 <meta name="theme-color" content="#F5EFE2" media="(prefers-color-scheme: light)">
-<title>Kostky — počítadlo</title>
+<title data-i18n="titulek">Kostky — počítadlo</title>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="favicon-64.png" sizes="64x64">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
@@ -204,6 +204,13 @@
   .setrow b{display:block;font-weight:500;font-size:14.5px}
   .setrow span{display:block;font-size:12.5px;color:var(--dim)}
   .setrow .ghost{flex:0 0 auto}
+  /* Přepínač jazyka. Šestnáct pixelů proto, že pod tuhle hranici iOS při
+     rozbalení stránku přiblíží; ostatní selecty v aplikaci to drží stejně. */
+  .setrow select{
+    flex:0 0 auto;max-width:44vw;
+    background:var(--field);border:1px solid var(--edge);border-radius:var(--r);
+    color:var(--bone);font-family:inherit;font-size:16px;padding:0 8px;min-height:40px;
+  }
   /* Řádky v koši mají dvě tlačítka. Na úzkém displeji se dvojice zalomí pod
      popis hry, proto flex-basis u .t — bez něj by se popis smrskl na nic
      a k zalomení by nikdy nedošlo. */
@@ -700,18 +707,18 @@
 <body>
 
 <div id="rot">
-  <b>Otoč telefon na výšku</b>
-  <span>Počítadlo je udělané jen pro svislou obrazovku.</span>
+  <b data-i18n="rot.nadpis">Otoč telefon na výšku</b>
+  <span data-i18n="rot.text">Počítadlo je udělané jen pro svislou obrazovku.</span>
 </div>
 
 <div class="toast" id="toast" role="status" aria-live="polite" hidden>
   <span id="toasttext"></span>
-  <button class="toastx" id="toastx" type="button" aria-label="Zavřít">×</button>
+  <button class="toastx" id="toastx" type="button" data-i18n-aria="spol.zavrit" aria-label="Zavřít">×</button>
 </div>
 
 <div class="top">
-  <div class="wordmark">Kostky</div>
-  <button class="fs" id="gamebtn" type="button" title="Nastavení hry" aria-label="Nastavení hry" aria-expanded="false">
+  <div class="wordmark" data-i18n="wordmark">Kostky</div>
+  <button class="fs" id="gamebtn" type="button" data-i18n-title="hlav.nastavenihry" title="Nastavení hry" data-i18n-aria="hlav.nastavenihry" aria-label="Nastavení hry" aria-expanded="false">
     <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round">
       <rect x="3.6" y="3.6" width="16.8" height="16.8" rx="3.2"/>
       <circle cx="8.6" cy="8.6" r="1.25" fill="currentColor" stroke="none"/>
@@ -719,43 +726,43 @@
       <circle cx="15.4" cy="15.4" r="1.25" fill="currentColor" stroke="none"/>
     </svg>
   </button>
-  <button class="fs" id="infobtn" type="button" title="Pravidla" aria-label="Pravidla">
+  <button class="fs" id="infobtn" type="button" data-i18n-title="hlav.pravidla" title="Pravidla" data-i18n-aria="hlav.pravidla" aria-label="Pravidla">
     <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round">
       <circle cx="12" cy="12" r="9"/>
       <path d="M12 11.2v5"/>
       <circle cx="12" cy="7.9" r="1.05" fill="currentColor" stroke="none"/>
     </svg>
   </button>
-  <button class="fs" id="setbtn" type="button" title="Nastavení" aria-label="Nastavení">
+  <button class="fs" id="setbtn" type="button" data-i18n-title="hlav.nastaveni" title="Nastavení" data-i18n-aria="hlav.nastaveni" aria-label="Nastavení">
     <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
       <circle cx="12" cy="12" r="3.1"/>
       <path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-1.8-.3 1.6 1.6 0 0 0-1 1.5v.2a2 2 0 1 1-4 0v-.1a1.6 1.6 0 0 0-1-1.5 1.6 1.6 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.6 1.6 0 0 0 .3-1.8 1.6 1.6 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.6 1.6 0 0 0 1.5-1 1.6 1.6 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.6 1.6 0 0 0 1.8.3H9a1.6 1.6 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.6 1.6 0 0 0 1 1.5 1.6 1.6 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0-.3 1.8V9a1.6 1.6 0 0 0 1.5 1h.2a2 2 0 1 1 0 4h-.1a1.6 1.6 0 0 0-1.5 1z"/>
     </svg>
   </button>
-  <button class="fs" id="theme" type="button" title="Světlý režim" aria-label="Světlý režim">
+  <button class="fs" id="theme" type="button" data-i18n-title="hlav.svetlyrezim" title="Světlý režim" data-i18n-aria="hlav.svetlyrezim" aria-label="Světlý režim">
     <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round">
       <g id="thsun" hidden><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M19.1 4.9l-1.4 1.4M6.3 17.7l-1.4 1.4"/></g>
       <path id="thmoon" d="M20 14.5A8.5 8.5 0 1 1 9.5 4a7 7 0 0 0 10.5 10.5z"/>
     </svg>
   </button>
 <div class="setup" id="setup" hidden>
-  <label class="goal">hraje se
+  <label class="goal"><span data-i18n="hra.hrajese">hraje se</span>
     <select id="modesel">
-      <option value="points" selected>do bodů</option>
-      <option value="rounds">na kola</option>
+      <option value="points" selected data-i18n="hra.dobodu">do bodů</option>
+      <option value="rounds" data-i18n="hra.nakola">na kola</option>
     </select>
     <select id="goalsel">
-      <option value="2000">2 000</option>
-      <option value="4000" selected>4 000</option>
-      <option value="6000">6 000</option>
-      <option value="8000">8 000</option>
-      <option value="10000">10 000</option>
-      <option value="custom">vlastní…</option>
+      <option value="2000" data-i18n="hra.cil2000">2 000</option>
+      <option value="4000" selected data-i18n="hra.cil4000">4 000</option>
+      <option value="6000" data-i18n="hra.cil6000">6 000</option>
+      <option value="8000" data-i18n="hra.cil8000">8 000</option>
+      <option value="10000" data-i18n="hra.cil10000">10 000</option>
+      <option value="custom" data-i18n="hra.vlastni">vlastní…</option>
     </select>
     <input id="goalnum" type="number" inputmode="numeric" min="100" step="100" hidden>
     <select id="roundsel" hidden>
-      <option value="none" selected>neomezeně</option>
-      <option value="custom">vlastní…</option>
+      <option value="none" selected data-i18n="hra.neomezene">neomezeně</option>
+      <option value="custom" data-i18n="hra.vlastni">vlastní…</option>
     </select>
     <input id="roundnum" type="number" inputmode="numeric" min="1" step="1" hidden>
   </label>
@@ -764,17 +771,17 @@
 
 
 <div class="tabs" role="tablist">
-  <button class="tab" id="tab0" role="tab" aria-selected="true" aria-controls="page0">Počítadlo</button>
-  <button class="tab" id="tab1" role="tab" aria-selected="false" aria-controls="page1">Zápis kol</button>
-  <button class="tab" id="tab2" role="tab" aria-selected="false" aria-controls="page2">Statistiky</button>
+  <button class="tab" id="tab0" role="tab" aria-selected="true" aria-controls="page0" data-i18n="zalozka.pocitadlo">Počítadlo</button>
+  <button class="tab" id="tab1" role="tab" aria-selected="false" aria-controls="page1" data-i18n="zalozka.zapis">Zápis kol</button>
+  <button class="tab" id="tab2" role="tab" aria-selected="false" aria-controls="page2" data-i18n="zalozka.statistiky">Statistiky</button>
 </div>
 
 <div class="pages" id="pages">
 <section class="page" id="page0" role="tabpanel" aria-labelledby="tab0">
 
 <div class="score" id="total">
-  <div class="line"><span>zapsáno</span><b id="score">0</b></div>
-  <div class="line sub"><span id="restlabel">zbývá</span><b id="rest">0</b></div>
+  <div class="line"><span data-i18n="pocitadlo.zapsano">zapsáno</span><b id="score">0</b></div>
+  <div class="line sub"><span id="restlabel" data-i18n="pocitadlo.zbyva">zbývá</span><b id="rest">0</b></div>
 </div>
 
 <section class="turn">
@@ -786,21 +793,21 @@
   <div class="rollhead">
     <div class="n" id="rollline"></div>
     <div class="sheettabs" id="sheettabs">
-      <button type="button" class="on">zadat</button>
-      <button type="button">opravit</button>
+      <button type="button" class="on" data-i18n="pocitadlo.zadat">zadat</button>
+      <button type="button" data-i18n="pocitadlo.opravit">opravit</button>
     </div>
   </div>
 
   <div class="sheets" id="sheets">
   <div class="sheet">
   <div class="pad">
-    <div class="cap">Co si z hodu necháváš</div>
+    <div class="cap" data-i18n="pocitadlo.zhodu">Co si z hodu necháváš</div>
     <div class="row">
-      <button class="chip" data-single="1">jednička<span class="v">100</span></button>
-      <button class="chip" data-single="5">pětka<span class="v">50</span></button>
+      <button class="chip" data-single="1" data-i18n-html="pocitadlo.chip.jednicka">jednička<span class="v">100</span></button>
+      <button class="chip" data-single="5" data-i18n-html="pocitadlo.chip.petka">pětka<span class="v">50</span></button>
     </div>
 
-    <div class="cap gap">Stejné hodnoty</div>
+    <div class="cap gap" data-i18n="pocitadlo.stejne">Stejné hodnoty</div>
     <div class="kind">
       <div class="col">
         <div class="pips" id="counts"></div>
@@ -809,20 +816,20 @@
       <button class="addbtn" id="addkind" disabled>+ 0</button>
     </div>
 
-    <div class="cap gap">Postupky</div>
+    <div class="cap gap" data-i18n="pocitadlo.postupky">Postupky</div>
     <div class="row">
-      <button class="chip" data-str="15">1–5<span class="v">500</span></button>
-      <button class="chip" data-str="26">2–6<span class="v">750</span></button>
-      <button class="chip" data-str="16">1–6<span class="v">1 500</span></button>
-      <button class="chip" id="mtoggle">ručně<span class="v">vlastní</span></button>
+      <button class="chip" data-str="15" data-i18n-html="pocitadlo.chip.s15">1–5<span class="v">500</span></button>
+      <button class="chip" data-str="26" data-i18n-html="pocitadlo.chip.s26">2–6<span class="v">750</span></button>
+      <button class="chip" data-str="16" data-i18n-html="pocitadlo.chip.s16">1–6<span class="v">1 500</span></button>
+      <button class="chip" id="mtoggle" data-i18n-html="pocitadlo.chip.rucne">ručně<span class="v">vlastní</span></button>
     </div>
 
     <div class="manual" id="manualwrap" hidden>
-      <input id="mnum" type="number" inputmode="numeric" placeholder="body" min="0" step="50">
+      <input id="mnum" type="number" inputmode="numeric" data-i18n-ph="pocitadlo.body.ph" placeholder="body" min="0" step="50">
       <button class="chip" id="mless" style="flex:0 0 40px">−</button>
       <button class="chip" id="mkost" style="flex:0 0 74px">1 kost.</button>
       <button class="chip" id="mmore" style="flex:0 0 40px">+</button>
-      <button class="addbtn" id="madd">Přidat</button>
+      <button class="addbtn" id="madd" data-i18n="pocitadlo.pridat">Přidat</button>
     </div>
   </div>
   </div>
@@ -831,16 +838,16 @@
 </section>
 
 <div class="rollbtnwrap">
-  <button class="rollbtn" id="rollon" disabled>Házet dál</button>
+  <button class="rollbtn" id="rollon" disabled data-i18n="pocitadlo.hazetdal">Házet dál</button>
 </div>
 
 <div class="lock" id="lock" hidden></div>
-<div class="lock warn" id="nosave" hidden>Ukládání nefunguje — rozehraná hra po zavření prohlížeče zmizí. Historii si zazálohuj v nastavení.</div>
+<div class="lock warn" id="nosave" hidden data-i18n="pocitadlo.neuklada">Ukládání nefunguje — rozehraná hra po zavření prohlížeče zmizí. Historii si zazálohuj v nastavení.</div>
 
 <div class="acts">
-  <button class="ghost" id="undo" style="flex:0 0 auto;padding:0 14px">Zpět</button>
-  <button class="act bank" id="bank" disabled>Zapsat a předat</button>
-  <button class="act bust" id="bust">Farkle</button>
+  <button class="ghost" id="undo" style="flex:0 0 auto;padding:0 14px" data-i18n="spol.zpet">Zpět</button>
+  <button class="act bank" id="bank" disabled data-i18n="pocitadlo.zapsatapredat">Zapsat a předat</button>
+  <button class="act bust" id="bust" data-i18n="pocitadlo.farkle">Farkle</button>
 </div>
 
 </section>
@@ -853,16 +860,16 @@
 
 <section class="hist">
   <div class="histhead">
-    <h2>Zápis kol</h2>
+    <h2 data-i18n="zapis.nadpis">Zápis kol</h2>
     <div class="histbtns">
-      <button class="ghost" id="fixturns" type="button" aria-pressed="false">Opravit</button>
+      <button class="ghost" id="fixturns" type="button" aria-pressed="false" data-i18n="zapis.opravit">Opravit</button>
     </div>
   </div>
   <table><tbody id="rows"></tbody></table>
-  <div class="empty" id="empty">Zatím žádné kolo. Hoď všemi šesti.</div>
+  <div class="empty" id="empty" data-i18n="zapis.prazdno">Zatím žádné kolo. Hoď všemi šesti.</div>
   <div class="archwrap">
-    <button class="ghost arch" id="arch" type="button">Zatím není co uložit do historie</button>
-    <button class="ghost bigbtn" id="reset" type="button">Nová hra</button>
+    <button class="ghost arch" id="arch" type="button" data-i18n="zapis.nicknulozeni">Zatím není co uložit do historie</button>
+    <button class="ghost bigbtn" id="reset" type="button" data-i18n="zapis.novahra">Nová hra</button>
   </div>
 </section>
 
@@ -870,16 +877,16 @@
 <section class="page" id="page2" role="tabpanel" aria-labelledby="tab2">
 
 <div id="p2list">
-  <div class="lock warn" id="nohist" hidden>Historii se teď nedaří načíst. Nic se neztratilo, jen k ní aplikace zrovna nemá přístup — dohrané hry se proto zatím nezapisují. Zkus aplikaci zavřít a otevřít znovu.</div>
+  <div class="lock warn" id="nohist" hidden data-i18n="stat.nedostupna">Historii se teď nedaří načíst. Nic se neztratilo, jen k ní aplikace zrovna nemá přístup — dohrané hry se proto zatím nezapisují. Zkus aplikaci zavřít a otevřít znovu.</div>
   <div class="seg" id="seg">
-    <button type="button" class="on">Statistiky</button>
-    <button type="button">Historie her</button>
+    <button type="button" class="on" data-i18n="stat.seg.statistiky">Statistiky</button>
+    <button type="button" data-i18n="stat.seg.historie">Historie her</button>
   </div>
   <div class="fbar" id="fbar" hidden>
-    <button class="ghost" type="button" id="fdatum">Datum</button>
-    <button class="ghost" type="button" id="ftyp" hidden>Typ</button>
-    <button class="ghost" type="button" id="frazeni" hidden>Řazení</button>
-    <button class="ghost" type="button" id="freset" aria-label="Resetovat filtry">Reset</button>
+    <button class="ghost" type="button" id="fdatum" data-i18n="filtr.datum">Datum</button>
+    <button class="ghost" type="button" id="ftyp" hidden data-i18n="filtr.typ">Typ</button>
+    <button class="ghost" type="button" id="frazeni" hidden data-i18n="filtr.razeni">Řazení</button>
+    <button class="ghost" type="button" id="freset" data-i18n-aria="filtr.reset.aria" aria-label="Resetovat filtry" data-i18n="filtr.reset">Reset</button>
   </div>
   <div id="statlist"></div>
   <div id="histlist" hidden></div>
@@ -887,7 +894,7 @@
 
 <div id="p2detail" hidden>
   <div class="dethead">
-    <button class="ghost back" id="detback" type="button">« Zpět</button>
+    <button class="ghost back" id="detback" type="button" data-i18n="stat.zpetseznam">« Zpět</button>
     <h2 id="dettitle"></h2>
   </div>
   <div id="detbody"></div>
@@ -899,74 +906,74 @@
 <div class="modal" id="rulesmodal" hidden>
   <div class="modalbox" role="dialog" aria-modal="true" aria-labelledby="rulestitle">
     <div class="modalhead">
-      <h2 id="rulestitle">Pravidla a návod</h2>
-      <button class="modalx" type="button" data-close aria-label="Zavřít">×</button>
+      <h2 id="rulestitle" data-i18n="pravidla.nadpis">Pravidla a návod</h2>
+      <button class="modalx" type="button" data-close data-i18n-aria="spol.zavrit" aria-label="Zavřít">×</button>
     </div>
     <div class="modalbody">
       <div class="seg" id="infoseg">
-        <button type="button" class="on">Pravidla</button>
-        <button type="button">Návod</button>
+        <button type="button" class="on" data-i18n="pravidla.seg.pravidla">Pravidla</button>
+        <button type="button" data-i18n="pravidla.seg.navod">Návod</button>
       </div>
       <div class="rules infocard" id="cardrules">
-    <p>Hodíš šesti kostkami a odložíš si z hodu aspoň jednu bodující kostku nebo kombinaci. Když hod nedá vůbec nic, je to <b>Farkle</b> — všechno, co máš v kole na stole, propadá a hraje soupeř.</p>
-    <p>Po každém hodu se rozhoduješ: <b>zapsat</b> body a předat kolo, nebo <b>házet dál</b> jen těmi kostkami, které jsi neodložil.</p>
-    <p>Když odložíš i poslední kostku, přicházejí <b>horké kostky</b> — házíš znovu všemi šesti a body se sčítají dál v tomtéž kole.</p>
+    <p data-i18n-html="pravidla.p1">Hodíš šesti kostkami a odložíš si z hodu aspoň jednu bodující kostku nebo kombinaci. Když hod nedá vůbec nic, je to <b>Farkle</b> — všechno, co máš v kole na stole, propadá a hraje soupeř.</p>
+    <p data-i18n-html="pravidla.p2">Po každém hodu se rozhoduješ: <b>zapsat</b> body a předat kolo, nebo <b>házet dál</b> jen těmi kostkami, které jsi neodložil.</p>
+    <p data-i18n-html="pravidla.p3">Když odložíš i poslední kostku, přicházejí <b>horké kostky</b> — házíš znovu všemi šesti a body se sčítají dál v tomtéž kole.</p>
     <table>
-      <tr><td>Každá jednička</td><td>100</td></tr>
-      <tr><td>Každá pětka</td><td>50</td></tr>
-      <tr><td>Tři jedničky</td><td>1 000</td></tr>
-      <tr><td>Tři dvojky / trojky / čtyřky / pětky / šestky</td><td>200–600</td></tr>
-      <tr><td>Postupka 1–5</td><td>500</td></tr>
-      <tr><td>Postupka 2–6</td><td>750</td></tr>
-      <tr><td>Postupka 1–6</td><td>1 500</td></tr>
+      <tr><td data-i18n="pravidla.t1n">Každá jednička</td><td data-i18n="pravidla.t1v">100</td></tr>
+      <tr><td data-i18n="pravidla.t2n">Každá pětka</td><td data-i18n="pravidla.t2v">50</td></tr>
+      <tr><td data-i18n="pravidla.t3n">Tři jedničky</td><td data-i18n="pravidla.t3v">1 000</td></tr>
+      <tr><td data-i18n="pravidla.t4n">Tři dvojky / trojky / čtyřky / pětky / šestky</td><td data-i18n="pravidla.t4v">200–600</td></tr>
+      <tr><td data-i18n="pravidla.t5n">Postupka 1–5</td><td data-i18n="pravidla.t5v">500</td></tr>
+      <tr><td data-i18n="pravidla.t6n">Postupka 2–6</td><td data-i18n="pravidla.t6v">750</td></tr>
+      <tr><td data-i18n="pravidla.t7n">Postupka 1–6</td><td data-i18n="pravidla.t7v">1 500</td></tr>
     </table>
-    <p class="note">Trojice = hodnota × 100 (jedničky 1 000). Každá další kostka navíc hodnotu <b>zdvojnásobí</b>: čtyři pětky 1 000, pět pětek 2 000, šest pětek 4 000. Šest jedniček je 8 000.</p>
-    <p class="note">Dvojice ani „skoro trojice“ neboduje — odložit jde jen jednička, pětka, hotová trojice a výš, nebo postupka.</p>
+    <p class="note" data-i18n-html="pravidla.pozn1">Trojice = hodnota × 100 (jedničky 1 000). Každá další kostka navíc hodnotu <b>zdvojnásobí</b>: čtyři pětky 1 000, pět pětek 2 000, šest pětek 4 000. Šest jedniček je 8 000.</p>
+    <p class="note" data-i18n="pravidla.pozn2">Dvojice ani „skoro trojice“ neboduje — odložit jde jen jednička, pětka, hotová trojice a výš, nebo postupka.</p>
   </div>
 
       <div class="rules infocard" id="cardguide" hidden>
-    <h3>Kolo</h3>
-    <p>Klávesnice zapisuje, co je odložené z hodu. Body se sčítají v řádku <b>na stole</b> a použité kostky ubývají ze zbývajících.</p>
+    <h3 data-i18n="navod.kolo.h">Kolo</h3>
+    <p data-i18n-html="navod.kolo.p">Klávesnice zapisuje, co je odložené z hodu. Body se sčítají v řádku <b>na stole</b> a použité kostky ubývají ze zbývajících.</p>
     <ul>
-      <li><b>Házet dál</b> — otevře nový hod a v popisku ukazuje, kolika kostkami. Po odložení všech šesti nabídne horké kostky a hází se znovu všemi.</li>
-      <li><b>Zapsat</b> — převede body ze stolu do skóre a otevře nové kolo.</li>
-      <li><b>Farkle</b> — body na stole propadnou a v zápise zůstane kolo s nulou.</li>
+      <li data-i18n-html="navod.kolo.li1"><b>Házet dál</b> — otevře nový hod a v popisku ukazuje, kolika kostkami. Po odložení všech šesti nabídne horké kostky a hází se znovu všemi.</li>
+      <li data-i18n-html="navod.kolo.li2"><b>Zapsat</b> — převede body ze stolu do skóre a otevře nové kolo.</li>
+      <li data-i18n-html="navod.kolo.li3"><b>Farkle</b> — body na stole propadnou a v zápise zůstane kolo s nulou.</li>
     </ul>
 
-    <h3>Klávesnice</h3>
-    <p><b>jednička</b> a <b>pětka</b> přidávají po jedné kostce. <b>Stejné hodnoty</b> mají v prvním řádku počet, ve druhém hodnotu; tlačítko vpravo ukazuje výsledek a přidá ho. <b>Postupky</b> jsou tři pevné kombinace. <b>ručně</b> otevře pole pro body a šipky pro počet kostek.</p>
-    <p class="note">Kombinace, které se nevejdou do zbývajících kostek, jsou zašedlé.</p>
+    <h3 data-i18n="navod.klavesnice.h">Klávesnice</h3>
+    <p data-i18n-html="navod.klavesnice.p"><b>jednička</b> a <b>pětka</b> přidávají po jedné kostce. <b>Stejné hodnoty</b> mají v prvním řádku počet, ve druhém hodnotu; tlačítko vpravo ukazuje výsledek a přidá ho. <b>Postupky</b> jsou tři pevné kombinace. <b>ručně</b> otevře pole pro body a šipky pro počet kostek.</p>
+    <p class="note" data-i18n="navod.klavesnice.pozn">Kombinace, které se nevejdou do zbývajících kostek, jsou zašedlé.</p>
 
-    <h3>Opravy</h3>
-    <p>Přepínač <b>zadat / opravit</b> vedle popisu hodu přepíná vnitřní kartu panelu. Karta <i>opravit</i> ukazuje každou odloženou položku jako tlačítko s křížkem, seskupené po hodech; smazání položky přepočítá i počty kostek v následujících hodech.</p>
-    <p><b>Zpět</b> ubírá po jednom odzadu v rozehraném kole — nejdřív položky, pak celé hody. Na zapsaná kola nesahá; jakmile v kole nic nezbývá, tlačítko zšedne.</p>
-    <p><b>Opravit</b> v Zápisu kol zapíná křížky u jednotlivých kol. Křížek vyvolá potvrzení; smazané kolo se odečte ze skóre a zbylá kola se přečíslují. Bez odehraných kol je tlačítko schované.</p>
+    <h3 data-i18n="navod.opravy.h">Opravy</h3>
+    <p data-i18n-html="navod.opravy.p1">Přepínač <b>zadat / opravit</b> vedle popisu hodu přepíná vnitřní kartu panelu. Karta <i>opravit</i> ukazuje každou odloženou položku jako tlačítko s křížkem, seskupené po hodech; smazání položky přepočítá i počty kostek v následujících hodech.</p>
+    <p data-i18n-html="navod.opravy.p2"><b>Zpět</b> ubírá po jednom odzadu v rozehraném kole — nejdřív položky, pak celé hody. Na zapsaná kola nesahá; jakmile v kole nic nezbývá, tlačítko zšedne.</p>
+    <p data-i18n-html="navod.opravy.p3"><b>Opravit</b> v Zápisu kol zapíná křížky u jednotlivých kol. Křížek vyvolá potvrzení; smazané kolo se odečte ze skóre a zbylá kola se přečíslují. Bez odehraných kol je tlačítko schované.</p>
 
-    <h3>Nastavení hry</h3>
-    <p>Ikona kostky otevírá panel s režimem a cílem, a to i uprostřed hry. <b>Do bodů</b> hraje na 2 000 až 10 000 nebo na vlastní číslo a druhý řádek skóre ukazuje, kolik zbývá. Kolo, kterým se cíl překročí, se počítá celé; po jeho zapsání je hra u konce. <b>Na kola</b> jen počítá kola; volitelný limit hru po posledním kole zamkne, bez limitu hra neskončí sama.</p>
+    <h3 data-i18n="navod.hra.h">Nastavení hry</h3>
+    <p data-i18n-html="navod.hra.p">Ikona kostky otevírá panel s režimem a cílem, a to i uprostřed hry. <b>Do bodů</b> hraje na 2 000 až 10 000 nebo na vlastní číslo a druhý řádek skóre ukazuje, kolik zbývá. Kolo, kterým se cíl překročí, se počítá celé; po jeho zapsání je hra u konce. <b>Na kola</b> jen počítá kola; volitelný limit hru po posledním kole zamkne, bez limitu hra neskončí sama.</p>
 
-    <h3>Tři stránky</h3>
-    <p>Záložky nahoře a swipenutí do stran přepínají mezi:</p>
+    <h3 data-i18n="navod.stranky.h">Tři stránky</h3>
+    <p data-i18n="navod.stranky.p">Záložky nahoře a swipenutí do stran přepínají mezi:</p>
     <ul>
-      <li><b>Počítadlo</b> — skóre a hraní.</li>
-      <li><b>Zápis kol</b> — čtyři statistiky a tabulka kol, Nová hra a Zapsat do historie.</li>
-      <li><b>Statistiky</b> — přepínač mezi rekordy a seznamem dohraných her. Rekord se rozklikne na žebříček, hra na svůj detail.</li>
+      <li data-i18n-html="navod.stranky.li1"><b>Počítadlo</b> — skóre a hraní.</li>
+      <li data-i18n-html="navod.stranky.li2"><b>Zápis kol</b> — čtyři statistiky a tabulka kol, Nová hra a Zapsat do historie.</li>
+      <li data-i18n-html="navod.stranky.li3"><b>Statistiky</b> — přepínač mezi rekordy a seznamem dohraných her. Rekord se rozklikne na žebříček, hra na svůj detail.</li>
     </ul>
 
-    <h3>Historie</h3>
-    <p>Statistiky vychází jen z her v historii; nezapsaná hra se do rekordů nepromítne.</p>
-    <p><b>Zapsat do historie</b> si vyžádá druhé klepnutí jen tehdy, když jsou na stole nezapsané body. Po uložení se přepne na <b>Uloženo v historii</b> a po dalším hraní na <b>Aktualizovat v historii</b>, což přepíše tentýž záznam místo zakládání nového. Když se ta hra mezitím smaže z historie, nabídne tlačítko <b>Obnovit do historie</b> — vrátí týž záznam z koše, takže se hra nikdy nezapíše dvakrát.</p>
-    <p><b>Automatické ukládání</b> v nastavení zapíše hru do historie samo, jakmile skončí — po posledním kole nebo po kole, kterým se překročí cíl. Uložení oznámí okénko, které samo zmizí. Hra na neomezený počet kol se takhle uložit nedá, protože nemá konec. Co bylo z historie smazané ručně, automat sám nevrací.</p>
+    <h3 data-i18n="navod.historie.h">Historie</h3>
+    <p data-i18n="navod.historie.p1">Statistiky vychází jen z her v historii; nezapsaná hra se do rekordů nepromítne.</p>
+    <p data-i18n-html="navod.historie.p2"><b>Zapsat do historie</b> si vyžádá druhé klepnutí jen tehdy, když jsou na stole nezapsané body. Po uložení se přepne na <b>Uloženo v historii</b> a po dalším hraní na <b>Aktualizovat v historii</b>, což přepíše tentýž záznam místo zakládání nového. Když se ta hra mezitím smaže z historie, nabídne tlačítko <b>Obnovit do historie</b> — vrátí týž záznam z koše, takže se hra nikdy nezapíše dvakrát.</p>
+    <p data-i18n-html="navod.historie.p3"><b>Automatické ukládání</b> v nastavení zapíše hru do historie samo, jakmile skončí — po posledním kole nebo po kole, kterým se překročí cíl. Uložení oznámí okénko, které samo zmizí. Hra na neomezený počet kol se takhle uložit nedá, protože nemá konec. Co bylo z historie smazané ručně, automat sám nevrací.</p>
 
-    <h3>Koš</h3>
-    <p><b>Nová hra</b> odkládá smazanou hru do nastavení, do oddílu <i>Smazané rozehrané hry</i> — drží posledních pět. <b>Smazat z historie</b> ukládá hru do oddílu <i>Smazané hry z historie</i>, kde jich zůstává deset. V obou oddílech vrací hru zpátky tlačítko <i>Obnovit</i>; <i>Trvale smazat</i> ji po potvrzení zahodí nadobro.</p>
-    <p>Když hra ještě není v historii, <b>Nová hra</b> se po potvrzení zeptá ještě jednou a nabídne ji rovnou uložit.</p>
+    <h3 data-i18n="navod.kos.h">Koš</h3>
+    <p data-i18n-html="navod.kos.p1"><b>Nová hra</b> odkládá smazanou hru do nastavení, do oddílu <i>Smazané rozehrané hry</i> — drží posledních pět. <b>Smazat z historie</b> ukládá hru do oddílu <i>Smazané hry z historie</i>, kde jich zůstává deset. V obou oddílech vrací hru zpátky tlačítko <i>Obnovit</i>; <i>Trvale smazat</i> ji po potvrzení zahodí nadobro.</p>
+    <p data-i18n-html="navod.kos.p2">Když hra ještě není v historii, <b>Nová hra</b> se po potvrzení zeptá ještě jednou a nabídne ji rovnou uložit.</p>
 
-    <h3>Záloha</h3>
-    <p>Data jsou uložená jen v tomto prohlížeči. <b>Export do souboru</b> vytvoří textový soubor s přehledem her, jehož poslední řádek nese data pro import — bez něj se soubor načíst nedá. <b>Zkopírovat do schránky</b> dává stejný obsah bez stahování. <b>Import ze souboru</b> i <b>Import ze schránky</b> nabídnou volbu mezi přidáním nových her a nahrazením celé historie.</p>
+    <h3 data-i18n="navod.zaloha.h">Záloha</h3>
+    <p data-i18n-html="navod.zaloha.p">Data jsou uložená jen v tomto prohlížeči. <b>Export do souboru</b> vytvoří textový soubor s přehledem her, jehož poslední řádek nese data pro import — bez něj se soubor načíst nedá. <b>Zkopírovat do schránky</b> dává stejný obsah bez stahování. <b>Import ze souboru</b> i <b>Import ze schránky</b> nabídnou volbu mezi přidáním nových her a nahrazením celé historie.</p>
 
-    <h3>Drobnosti</h3>
-    <p>Ikona vpravo nahoře přepíná světlý a tmavý vzhled. <b>Celá obrazovka</b> v nastavení schová lišty prohlížeče; na iPhonu chybí, Safari to neumí. <b>Nezhasínat displej</b> tamtéž drží obrazovku rozsvícenou, dokud se hraje; po třech minutách bez doteku se pustí a telefon zhasne jako obvykle. Aplikace běží offline a dá se přidat na plochu.</p>
+    <h3 data-i18n="navod.drobnosti.h">Drobnosti</h3>
+    <p data-i18n-html="navod.drobnosti.p">Ikona vpravo nahoře přepíná světlý a tmavý vzhled. <b>Celá obrazovka</b> v nastavení schová lišty prohlížeče; na iPhonu chybí, Safari to neumí. <b>Nezhasínat displej</b> tamtéž drží obrazovku rozsvícenou, dokud se hraje; po třech minutách bez doteku se pustí a telefon zhasne jako obvykle. Aplikace běží offline a dá se přidat na plochu.</p>
   </div>
     </div>
   </div>
@@ -975,63 +982,67 @@
 <div class="modal" id="setmodal" hidden>
   <div class="modalbox" role="dialog" aria-modal="true" aria-labelledby="settitle">
     <div class="modalhead">
-      <h2 id="settitle">Nastavení</h2>
-      <button class="modalx" type="button" data-close aria-label="Zavřít">×</button>
+      <h2 id="settitle" data-i18n="nast.nadpis">Nastavení</h2>
+      <button class="modalx" type="button" data-close data-i18n-aria="spol.zavrit" aria-label="Zavřít">×</button>
     </div>
     <div class="modalbody">
+      <div class="setrow" id="jazykrow">
+        <div class="t"><b data-i18n="nast.jazyk.n">Jazyk</b><span data-i18n="nast.jazyk.p">Změní se hned, bez restartu aplikace.</span></div>
+        <select id="jazyksel" data-i18n-aria="nast.jazyk.aria" aria-label="Jazyk rozhraní"></select>
+      </div>
       <div class="setrow" id="fsrow">
-        <div class="t"><b>Celá obrazovka</b><span>Skryje lišty prohlížeče.</span></div>
-        <button class="ghost" id="fs" type="button">Vypnuto</button>
+        <div class="t"><b data-i18n="nast.fs.n">Celá obrazovka</b><span data-i18n="nast.fs.p">Skryje lišty prohlížeče.</span></div>
+        <button class="ghost" id="fs" type="button" data-i18n="nast.vypnuto">Vypnuto</button>
       </div>
       <div class="setrow" id="svitrow">
-        <div class="t"><b>Nezhasínat displej</b><span>Displej zůstane svítit, dokud se s aplikací pracuje. Po třech minutách bez doteku se pustí a telefon zhasne jako obvykle.</span></div>
-        <button class="ghost" id="svit" type="button">Vypnuto</button>
+        <div class="t"><b data-i18n="nast.svit.n">Nezhasínat displej</b><span data-i18n="nast.svit.p">Displej zůstane svítit, dokud se s aplikací pracuje. Po třech minutách bez doteku se pustí a telefon zhasne jako obvykle.</span></div>
+        <button class="ghost" id="svit" type="button" data-i18n="nast.vypnuto">Vypnuto</button>
       </div>
       <div class="setrow" id="autorow">
-        <div class="t"><b>Automatické ukládání</b><span>Hru zapíše do historie, jakmile skončí. Hra na neomezený počet kol se automaticky neukládá.</span></div>
-        <button class="ghost" id="auto" type="button">Vypnuto</button>
+        <div class="t"><b data-i18n="nast.auto.n">Automatické ukládání</b><span data-i18n="nast.auto.p">Hru zapíše do historie, jakmile skončí. Hra na neomezený počet kol se automaticky neukládá.</span></div>
+        <button class="ghost" id="auto" type="button" data-i18n="nast.vypnuto">Vypnuto</button>
       </div>
       <details class="setsec" id="seckos">
-        <summary><span>Smazané rozehrané hry</span><span class="cnt" id="koscnt"></span></summary>
+        <summary><span data-i18n="nast.koshry">Smazané rozehrané hry</span><span class="cnt" id="koscnt"></span></summary>
         <div class="secbody"><div id="koslist"></div></div>
       </details>
 
       <details class="setsec" id="seckoshist">
-        <summary><span>Smazané hry z historie</span><span class="cnt" id="koshistcnt"></span></summary>
+        <summary><span data-i18n="nast.koshist">Smazané hry z historie</span><span class="cnt" id="koshistcnt"></span></summary>
         <div class="secbody"><div id="koshistlist"></div></div>
       </details>
 
       <details class="setsec" id="seczal">
-        <summary><span>Záloha historie</span></summary>
+        <summary><span data-i18n="nast.zaloha">Záloha historie</span></summary>
         <div class="secbody">
           <div class="setrow">
-            <div class="t"><b>Export do souboru</b><span>Textový soubor s přehledem her a daty pro pozdější import.</span></div>
-            <button class="ghost" id="expbtn" type="button">Uložit</button>
+            <div class="t"><b data-i18n="nast.exp.n">Export do souboru</b><span data-i18n="nast.exp.p">Textový soubor s přehledem her a daty pro pozdější import.</span></div>
+            <button class="ghost" id="expbtn" type="button" data-i18n="nast.exp.btn">Uložit</button>
           </div>
           <div class="setrow">
-            <div class="t"><b>Zkopírovat do schránky</b><span>Pro případ nefunkčního stahování.</span></div>
-            <button class="ghost" id="copybtn" type="button">Kopírovat</button>
+            <div class="t"><b data-i18n="nast.kop.n">Zkopírovat do schránky</b><span data-i18n="nast.kop.p">Pro případ nefunkčního stahování.</span></div>
+            <button class="ghost" id="copybtn" type="button" data-i18n="nast.kop.btn">Kopírovat</button>
           </div>
           <div class="setrow">
-            <div class="t"><b>Import ze souboru</b><span>Načte zálohu a nabídne přidání nebo nahrazení.</span></div>
-            <button class="ghost" id="impbtn" type="button">Vybrat soubor</button>
+            <div class="t"><b data-i18n="nast.impf.n">Import ze souboru</b><span data-i18n="nast.impf.p">Načte zálohu a nabídne přidání nebo nahrazení.</span></div>
+            <button class="ghost" id="impbtn" type="button" data-i18n="nast.impf.btn">Vybrat soubor</button>
           </div>
           <div class="setrow">
-            <div class="t"><b>Import ze schránky</b><span>Vlož text zálohy do pole a načti ho.</span></div>
-            <button class="ghost" id="pastebtn" type="button">Vložit text</button>
+            <div class="t"><b data-i18n="nast.imps.n">Import ze schránky</b><span data-i18n="nast.imps.p">Vlož text zálohy do pole a načti ho.</span></div>
+            <button class="ghost" id="pastebtn" type="button" data-i18n="nast.imps.btn">Vložit text</button>
           </div>
           <div id="pastebox" hidden>
-            <textarea id="pastearea" placeholder="Sem vlož zkopírovanou zálohu"></textarea>
+            <textarea id="pastearea" data-i18n-ph="nast.vlozit.ph" placeholder="Sem vlož zkopírovanou zálohu"></textarea>
             <div class="improw">
-              <button class="ghost" id="pasteload" type="button">Načíst</button>
-              <button class="ghost" id="pastecancel" type="button">Zrušit</button>
+              <button class="ghost" id="pasteload" type="button" data-i18n="nast.nacist">Načíst</button>
+              <button class="ghost" id="pastecancel" type="button" data-i18n="spol.zrusit">Zrušit</button>
             </div>
           </div>
           <div id="impbox" hidden>
             <div class="msg" id="impinfo"></div>
             <div class="improw">
-              <button class="ghost" id="impadd" type="button">Přidat nové</button>
-              <button class="ghost warn" id="imprep" type="button">Nahradit vše</button>
+              <button class="ghost" id="impadd" type="button" data-i18n="nast.pridatnove">Přidat nové</button>
+              <button class="ghost warn" id="imprep" type="button" data-i18n="nast.nahraditvse">Nahradit vše</button>
             </div>
           </div>
           <div class="msg" id="zalmsg" hidden></div>
@@ -1039,8 +1050,8 @@
       </details>
 
       <div class="setrow mistorow" id="mistorow">
-        <div class="t"><b>Zabrané místo</b><span id="mistocelkem">Zjišťuji&#8230;</span></div>
-        <button class="ghost" id="mistobtn" type="button">Detail</button>
+        <div class="t"><b data-i18n="nast.misto.n">Zabrané místo</b><span id="mistocelkem" data-i18n="nast.misto.zjistuji">Zjišťuji&#8230;</span></div>
+        <button class="ghost" id="mistobtn" type="button" data-i18n="nast.misto.btn">Detail</button>
       </div>
       <div class="msg misto" hidden></div>
       <input type="file" id="impfile" accept=".txt,text/plain" hidden>
@@ -1051,25 +1062,25 @@
 <div class="modal" id="datemodal" hidden>
   <div class="modalbox" role="dialog" aria-modal="true" aria-labelledby="datetitle">
     <div class="modalhead">
-      <h2 id="datetitle">Filtr podle data</h2>
-      <button class="modalx" type="button" data-close aria-label="Zavřít">×</button>
+      <h2 id="datetitle" data-i18n="datum.nadpis">Filtr podle data</h2>
+      <button class="modalx" type="button" data-close data-i18n-aria="spol.zavrit" aria-label="Zavřít">×</button>
     </div>
     <div class="modalbody">
       <div class="seg" id="dateseg">
-        <button type="button" class="on">Jeden den</button>
-        <button type="button">Rozsah</button>
+        <button type="button" class="on" data-i18n="datum.jedenden">Jeden den</button>
+        <button type="button" data-i18n="datum.rozsah">Rozsah</button>
       </div>
       <div class="daterow">
-        <label for="dateod" id="dateodl">Den</label>
+        <label for="dateod" id="dateodl" data-i18n="datum.den">Den</label>
         <input type="date" id="dateod">
       </div>
       <div class="daterow" id="datedorow" hidden>
-        <label for="datedo">Do</label>
+        <label for="datedo" data-i18n="datum.do">Do</label>
         <input type="date" id="datedo">
       </div>
       <div class="datebtns">
-        <button class="ghost arch" id="dateok" type="button">Použít</button>
-        <button class="ghost bigbtn" id="datezpet" type="button">Zpět</button>
+        <button class="ghost arch" id="dateok" type="button" data-i18n="spol.pouzit">Použít</button>
+        <button class="ghost bigbtn" id="datezpet" type="button" data-i18n="spol.zpet">Zpět</button>
       </div>
     </div>
   </div>
@@ -1078,22 +1089,22 @@
 <div class="modal" id="typmodal" hidden>
   <div class="modalbox" role="dialog" aria-modal="true" aria-labelledby="typtitle">
     <div class="modalhead">
-      <h2 id="typtitle">Filtr podle typu hry</h2>
-      <button class="modalx" type="button" data-close aria-label="Zavřít">×</button>
+      <h2 id="typtitle" data-i18n="typ.nadpis">Filtr podle typu hry</h2>
+      <button class="modalx" type="button" data-close data-i18n-aria="spol.zavrit" aria-label="Zavřít">×</button>
     </div>
     <div class="modalbody">
       <div class="seg" id="typseg">
-        <button type="button" class="on">Vše</button>
-        <button type="button">Na body</button>
-        <button type="button">Na kola</button>
+        <button type="button" class="on" data-i18n="typ.vse">Vše</button>
+        <button type="button" data-i18n="typ.nabody">Na body</button>
+        <button type="button" data-i18n="typ.nakola">Na kola</button>
       </div>
       <div class="daterow" id="typvalrow" hidden>
-        <label for="typval" id="typvall">Cíl</label>
+        <label for="typval" id="typvall" data-i18n="typ.cil">Cíl</label>
         <select id="typval"></select>
       </div>
       <div class="datebtns">
-        <button class="ghost arch" id="typok" type="button">Použít</button>
-        <button class="ghost bigbtn" id="typzpet" type="button">Zpět</button>
+        <button class="ghost arch" id="typok" type="button" data-i18n="spol.pouzit">Použít</button>
+        <button class="ghost bigbtn" id="typzpet" type="button" data-i18n="spol.zpet">Zpět</button>
       </div>
     </div>
   </div>
@@ -1102,15 +1113,15 @@
 <div class="modal" id="sortmodal" hidden>
   <div class="modalbox" role="dialog" aria-modal="true" aria-labelledby="sorttitle">
     <div class="modalhead">
-      <h2 id="sorttitle">Řazení historie</h2>
-      <button class="modalx" type="button" data-close aria-label="Zavřít">×</button>
+      <h2 id="sorttitle" data-i18n="razeni.nadpis">Řazení historie</h2>
+      <button class="modalx" type="button" data-close data-i18n-aria="spol.zavrit" aria-label="Zavřít">×</button>
     </div>
     <div class="modalbody">
       <div class="datebtns" id="sortbtns">
-        <button class="ghost" type="button" data-podle="datum" data-smer="desc">Od nejnovějších</button>
-        <button class="ghost" type="button" data-podle="datum" data-smer="asc">Od nejstarších</button>
-        <button class="ghost" type="button" data-podle="body" data-smer="desc">Od nejvíc bodů</button>
-        <button class="ghost" type="button" data-podle="body" data-smer="asc">Od nejmíň bodů</button>
+        <button class="ghost" type="button" data-podle="datum" data-smer="desc" data-i18n="razeni.nejnovejsi">Od nejnovějších</button>
+        <button class="ghost" type="button" data-podle="datum" data-smer="asc" data-i18n="razeni.nejstarsi">Od nejstarších</button>
+        <button class="ghost" type="button" data-podle="body" data-smer="desc" data-i18n="razeni.nejvic">Od nejvíc bodů</button>
+        <button class="ghost" type="button" data-podle="body" data-smer="asc" data-i18n="razeni.nejmin">Od nejmíň bodů</button>
       </div>
     </div>
   </div>
@@ -1119,15 +1130,15 @@
 <div class="modal" id="newmodal" hidden>
   <div class="modalbox" role="dialog" aria-modal="true" aria-labelledby="newtitle">
     <div class="modalhead">
-      <h2 id="newtitle">Hra není uložená</h2>
-      <button class="modalx" type="button" data-close aria-label="Zavřít">×</button>
+      <h2 id="newtitle" data-i18n="nova.nadpis">Hra není uložená</h2>
+      <button class="modalx" type="button" data-close data-i18n-aria="spol.zavrit" aria-label="Zavřít">×</button>
     </div>
     <div class="modalbody">
       <div class="msg" id="newtext"></div>
       <div class="newbtns">
-        <button class="ghost arch" id="newsave" type="button">Uložit a začít novou</button>
-        <button class="ghost bigbtn warn" id="newdrop" type="button">Začít novou bez uložení</button>
-        <button class="ghost bigbtn" id="newback" type="button">Zpět</button>
+        <button class="ghost arch" id="newsave" type="button" data-i18n="nova.ulozit">Uložit a začít novou</button>
+        <button class="ghost bigbtn warn" id="newdrop" type="button" data-i18n="nova.bezulozeni">Začít novou bez uložení</button>
+        <button class="ghost bigbtn" id="newback" type="button" data-i18n="spol.zpet">Zpět</button>
       </div>
     </div>
   </div>
@@ -1136,6 +1147,410 @@
 <script>
 (function(){
   "use strict";
+
+  /* ---------- jazyky ----------
+     Čeština se do katalogu nepíše ručně. Statické texty zůstávají napsané
+     přímo v <body> a při startu se z anotovaných prvků jednou seberou do
+     I18N.cs — teprve pak se případně přepíšou. Diff v HTML je tak jen
+     přidaný atribut, výchozí vykreslení je hotové bez záblesku prázdné
+     stránky a návrat k češtině nepotřebuje reload.
+
+     Texty, které vznikají až za běhu (seznamy her, žebříčky), do sběru
+     nepatří — ty jdou přes t() a tn() a v katalogu stojí napsané. */
+  var JAZYKY = ["cs", "en"];        /* pořadí v přepínači */
+  var VYCHOZI = "cs";
+  var JKEY = "farkle-jazyk-v1";
+  var I18N = { cs: {}, en: {} };
+
+  /* Názvy v přepínači jsou endonyma a do katalogu nepatří: vlastní jméno
+     jazyka se nepřekládá, aby ho uživatel našel i v rozhraní, kterému
+     nerozumí. Každý další jazyk sem přidá jednu dvojici. */
+  var NAZVY = { cs: "Čeština", en: "English" };
+
+  I18N.cs.plural = function(n){ return n === 1 ? 0 : ((n >= 2 && n < 5) ? 1 : 2); };
+  I18N.en.plural = function(n){ return n === 1 ? 0 : 1; };
+
+  /* ---------- čísla a data ----------
+     toLocale* zůstává mimo hru: výstup by se lišil podle zařízení a font je
+     subsetovaný. Formát proto řídí katalog a fmt(), dt(), dtDen() i
+     desetina() si ho odsud tahají. Oddělovač tisíců, desetinná značka
+     i tvary data tak leží na jednom místě. */
+  I18N.cs.sep = "\u202F";        /* úzká nezlomitelná mezera */
+  I18N.cs.des = ",";
+  I18N.en.sep = ",";
+  I18N.en.des = ".";
+  function hodiny(d){ return d.getHours() + ":" + ("0" + d.getMinutes()).slice(-2); }
+  I18N.cs.datum    = function(d){ return d.getDate() + ". " + (d.getMonth() + 1) + ". " + d.getFullYear(); };
+  I18N.cs.datumCas = function(d){ return I18N.cs.datum(d) + " \u00B7 " + hodiny(d); };
+  /* Rozsah dnů se píše co nejúsporněji: shodné části se neopakují. */
+  I18N.cs.datumRozsah = function(a, b){
+    if(a.getFullYear() !== b.getFullYear()) return I18N.cs.datum(a) + " \u2013 " + I18N.cs.datum(b);
+    if(a.getMonth() !== b.getMonth())
+      return a.getDate() + ". " + (a.getMonth() + 1) + ". \u2013 " + I18N.cs.datum(b);
+    return a.getDate() + ".\u2013" + I18N.cs.datum(b);
+  };
+  /* Anglické zkratky měsíců přidávají do textu jen znaky, které font už má.
+     Každý další jazyk je nutné proti subsetu prověřit znovu. */
+  var MESICE_EN = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  I18N.en.datum    = function(d){ return MESICE_EN[d.getMonth()] + " " + d.getDate() + ", " + d.getFullYear(); };
+  I18N.en.datumCas = function(d){ return I18N.en.datum(d) + " \u00B7 " + hodiny(d); };
+  I18N.en.datumRozsah = function(a, b){
+    if(a.getFullYear() !== b.getFullYear()) return I18N.en.datum(a) + " \u2013 " + I18N.en.datum(b);
+    if(a.getMonth() !== b.getMonth())
+      return MESICE_EN[a.getMonth()] + " " + a.getDate() + " \u2013 " + I18N.en.datum(b);
+    return MESICE_EN[a.getMonth()] + " " + a.getDate() + " \u2013 " + b.getDate() + ", " + b.getFullYear();
+  };
+
+  I18N.en.wordmark = "Dice";
+  I18N.en.titulek  = "Dice \u2014 counter";
+
+  var jazyk = VYCHOZI;
+
+  /* Hodnoty se do textu doplňují pojmenovaně, ne zřetězením: pořadí čísel
+     ve větě se jazyk od jazyka liší a slepené kousky by ho zafixovaly
+     česky. Neznámý zástupný symbol zůstane, jak je — viditelná chyba je
+     lepší než prázdné místo. */
+  function vloz(text, hodnoty){
+    if(!hodnoty) return text;
+    return text.replace(/\{(\w+)\}/g, function(cely, jmeno){
+      var v = hodnoty[jmeno];
+      return (v === undefined || v === null) ? cely : String(v);
+    });
+  }
+  /* Nenajde-li se klíč v jazyce, zkusí se čeština; nenajde-li se ani tam,
+     vrátí se samotný klíč. Klíč v rozhraní je chyba, ale viditelná —
+     lepší než prázdné místo. */
+  function t(klic, hodnoty){
+    var v = I18N[jazyk] && I18N[jazyk][klic];
+    if(typeof v !== "string"){ v = I18N[VYCHOZI][klic]; }
+    return vloz(typeof v === "string" ? v : klic, hodnoty);
+  }
+  /* Klíče s více tvary jsou pole. Tvar vybírá plural() toho jazyka, ze
+     kterého pole nakonec pochází — jinak by propadlá česká trojice dostala
+     anglické pravidlo a vyšlo by „5 kola". Jazyk s méně tvary, než jich
+     klíč nabízí, bere poslední dostupný. Počet se do tvaru doplní sám
+     jako {n}, aby si každý jazyk mohl číslo umístit po svém. */
+  function tn(klic, n, hodnoty){
+    var kod = (I18N[jazyk] && Array.isArray(I18N[jazyk][klic])) ? jazyk : VYCHOZI;
+    var tvary = I18N[kod][klic];
+    if(!Array.isArray(tvary) || !tvary.length) return klic;
+    var i = I18N[kod].plural(n);
+    var vse = { n: n }, k;
+    if(hodnoty){ for(k in hodnoty){ if(Object.prototype.hasOwnProperty.call(hodnoty, k)) vse[k] = hodnoty[k]; } }
+    return vloz(tvary[Math.min(Math.max(i, 0), tvary.length - 1)], vse);
+  }
+  /* Položky katalogu, které nejsou text (oddělovače, formátovače data),
+     mají stejný propad do češtiny jako texty. */
+  function kat(jmeno){
+    var v = I18N[jazyk] && I18N[jazyk][jmeno];
+    return v === undefined ? I18N[VYCHOZI][jmeno] : v;
+  }
+
+  /* ---------- ručně psaná čeština ----------
+     Klíče, které se nemají z čeho sebrat: jejich text vzniká až za běhu
+     v JS. Píšou se proto česky rovnou sem. Sběr z DOMu je nepřepíše — bere
+     jen klíče, které ještě nemá — a proto tu nesmí stát klíč, který je
+     zároveň anotovaný v <body>. Hlídá to strážní test, stejně jako to,
+     že tu neleží klíč, který už nikdo nevolá. */
+  var RUCNI = {
+    /* společné */
+    "spol.smazat":            "Smazat",
+    "spol.obnovit":           "Obnovit",
+    "spol.zapnuto":           "Zapnuto",
+
+    /* slova s více tvary — {n} se doplní samo */
+    "slovo.kolo":     ["{n} kolo", "{n} kola", "{n} kol"],
+    "slovo.hra":      ["{n} hra", "{n} hry", "{n} her"],
+    "slovo.nova":     ["{n} nová", "{n} nové", "{n} nových"],
+    "slovo.kostkami": ["{n} kostkou", "{n} kostkami"],
+    "slovo.farkle":   "farkle",
+
+    /* štítky odložených položek — kolo si ukládá kód, slova vznikají až tady */
+    "stitek.j":   "jednička",
+    "stitek.p":   "pětka",
+    "stitek.v":   "vlastní",
+    "stitek.s15": "postupka 1\u20135",
+    "stitek.s26": "postupka 2\u20136",
+    "stitek.s16": "postupka 1\u20136",
+    "stitek.n":   "{p}\u00D7 {h}",
+
+    /* režim hry — jediné místo, kde se skládá */
+    "rezim.dobodu":      "do {b}",
+    "rezim.nakola":      "na kola",
+    "rezim.nakolalimit": "na kola \u00B7 limit {n}",
+
+    /* počítadlo */
+    "pocitadlo.odehranokol": "odehráno kol",
+    "pocitadlo.nadcil":      "nad cíl",
+    "pocitadlo.zkol":        "{n} z {z}",
+    "pocitadlo.hodradek":    "Hod {n} — házíš <b>{kostky}</b>",
+    "pocitadlo.hodzbyva":    "\u00B7 zbývá {n}",
+    "pocitadlo.hraskoncila": "Hra skončila — zobrazit zápis kol",
+    "pocitadlo.nejdriv":     "Nejdřív si z hodu něco odlož",
+    "pocitadlo.hazetdalx":   "Házet dál — {kostky}",
+    "pocitadlo.horke":       "Horké kostky — házet znovu všemi šesti",
+    "pocitadlo.zapsatx":     "Zapsat {b}",
+    "pocitadlo.plus":        "+ {b}",
+    "pocitadlo.kostzkr":     "{n} kost.",
+    "pocitadlo.konecbody":   "Cíl {b} je dosažený — hra je u konce. Cíl se dá změnit v nastavení hry.",
+    "pocitadlo.koneckola":   "Odehráno všech {n} kol — hra je u konce. Počet kol se dá změnit v nastavení hry.",
+
+    /* vrubovka */
+    "tally.kolzn":     "odehráno kol: {n} z {z}",
+    "tally.koln":      "odehráno kol: {n}",
+    "tally.zadnekolo": "zatím žádné kolo",
+    "tally.docile":    "do cíle zbývá {b}",
+    "tally.prekonano": "cíl překonán o {b}",
+
+    /* karta opravit a tabulka kol */
+    "oprava.nic":            "V tomto kole zatím nic zapsaného.",
+    "oprava.hod":            "hod {n} \u00B7 {k}k",
+    "oprava.horke":          "horké",
+    "oprava.smazatpolozku":  "Smazat položku",
+    "zapis.hotovo":          "Hotovo",
+    "zapis.opravdusmazat":   "Opravdu smazat kolo {n}?",
+    "zapis.smazatkolo":      "Smazat kolo {n}",
+
+    /* přehledové dlaždice */
+    "souhrn.celkem":   "celkem",
+    "souhrn.nejlepsi": "nejlepší",
+    "souhrn.prumer":   "průměr",
+    "souhrn.farklu":   "farklů",
+
+    /* tlačítko zápisu do historie */
+    "arch.propadne":     "Na stole je {b} a propadne — zapsat?",
+    "arch.obnovit":      "Obnovit do historie",
+    "arch.ulozeno":      "Uloženo v historii",
+    "arch.aktualizovat": "Aktualizovat v historii",
+    "arch.zapsat":       "Zapsat do historie",
+
+    /* hlášky o selhání zápisu */
+    "chyba.mistoulozit":  "Nepodařilo se uložit — došlo místo",
+    "chyba.mistosmazat":  "Nepodařilo se smazat — došlo místo",
+    "chyba.nedostupna":   "Historie teď není dostupná",
+    "chyba.zalohovathru": "Nepodařilo se zálohovat rozehranou hru",
+    "chyba.smazat":       "Nepodařilo se smazat",
+    "chyba.dokose":       "Nepodařilo se uložit do koše",
+
+    /* koš */
+    "kos.opravdutrvale": "Opravdu trvale smazat?",
+    "kos.trvalesmazat":  "Trvale smazat",
+    "kos.prazdny":       "Zatím není co obnovit. Hra smazaná tlačítkem Nová hra se sem odloží sama.",
+    "kos.prazdnyhist":   "Zatím není co obnovit. Hra smazaná z historie se sem odloží sama.",
+
+    /* nová hra */
+    "nova.nezalohovano": "Nepodařilo se zálohovat — hra zůstává",
+    "nova.opravdu":      "Opravdu nová?",
+    "nova.text":         "Tahle hra zatím není v historii, takže se nezapočítá do statistik. " +
+                         "Nová hra ji odloží do nastavení, mezi smazané rozehrané hry — drží se jich posledních pět.",
+    "nova.propadne":     "Na stole je {b} a propadne.",
+
+    /* bublina */
+    "toast.aktualizovan": "Záznam v historii aktualizován",
+    "toast.ulozena":      "Hra uložena do historie",
+
+    /* stavové popisky přepínačů nahoře i v nastavení */
+    "hlav.tmavyrezim":  "Tmavý režim",
+    "fs.zpet":          "Zpět z celé obrazovky",
+    "fs.zapnout":       "Celá obrazovka",
+    "svit.nechat":      "Nechat displej zhasínat",
+    "svit.nezhasinat":  "Nezhasínat displej",
+    "auto.vypnout":     "Vypnout automatické ukládání",
+    "auto.zapnout":     "Zapnout automatické ukládání",
+
+    /* názvy sledovaných statistik */
+    "stat.n.pocet":         "Odehráno her",
+    "stat.n.denmax":        "Nejvíc her za den",
+    "stat.n.soucet":        "Celkem nasbíráno bodů",
+    "stat.n.maxbody":       "Nejvíc bodů za hru",
+    "stat.n.maxbodybody":   "Nejvíc bodů — hra na body",
+    "stat.n.maxbodykola":   "Nejvíc bodů — hra na kola",
+    "stat.n.prumer":        "Celkový průměr na kolo",
+    "stat.n.prumerbody":    "Průměr na kolo — hra na body",
+    "stat.n.prumerkola":    "Průměr na kolo — hra na kola",
+    "stat.n.maxhodu":       "Nejvíc hodů v jednom kole",
+    "stat.n.minkol":        "Nejméně kol v jedné hře na body",
+    "stat.n.maxkol":        "Nejvíc kol v jedné hře na body",
+    "stat.n.nejlepsikolo":  "Nejlepší kolo",
+    "stat.n.nejhorsikolo":  "Nejhorší kolo bez farklu",
+    "stat.n.maxfarklu":     "Nejvíc farklů za hru",
+    "stat.n.ztraceno":      "Nejvíc bodů ztraceno farklem",
+    "stat.n.serie":         "Nejdelší série bez farklu",
+    "stat.n.farkluhra":     "Farklů na hru",
+
+    /* seznamy statistik a historie */
+    "stat.filtrprazdno": "Tomuhle filtru neodpovídá žádná hra.",
+    "stat.zadnahra":     "Zatím žádná dohraná hra. Hru zapíšeš do historie tlačítkem dole v Zápisu kol.",
+    "stat.beznadat":     "Pro tuhle statistiku zatím nejsou data.",
+    "hist.prazdna":      "Historie je prázdná. Dohranou hru do ní zapíšeš tlačítkem dole v Zápisu kol.",
+    "hist.farklex":      "{n}\u00D7 farkle",
+    "hist.hraz":         "Hra z {kdy}",
+    "hist.nactamkola":   "Načítám kola\u2026",
+    "hist.kolanejdou":   "Kola téhle hry se teď nedaří načíst.",
+    "hist.zadnekolo":    "V téhle hře není zapsané žádné kolo.",
+    "hist.smazat":       "Smazat z historie",
+    "hist.opravdu":      "Opravdu smazat?",
+
+    /* dolití dlouhého seznamu */
+    "dalsi.dalsich":    "Zobrazit dalších {n}",
+    "dalsi.zbyva":      "zbývá {n}",
+    "dalsi.poslednich": "Zobrazit posledních {n}",
+
+    /* lišta filtrů a okna filtrů */
+    "filtr.typhry":     "Typ hry",
+    "filtr.nabody":     "na body",
+    "filtr.nakolan":    "na kola \u00B7 {n}",
+    "filtr.bezlimitu":  "bez limitu",
+    "datum.od":         "Od",
+    "typ.limit":        "Limit",
+    "typ.vsechny":      "Všechny",
+
+    /* záloha a import */
+    "zal.pripravuji":       "Připravuji zálohu\u2026",
+    "zal.neslozit":         "Zálohu se nepodařilo složit — historie teď není dostupná.",
+    "zal.opravdunahradit":  "Opravdu nahradit?",
+    "zal.ukladase":         "Soubor se ukládá.",
+    "zal.stazenineslo":     "Stažení se nepodařilo — zkus kopii do schránky.",
+    "zal.veschrance":       "Záloha je ve schránce.",
+    "zal.schrankaneslo":    "Do schránky se to nepodařilo zkopírovat — zkus Stáhnout soubor.",
+    "zal.souborneslo":      "Soubor se nepodařilo přečíst.",
+    "zal.poleprazdne":      "Pole je prázdné — vlož do něj text zálohy.",
+    "zal.nerozumim.soubor": "Souboru nerozumím — chybí v něm datový řádek.",
+    "zal.nerozumim.text":   "Textu nerozumím — chybí v něm datový řádek.",
+    "zal.prazdno.soubor":   "V souboru není žádná hra.",
+    "zal.prazdno.text":     "V textu není žádná hra.",
+    "zal.info.soubor":      "V souboru {her}, z toho {nove}.",
+    "zal.info.text":        "V textu {her}, z toho {nove}.",
+    "zal.pridatn":          "Přidat {n}",
+    "zal.nenicopridat":     "Není co přidat",
+    "zal.pridano":          ["Přidána {n} hra.", "Přidány {n} hry.", "Přidáno {n} her."],
+    "zal.nahrazeno":        "Historie nahrazena, {her}.",
+
+    /* čitelná část souboru zálohy */
+    "exp.nadpis":     "Kostky — záloha historie her",
+    "exp.vytvoreno":  "vytvořeno {kdy}, her: {n}",
+    "exp.souhrn":     "celkem {b}, nejlepší kolo {nej}, farklů {f}",
+    "exp.mezisoucet": "celkem {b}",
+    "exp.oddelovac":  "--- data pro import, nešahat ---",
+
+    /* zabrané místo */
+    "misto.nezjistit":     "Velikost se nedaří zjistit.",
+    "misto.zdostupnych":   "{u} z {q} dostupných",
+    "misto.pocitam":       "Počítám\u2026",
+    "misto.historie":      "Historie:",
+    "misto.nezmeritmalo":  "velikost se nedaří zjistit",
+    "misto.priblizne":     "přibližně {v}",
+    "misto.zadnahra":      "zatím žádná hra",
+    "misto.rozehrana":     "Rozehraná hra:",
+    "misto.nezmerit":      "nedá se změřit",
+    "misto.kose":          "Koše:",
+    "misto.prazdne":       "prázdné",
+    "misto.nastaveni":     "Nastavení a starší data:",
+    "misto.aplikace":      "Aplikace:",
+    "misto.offline":       "{v}, uložená pro běh offline",
+    "misto.celkem":        "Celkem z této adresy:",
+    "misto.trvale":        "Prohlížeč je označil za trvalá."
+  };
+  for(var rucniKlic in RUCNI){
+    if(Object.prototype.hasOwnProperty.call(RUCNI, rucniKlic)) I18N.cs[rucniKlic] = RUCNI[rucniKlic];
+  }
+
+  function primarni(kod){ return String(kod || "").toLowerCase().split("-")[0]; }
+  function zeSystemu(){
+    var seznam = [];
+    try{
+      if(navigator.languages && navigator.languages.length){ seznam = [].slice.call(navigator.languages); }
+      else if(navigator.language){ seznam = [navigator.language]; }
+    }catch(e){}
+    for(var i = 0; i < seznam.length; i++){
+      var p = primarni(seznam[i]);
+      if(JAZYKY.indexOf(p) >= 0) return p;
+    }
+    return VYCHOZI;
+  }
+  /* Při startu se do localStorage nic nezapisuje. Dokud uživatel nesáhne na
+     přepínač, aplikace každý start následuje systém; uložený nesmysl se
+     ignoruje a propadne se na systém. */
+  function zjistiJazyk(){
+    var ulozeny = null;
+    try{ ulozeny = localStorage.getItem(JKEY); }catch(e){}
+    if(ulozeny && JAZYKY.indexOf(ulozeny) >= 0) return ulozeny;
+    return zeSystemu();
+  }
+
+  var ANOTACE = [
+    { atr: "data-i18n",       cil: "text" },
+    { atr: "data-i18n-html",  cil: "html" },
+    { atr: "data-i18n-aria",  cil: "aria-label" },
+    { atr: "data-i18n-title", cil: "title" },
+    { atr: "data-i18n-ph",    cil: "placeholder" }
+  ];
+  function projdiAnotace(fn){
+    for(var i = 0; i < ANOTACE.length; i++){
+      var a = ANOTACE[i];
+      var prvky = document.querySelectorAll("[" + a.atr + "]");
+      for(var j = 0; j < prvky.length; j++){
+        fn(prvky[j], a.cil, prvky[j].getAttribute(a.atr));
+      }
+    }
+  }
+  function ctiText(el, cil){
+    if(cil === "text") return el.textContent;
+    if(cil === "html") return el.innerHTML;
+    return el.getAttribute(cil) || "";
+  }
+  function pisText(el, cil, text){
+    if(cil === "text"){ el.textContent = text; return; }
+    if(cil === "html"){ el.innerHTML = text; return; }
+    el.setAttribute(cil, text);
+  }
+  /* Sběr běží jen jednou. Kdyby se pustil podruhé, sebral by už přeložený
+     text a čeština by se ztratila. */
+  var sebrano = false;
+  function sberCestinu(){
+    if(sebrano) return;
+    sebrano = true;
+    projdiAnotace(function(el, cil, klic){
+      if(typeof I18N.cs[klic] === "string") return;   /* první výskyt vyhrává */
+      I18N.cs[klic] = ctiText(el, cil);
+    });
+  }
+  function prelozStatiku(){
+    projdiAnotace(function(el, cil, klic){ pisText(el, cil, t(klic)); });
+  }
+  /* Statické texty přepíše prelozStatiku(), ale to, co se skládá až za běhu
+     (počítadlo, statistiky, historie, stavové popisky tlačítek), se musí
+     překreslit vlastní funkcí. Registr existuje proto, aby nastavJazyk()
+     nemusel znát jméno každé z nich — přibývající místa se jen přiregistrují.
+     Při startu je registr prázdný, takže první volání nic nespouští a pořadí
+     inicializace zůstává beze změny. */
+  var PREKRESLI = [];
+  function naJazyk(fn){ PREKRESLI.push(fn); }
+  function prekresliVse(){
+    for(var i = 0; i < PREKRESLI.length; i++){
+      /* jedno rozbité překreslení nesmí shodit zbytek ani nechat aplikaci
+         napůl přepnutou */
+      try{ PREKRESLI[i](); }catch(e){}
+    }
+  }
+  function nastavJazyk(kod, ulozit){
+    jazyk = (JAZYKY.indexOf(kod) >= 0) ? kod : VYCHOZI;
+    if(ulozit){ try{ localStorage.setItem(JKEY, jazyk); }catch(e){} }
+    document.documentElement.lang = jazyk;
+    prelozStatiku();
+    prekresliVse();
+  }
+
+  sberCestinu();
+  nastavJazyk(zjistiJazyk(), false);
+
+  /* Sonda pro testy: katalog žije uvnitř uzávěru a sady se k němu jinak
+     nedostanou. Aplikace ji sama nepoužívá. */
+  try{
+    window.__i18n = { I18N: I18N, JAZYKY: JAZYKY, VYCHOZI: VYCHOZI, NAZVY: NAZVY,
+                      RUCNI: RUCNI, t: t, tn: tn, kat: kat,
+                      kod: function(){ return jazyk; } };
+  }catch(e){}
 
   /* ---------- stav ----------
      rolls = hody v rozehraném kole, poslední je ten, který právě řeším
@@ -1187,9 +1602,8 @@
     S.dirty = !!S.dirty;
     S.autoUlozeno = !!S.autoUlozeno;
 
-    S.turns = (Array.isArray(S.turns) ? S.turns : []).map(function(t){
-      return { p: naCislo(t && t.p, 0), bust: !!(t && t.bust),
-               d: (t && typeof t.d === "string") ? t.d : "" };
+    S.turns = (Array.isArray(S.turns) ? S.turns : []).map(function(tah){
+      return kopieKola(tah);
     });
 
     S.rolls = (Array.isArray(S.rolls) && S.rolls.length ? S.rolls : [{}]).map(function(r){
@@ -1198,9 +1612,14 @@
         thrown: (thrown >= 1 && thrown <= 6) ? Math.floor(thrown) : 6,
         hot: !!(r && r.hot),
         items: (Array.isArray(r && r.items) ? r.items : []).map(function(i){
-          return { l: (i && typeof i.l === "string") ? i.l : "vlastní",
-                   p: naCislo(i && i.p, 0),
-                   d: Math.max(0, Math.floor(naCislo(i && i.d, 0))) };
+          var o = { p: naCislo(i && i.p, 0),
+                    d: Math.max(0, Math.floor(naCislo(i && i.d, 0))) };
+          if(i && typeof i.k === "string"){ o.k = i.k; return o; }
+          /* rozehraná hra uložená starší verzí nese v položce text: kód se
+             z něj vytáhne, a nejde-li to, text se veze dál nedotčený */
+          var kod = (i && typeof i.l === "string") ? kodZTextu(i.l) : "v";
+          if(kod === null){ o.l = i.l; } else { o.k = kod; }
+          return o;
         })
       };
     });
@@ -1294,8 +1713,8 @@
     };
   }
   function detailZ(rec){
-    return { id: rec.id, turns: (rec.turns || []).map(function(t){
-      return { p: t.p || 0, bust: !!t.bust, d: t.d || "" };
+    return { id: rec.id, turns: (rec.turns || []).map(function(tah){
+      return kopieKola(tah);
     }) };
   }
 
@@ -1588,8 +2007,10 @@
   }
 
   /* Když se historie nedá načíst, není chyba v místě — hlášky by lhaly. */
-  function textSelhani(zaklad){
-    return historieNedostupna ? "Historie teď není dostupná" : zaklad;
+  /* Vrací klíč, ne hotový text: hláška může na tlačítku přežít přepnutí
+     jazyka a přeloží se až tam, kde se vypisuje. */
+  function klicSelhani(zaklad){
+    return historieNedostupna ? "chyba.nedostupna" : zaklad;
   }
 
   /* Pravidlo z HANDOVER §4 platí dál: každý zápis má výsledek a volající ho
@@ -1641,7 +2062,7 @@
     return {
       mode: S.mode, goal: S.goal, roundGoal: S.roundGoal || null,
       banked: S.banked,
-      turns: S.turns.map(function(t){ return { p:t.p, bust:!!t.bust, d:t.d || "" }; })
+      turns: S.turns.map(function(tah){ return kopieKola(tah); })
     };
   }
   function makeRecord(id){
@@ -1659,33 +2080,25 @@
     var base = (value === 1) ? 1000 : value * 100;
     return base * Math.pow(2, count - 3);
   }
-  var STRAIGHTS = { "15":{p:500,d:5,l:"postupka 1–5"}, "26":{p:750,d:5,l:"postupka 2–6"}, "16":{p:1500,d:6,l:"postupka 1–6"} };
+  var STRAIGHTS = { "15":{p:500,d:5,k:"s15"}, "26":{p:750,d:5,k:"s26"}, "16":{p:1500,d:6,k:"s16"} };
   /* Vlastní formát místo toLocale*: na různých zařízeních by se lišil
      a font má omezenou sadu znaků. */
-  function dt(ms){
-    var d = new Date(ms);
-    return d.getDate() + ". " + (d.getMonth() + 1) + ". " + d.getFullYear() +
-           " \u00B7 " + d.getHours() + ":" + ("0" + d.getMinutes()).slice(-2);
-  }
+  function dt(ms){ return kat("datumCas")(new Date(ms)); }
   /* pro údaje, které nepatří jedné hře, ale celému dni */
-  function dtDen(ms){
-    var d = new Date(ms);
-    return d.getDate() + ". " + (d.getMonth() + 1) + ". " + d.getFullYear();
-  }
-  function kolSlovo(n){ return n === 1 ? "kolo" : ((n >= 2 && n < 5) ? "kola" : "kol"); }
+  function dtDen(ms){ return kat("datum")(new Date(ms)); }
   /* Jediné místo, kde se skládá text režimu hry. Používá ho popis hry
      v Zápisu kol, řádek historie, podřádek statistiky i řádek žebříčku —
      dřív se stejný výraz psal dvakrát zvlášť. */
   function popisRezimu(rec){
     return rec.mode === "rounds"
-      ? ("na kola" + (rec.roundGoal ? " \u00B7 limit " + rec.roundGoal : ""))
-      : ("do " + fmt(rec.goal || 0));
+      ? (rec.roundGoal ? t("rezim.nakolalimit", { n: rec.roundGoal }) : t("rezim.nakola"))
+      : t("rezim.dobodu", { b: fmt(rec.goal || 0) });
   }
   function popisHry(rec){
     var kol = gKol(rec);
-    return dt(rec.savedAt) + " \u00B7 " + popisRezimu(rec) + " \u00B7 " + kol + " " + kolSlovo(kol);
+    return dt(rec.savedAt) + " \u00B7 " + popisRezimu(rec) + " \u00B7 " + tn("slovo.kolo", kol);
   }
-  function fmt(n){ return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, "\u202F"); }
+  function fmt(n){ return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, kat("sep")); }
   /* Popisy kol a názvy položek můžou pocházet z cizí zálohy nebo z poškozeného
      uložení; všude, kde jdou do innerHTML, musí projít tudy. */
   function esc(s){
@@ -1693,7 +2106,93 @@
       return c === "&" ? "&amp;" : c === "<" ? "&lt;" : c === ">" ? "&gt;" : "&quot;";
     });
   }
-  function kostkami(n){ return n === 1 ? "1 kostkou" : n + " kostkami"; }
+
+  /* ---------- štítky odložených položek ----------
+     Položka nese kód, ne text. Kolo se ukládá do historie i do zálohy a text
+     zapsaný při jeho vzniku by v něm zafixoval jazyk natrvalo — po přepnutí
+     by se přeložilo rozhraní, ale dohrané hry ne. Na slova se kód převádí až
+     při vykreslení.
+
+     Kolo drží kódy v poli c: hody odděluje "|", položky ",". Je to kratší než
+     dřívější český popis a triviálně rozebratelné. */
+  var KODY = ["j", "p", "v", "s15", "s26", "s16"];
+  var NKOD = /^n([3-6])([1-6])$/;
+  var HODY_ODD = "|", POLOZKY_ODD = ",";
+  var HODY_TXT = " \u00B7 ", POLOZKY_TXT = " + ";
+
+  /* Záznamy zapsané před zavedením kódů nesou text v poli d. Ten je vždycky
+     český — jiný jazyk aplikace tehdy neuměla — a tabulka je proto zmrazená.
+     Svázat ji s katalogem by znamenalo, že přeformulování českého štítku
+     udělá ze starých dat nečitelná. Že se obě strany nerozešly, hlídá
+     sada 17. */
+  var STARE = { "jednička": "j", "pětka": "p", "vlastní": "v",
+                "postupka 1\u20135": "s15", "postupka 2\u20136": "s26",
+                "postupka 1\u20136": "s16" };
+  var STARE_N = /^([3-6])\u00D7 ([1-6])$/;
+
+  /* Neznámý kód se ukáže tak, jak je: cizí záloha ani poškozená data se
+     nemají tvářit jako prázdné místo. Do stránky jde přes esc() jako
+     všechno ostatní. */
+  function textKodu(k){
+    var m = NKOD.exec(k);
+    if(m) return t("stitek.n", { p: m[1], h: m[2] });
+    return KODY.indexOf(k) >= 0 ? t("stitek." + k) : String(k);
+  }
+  function stitek(it){
+    if(it && typeof it.k === "string") return textKodu(it.k);
+    /* rozehraná hra uložená starší verzí, jejíž text se rozebrat nepodařilo */
+    return (it && typeof it.l === "string") ? it.l : t("stitek.v");
+  }
+  function kodyNaText(c){
+    if(!c) return "";
+    return String(c).split(HODY_ODD).map(function(hod){
+      return hod.split(POLOZKY_ODD).map(textKodu).join(POLOZKY_TXT);
+    }).join(HODY_TXT);
+  }
+  function kodZTextu(s){
+    if(Object.prototype.hasOwnProperty.call(STARE, s)) return STARE[s];
+    var m = STARE_N.exec(s);
+    return m ? ("n" + m[1] + m[2]) : null;
+  }
+  /* Rozbor běží líně při čtení a nic nepřepisuje — stejný vzorec jako dopočet
+     chybějících polí souhrnu, a stejně jako on nepotřebuje bump verze IndexedDB.
+     Gramatika je uzavřená, takže selhání znamená cizí nebo poškozená data;
+     pak se vrací null a volající text ukáže syrový. */
+  function kodyZPopisu(d){
+    if(!d) return "";
+    var hody = String(d).split(HODY_TXT), out = [], i, j, kusy, radek, k;
+    for(i = 0; i < hody.length; i++){
+      kusy = hody[i].split(POLOZKY_TXT); radek = [];
+      for(j = 0; j < kusy.length; j++){
+        k = kodZTextu(kusy[j]);
+        if(k === null) return null;
+        radek.push(k);
+      }
+      out.push(radek.join(POLOZKY_ODD));
+    }
+    return out.join(HODY_ODD);
+  }
+  /* Jediné místo, kde se popis kola skládá pro zobrazení. Kód vyhrává; není-li,
+     zkusí se rozebrat starý text a teprve pak se ukáže tak, jak je. */
+  function popisKola(tah){
+    if(tah && typeof tah.c === "string") return kodyNaText(tah.c);
+    var d = (tah && typeof tah.d === "string") ? tah.d : "";
+    var c = kodyZPopisu(d);
+    return c === null ? d : kodyNaText(c);
+  }
+  /* Kolo se všude kopíruje stejně: veze si kódy, a nemá-li je, původní text.
+     Nic se nepřepisuje, takže starý záznam přežije i opakovaný zápis do
+     historie, export i import beze změny. */
+  function kopieKola(tah, strop){
+    var o = { p: naCislo(tah && tah.p, 0), bust: !!(tah && tah.bust) };
+    if(tah && typeof tah.c === "string"){
+      o.c = strop ? tah.c.slice(0, strop) : tah.c;
+    } else {
+      var d = (tah && typeof tah.d === "string") ? tah.d : "";
+      o.d = strop ? d.slice(0, strop) : d;
+    }
+    return o;
+  }
 
   /* ---------- odvozené ---------- */
   function cur(){ return S.rolls[S.rolls.length - 1]; }
@@ -1701,9 +2200,32 @@
   function left(){ return cur().thrown - usedInRoll(cur()); }
   function rollPoints(r){ return r.items.reduce(function(a,i){ return a + i.p; }, 0); }
   function potTotal(){ return S.rolls.reduce(function(a,r){ return a + rollPoints(r); }, 0); }
+  /* Prázdný hod se do popisu nedostane — u farklu je poslední hod prázdný
+     z definice a slovo se dopisuje až při zobrazení. */
+  function turnKody(){
+    var out = [], i, j, r, radek;
+    for(i = 0; i < S.rolls.length; i++){
+      r = S.rolls[i]; radek = [];
+      for(j = 0; j < r.items.length; j++){
+        /* položka bez kódu se do c zapsat nedá */
+        if(typeof r.items[j].k !== "string") return null;
+        radek.push(r.items[j].k);
+      }
+      if(radek.length) out.push(radek.join(POLOZKY_ODD));
+    }
+    return out.join(HODY_ODD);
+  }
   function turnDesc(){
-    return S.rolls.map(function(r){ return r.items.map(function(i){ return i.l; }).join(" + "); })
-                  .filter(Boolean).join(" · ");
+    return S.rolls.map(function(r){ return r.items.map(stitek).join(POLOZKY_TXT); })
+                  .filter(Boolean).join(HODY_TXT);
+  }
+  /* Kolo se ukládá v kódech. Kdyby některá položka kód neměla — rozehraná hra
+     z doby před nimi, jejíž štítek se rozebrat nepodařilo — zapíše se raději
+     text; ztratit štítek by bylo horší než zafixovat u jednoho kola jazyk. */
+  function zapisKolo(bodu, farkle){
+    var c = turnKody(), tah = { p: bodu, bust: farkle };
+    if(c === null){ tah.d = turnDesc(); } else { tah.c = c; }
+    S.turns.push(tah);
   }
 
   /* ---------- prvky ---------- */
@@ -1749,9 +2271,9 @@
   /* ---------- akce ---------- */
   /* diceUsed < 1 by šlo zapisovat donekonečna, aniž by ubývaly kostky —
      jediná cesta sem je ruční zadání při nule zbývajících kostek */
-  function keep(label, points, diceUsed){
+  function keep(kod, points, diceUsed){
     if(diceUsed < 1 || diceUsed > left()) return;
-    cur().items.push({l:label, p:points, d:diceUsed});
+    cur().items.push({k:kod, p:points, d:diceUsed});
     render();
   }
   function unkeep(i){ cur().items.splice(i, 1); render(); }
@@ -1770,7 +2292,7 @@
     var p = potTotal();
     if(p <= 0 || locked()) return;
     S.dirty = true;
-    S.turns.push({p:p, bust:false, d:turnDesc()});
+    zapisKolo(p, false);
     S.banked += p;
     S.rolls = [{thrown:6, hot:false, items:[]}];
     render();
@@ -1779,7 +2301,7 @@
   function bust(){
     if(locked()) return;
     S.dirty = true;
-    S.turns.push({p:potTotal(), bust:true, d:turnDesc()});
+    zapisKolo(potTotal(), true);
     S.rolls = [{thrown:6, hot:false, items:[]}];
     render();
     zkusAutoUlozit();
@@ -1833,7 +2355,7 @@
   /* Selhání zápisu do historie hlásí tlačítko v Zápisu kol — ať už klepnutí
      přišlo od uživatele, nebo zápis pustil automat. */
   function selhalZapis(){
-    archMsg = textSelhani("Nepodařilo se uložit — došlo místo");
+    archMsg = klicSelhani("chyba.mistoulozit");
     setTimeout(function(){ archMsg = ""; renderArch(); }, 4000);
     renderArch();
   }
@@ -1874,25 +2396,25 @@
   }
   function renderArch(){
     elArch.classList.remove("warn");
-    if(archMsg){ elArch.disabled = true; elArch.textContent = archMsg; return; }
-    if(gameEmpty()){ elArch.disabled = true; elArch.textContent = "Zatím není co uložit do historie"; return; }
+    if(archMsg){ elArch.disabled = true; elArch.textContent = t(archMsg); return; }
+    if(gameEmpty()){ elArch.disabled = true; elArch.textContent = t("zapis.nicknulozeni"); return; }
     if(archTimer){
       elArch.disabled = false;
       elArch.classList.add("warn");
-      elArch.textContent = "Na stole je " + fmt(potTotal()) + " a propadne — zapsat?";
+      elArch.textContent = t("arch.propadne", { b: fmt(potTotal()) });
       return;
     }
     var kde = kdeZaznam();
     /* Záznam smazaný z historie se z tlačítka vrací zpátky, a to pod stejným
        id — proto tady nevzniká nová hra ani při rozehrané úpravě. */
     if(kde === "kos"){
-      elArch.disabled = false; elArch.textContent = "Obnovit do historie"; return;
+      elArch.disabled = false; elArch.textContent = t("arch.obnovit"); return;
     }
     if(kde === "historie" && !S.dirty){
-      elArch.disabled = true; elArch.textContent = "Uloženo v historii"; return;
+      elArch.disabled = true; elArch.textContent = t("arch.ulozeno"); return;
     }
     elArch.disabled = false;
-    elArch.textContent = (kde === "historie") ? "Aktualizovat v historii" : "Zapsat do historie";
+    elArch.textContent = t((kde === "historie") ? "arch.aktualizovat" : "arch.zapsat");
   }
 
   /* Selhání zápisu se hlásí tam, kde uživatel klepnul: text tlačítka se na
@@ -1933,8 +2455,8 @@
     S.goal = rec.goal > 0 ? rec.goal : 4000;
     S.roundGoal = rec.roundGoal > 0 ? rec.roundGoal : null;
     S.banked = rec.banked || 0;
-    S.turns = (rec.turns || []).map(function(t){
-      return { p: t.p || 0, bust: !!t.bust, d: t.d || "" };
+    S.turns = (rec.turns || []).map(function(tah){
+      return kopieKola(tah);
     });
     S.rolls = [{thrown:6, hot:false, items:[]}];
     /* Obnovená hra se hlásí ke svému původnímu záznamu, pokud si ho koš
@@ -1951,7 +2473,7 @@
     /* co je právě rozehrané, taky neztratíme — když se to nepovede uložit,
        obnovu neděláme, jinak by rozehraná hra zmizela */
     if(!kosPush()){
-      hlaskaNaTlacitku(btn, "Nepodařilo se zálohovat rozehranou hru", "Obnovit");
+      hlaskaNaTlacitku(btn, t("chyba.zalohovathru"), t("spol.obnovit"));
       return;
     }
     list = kosAll().filter(function(x){ return x.id !== id; });
@@ -1974,31 +2496,31 @@
   function kosRadek(rec, ptaSe, akce){
     var row = document.createElement("div");
     row.className = "setrow kosrow";
-    var t = document.createElement("div");
-    t.className = "t";
+    var popis = document.createElement("div");
+    popis.className = "t";
     var btns = document.createElement("div");
     btns.className = "setbtns";
     if(ptaSe){
-      t.innerHTML = "<b>Opravdu trvale smazat?</b><span>" +
+      popis.innerHTML = "<b>" + esc(t("kos.opravdutrvale")) + "</b><span>" +
         esc(fmt(rec.banked || 0) + " — " + popisHry(rec)) + "</span>";
       var ano = document.createElement("button");
-      ano.type = "button"; ano.className = "ghost warn"; ano.textContent = "Smazat";
+      ano.type = "button"; ano.className = "ghost warn"; ano.textContent = t("spol.smazat");
       ano.addEventListener("click", function(){ akce.smaz(ano); });
       var ne = document.createElement("button");
-      ne.type = "button"; ne.className = "ghost"; ne.textContent = "Zrušit";
+      ne.type = "button"; ne.className = "ghost"; ne.textContent = t("spol.zrusit");
       ne.addEventListener("click", akce.zrus);
       btns.appendChild(ano); btns.appendChild(ne);
     }else{
-      t.innerHTML = "<b>" + fmt(rec.banked || 0) + "</b><span>" + esc(popisHry(rec)) + "</span>";
+      popis.innerHTML = "<b>" + fmt(rec.banked || 0) + "</b><span>" + esc(popisHry(rec)) + "</span>";
       var ob = document.createElement("button");
-      ob.type = "button"; ob.className = "ghost"; ob.textContent = "Obnovit";
+      ob.type = "button"; ob.className = "ghost"; ob.textContent = t("spol.obnovit");
       ob.addEventListener("click", function(){ akce.obnov(ob); });
       var tr = document.createElement("button");
-      tr.type = "button"; tr.className = "ghost"; tr.textContent = "Trvale smazat";
+      tr.type = "button"; tr.className = "ghost"; tr.textContent = t("kos.trvalesmazat");
       tr.addEventListener("click", akce.ptejSe);
       btns.appendChild(ob); btns.appendChild(tr);
     }
-    row.appendChild(t); row.appendChild(btns);
+    row.appendChild(popis); row.appendChild(btns);
     return row;
   }
 
@@ -2009,7 +2531,7 @@
     elKosList.innerHTML = "";
     if(!list.length){
       ptamSeKos = null;
-      elKosList.innerHTML = '<div class="empty">Zatím není co obnovit. Hra smazaná tlačítkem Nová hra se sem odloží sama.</div>';
+      elKosList.innerHTML = '<div class="empty">' + esc(t("kos.prazdny")) + '</div>';
       return;
     }
     list.forEach(function(rec){
@@ -2021,7 +2543,7 @@
           /* Když zápis selže, záznam v koši zůstane — hlásíme to na tlačítku
              a řádek nepřekreslujeme, jinak by hláška hned zmizela. */
           if(!kosWrite(kosAll().filter(function(x){ return x.id !== rec.id; }))){
-            hlaskaNaTlacitku(b, "Nepodařilo se smazat", "Smazat");
+            hlaskaNaTlacitku(b, t("chyba.smazat"), t("spol.smazat"));
             return;
           }
           ptamSeKos = null;
@@ -2052,7 +2574,7 @@
     if(histIndex(hry, rec.id) >= 0){ rec.id = newId(); }
     histWrite(hry.concat([proHistorii(rec)]), function(ok){
       if(!ok){
-        hlaskaNaTlacitku(btn, textSelhani("Nepodařilo se uložit — došlo místo"), "Obnovit");
+        hlaskaNaTlacitku(btn, t(klicSelhani("chyba.mistoulozit")), t("spol.obnovit"));
         return;
       }
       kosHistWrite(list.filter(function(x, k){ return k !== i; }));
@@ -2067,7 +2589,7 @@
     elKosHistList.innerHTML = "";
     if(!list.length){
       ptamSeKosHist = null;
-      elKosHistList.innerHTML = '<div class="empty">Zatím není co obnovit. Hra smazaná z historie se sem odloží sama.</div>';
+      elKosHistList.innerHTML = '<div class="empty">' + esc(t("kos.prazdnyhist")) + '</div>';
       return;
     }
     list.forEach(function(rec){
@@ -2077,7 +2599,7 @@
         zrus: function(){ ptamSeKosHist = null; renderKosHist(); },
         smaz: function(b){
           if(!kosHistWrite(kosHistAll().filter(function(x){ return x.id !== rec.id; }))){
-            hlaskaNaTlacitku(b, "Nepodařilo se smazat", "Smazat");
+            hlaskaNaTlacitku(b, t("chyba.smazat"), t("spol.smazat"));
             return;
           }
           ptamSeKosHist = null;
@@ -2094,7 +2616,7 @@
     clearTimeout(resetTimer); resetTimer = null;
     var b = $("reset");
     b.classList.remove("warn");
-    b.textContent = "Nová hra";
+    b.textContent = t("zapis.novahra");
   }
   /* Společný konec všech cest k nové hře. wipe() až po úspěšné záloze —
      jinak by rozehraná hra zmizela bez možnosti obnovy. Když se nepovede,
@@ -2104,7 +2626,7 @@
     if(!kosPush()){
       resetMsg = true;
       b.classList.add("warn");
-      b.textContent = "Nepodařilo se zálohovat — hra zůstává";
+      b.textContent = t("nova.nezalohovano");
       setTimeout(function(){ resetMsg = false; disarmReset(); }, 4000);
       return false;
     }
@@ -2124,7 +2646,7 @@
     if(gameEmpty()){ wipe(); goTo(0); return; }
     if(!resetTimer){
       b.classList.add("warn");
-      b.textContent = "Opravdu nová?";
+      b.textContent = t("nova.opravdu");
       resetTimer = setTimeout(disarmReset, 4000);
       return;
     }
@@ -2134,10 +2656,9 @@
   }
   function otevriNovaModal(btn){
     var pot = potTotal();
-    var t = "Tahle hra zatím není v historii, takže se nezapočítá do statistik. " +
-            "Nová hra ji odloží do nastavení, mezi smazané rozehrané hry — drží se jich posledních pět.";
-    if(pot > 0) t += " Na stole je " + fmt(pot) + " a propadne.";
-    $("newtext").textContent = t;
+    var zprava = t("nova.text");
+    if(pot > 0) zprava += " " + t("nova.propadne", { b: fmt(pot) });
+    $("newtext").textContent = zprava;
     otevriModal("newmodal", btn);
   }
 
@@ -2200,7 +2721,7 @@
       if(!ok){ selhalZapis(); return; }   /* pop-up jen po potvrzeném zápisu */
       S.autoUlozeno = true;
       save();
-      toast(aktualizace ? "Záznam v historii aktualizován" : "Hra uložena do historie");
+      toast(t(aktualizace ? "toast.aktualizovan" : "toast.ulozena"));
     });
   }
 
@@ -2217,7 +2738,7 @@
     });
     var ok = selValue !== null && selCount <= l && !lock;
     elAddKind.disabled = !ok;
-    elAddKind.textContent = ok ? ("+ " + fmt(kindPoints(selValue, selCount))) : "+ 0";
+    elAddKind.textContent = t("pocitadlo.plus", { b: ok ? fmt(kindPoints(selValue, selCount)) : "0" });
   }
 
   /* Vrubovka i přehledové dlaždice se kreslí z otisku hry, takže stejný kód
@@ -2235,9 +2756,9 @@
         elBars.appendChild(s);
       }
       if(rec.roundGoal > 0){
-        elCap.textContent = "odehráno kol: " + played + " z " + rec.roundGoal;
+        elCap.textContent = t("tally.kolzn", { n: played, z: rec.roundGoal });
       } else {
-        elCap.textContent = played ? ("odehráno kol: " + played) : "zatím žádné kolo";
+        elCap.textContent = played ? t("tally.koln", { n: played }) : t("tally.zadnekolo");
       }
       return;
     }
@@ -2251,7 +2772,8 @@
       elBars.appendChild(s);
     }
     var rest = rec.goal - rec.banked;
-    elCap.textContent = rest > 0 ? ("do cíle zbývá " + fmt(rest)) : ("cíl překonán o " + fmt(-rest));
+    elCap.textContent = rest > 0 ? t("tally.docile", { b: fmt(rest) })
+                                 : t("tally.prekonano", { b: fmt(-rest) });
   }
   function renderTally(){ tallyInto(elTally, elTallyCap, snapshot()); }
 
@@ -2280,14 +2802,15 @@
     elFix.innerHTML = "";
     var any = S.rolls.some(function(r){ return r.items.length; });
     if(!any){
-      elFix.innerHTML = '<div class="none">V tomto kole zatím nic zapsaného.</div>';
+      elFix.innerHTML = '<div class="none">' + esc(t("oprava.nic")) + '</div>';
       return;
     }
     S.rolls.forEach(function(r, ri){
       if(!r.items.length) return;
       var lbl = document.createElement("div");
       lbl.className = "lbl";
-      lbl.innerHTML = '<span>hod ' + (ri + 1) + ' \u00B7 ' + r.thrown + 'k' + (r.hot ? ' \u00B7 hork\u00E9' : '') + '</span>' +
+      lbl.innerHTML = '<span>' + esc(t("oprava.hod", { n: ri + 1, k: r.thrown }) +
+                        (r.hot ? " \u00B7 " + t("oprava.horke") : "")) + '</span>' +
                       '<b>' + fmt(rollPoints(r)) + '</b>';
       var grp = document.createElement("div");
       grp.className = "grp";
@@ -2295,8 +2818,8 @@
         var b = document.createElement("button");
         b.type = "button";
         b.className = "ent";
-        b.innerHTML = '<span>' + esc(it.l) + '</span><b>' + fmt(it.p) + '</b>';
-        b.title = "Smazat položku";
+        b.innerHTML = '<span>' + esc(stitek(it)) + '</span><b>' + fmt(it.p) + '</b>';
+        b.title = t("oprava.smazatpolozku");
         b.addEventListener("click", function(){ removeEntry(ri, ii); });
         grp.appendChild(b);
       });
@@ -2305,14 +2828,23 @@
     });
   }
 
+  /* Farkle se do dat nezapisuje, dopisuje se až tady jako poslední úsek —
+     stará historie ho tak dostane taky, bez jakékoli migrace. Živá tabulka
+     kol i nedotknutelný náhled hry z historie skládají buňku touhle jednou
+     funkcí, aby se obě podoby nemohly rozejít. */
+  function bunkaPopisu(tah){
+    var p = esc(popisKola(tah));
+    if(tah.bust) return p ? p + " \u00B7 " + esc(t("slovo.farkle")) : esc(t("slovo.farkle"));
+    return p || "&nbsp;";
+  }
   function rowsHTML(turns){
     var run = 0, out = "";
-    (turns || []).forEach(function(t, i){
-      if(!t.bust) run += t.p;
-      out += '<tr' + (t.bust ? ' class="f"' : '') + '>' +
+    (turns || []).forEach(function(tah, i){
+      if(!tah.bust) run += tah.p;
+      out += '<tr' + (tah.bust ? ' class="f"' : '') + '>' +
         '<td class="n">' + (i + 1) + '</td>' +
-        '<td class="d">' + (t.bust ? (t.d ? esc(t.d) + " · farkle" : "farkle") : (esc(t.d) || "&nbsp;")) + '</td>' +
-        '<td class="g">' + fmt(t.p || 0) + '</td>' +
+        '<td class="d">' + bunkaPopisu(tah) + '</td>' +
+        '<td class="g">' + fmt(tah.p || 0) + '</td>' +
         '<td class="s">' + fmt(run) + '</td></tr>';
     });
     return out;
@@ -2342,11 +2874,11 @@
     fb.style.display = S.turns.length ? "" : "none";
     fb.classList.toggle("on", fixMode);
     fb.setAttribute("aria-pressed", fixMode ? "true" : "false");
-    fb.textContent = fixMode ? "Hotovo" : "Opravit";
+    fb.textContent = t(fixMode ? "zapis.hotovo" : "zapis.opravit");
 
     var run = 0;
-    S.turns.forEach(function(t, i){
-      if(!t.bust) run += t.p;
+    S.turns.forEach(function(tah, i){
+      if(!tah.bust) run += tah.p;
       var tr = document.createElement("tr");
 
       if(pendingDel === i){
@@ -2357,12 +2889,12 @@
         wrap.className = "cf";
         var q = document.createElement("span");
         q.className = "q";
-        q.textContent = "Opravdu smazat kolo " + (i + 1) + "?";
+        q.textContent = t("zapis.opravdusmazat", { n: i + 1 });
         var yes = document.createElement("button");
-        yes.type = "button"; yes.className = "mini danger"; yes.textContent = "Smazat";
+        yes.type = "button"; yes.className = "mini danger"; yes.textContent = t("spol.smazat");
         yes.addEventListener("click", function(){ deleteTurn(i); });
         var no = document.createElement("button");
-        no.type = "button"; no.className = "mini"; no.textContent = "Zrušit";
+        no.type = "button"; no.className = "mini"; no.textContent = t("spol.zrusit");
         no.addEventListener("click", function(){ pendingDel = null; renderRows(); });
         wrap.appendChild(q); wrap.appendChild(yes); wrap.appendChild(no);
         td.appendChild(wrap);
@@ -2371,11 +2903,11 @@
         return;
       }
 
-      if(t.bust) tr.className = "f";
+      if(tah.bust) tr.className = "f";
       tr.innerHTML =
         '<td class="n">' + (i + 1) + '</td>' +
-        '<td class="d">' + (t.bust ? (t.d ? esc(t.d) + " · farkle" : "farkle") : (esc(t.d) || "&nbsp;")) + '</td>' +
-        '<td class="g">' + fmt(t.p || 0) + '</td>' +
+        '<td class="d">' + bunkaPopisu(tah) + '</td>' +
+        '<td class="g">' + fmt(tah.p || 0) + '</td>' +
         '<td class="s">' + fmt(run) + '</td>';
 
       if(fixMode){
@@ -2383,8 +2915,8 @@
         xtd.className = "x";
         var x = document.createElement("button");
         x.type = "button"; x.className = "delbtn"; x.innerHTML = "\u00D7";
-        x.title = "Smazat kolo " + (i + 1);
-        x.setAttribute("aria-label", "Smazat kolo " + (i + 1));
+        x.title = t("zapis.smazatkolo", { n: i + 1 });
+        x.setAttribute("aria-label", x.title);
         x.addEventListener("click", function(){ pendingDel = i; renderRows(); });
         xtd.appendChild(x);
         tr.appendChild(xtd);
@@ -2534,7 +3066,7 @@
       var light = mode === "light";
       vrstva("thsun", !light);
       vrstva("thmoon", light);
-      var label = light ? "Tmavý režim" : "Světlý režim";
+      var label = t(light ? "hlav.tmavyrezim" : "hlav.svetlyrezim");
       btn.title = label;
       btn.setAttribute("aria-label", label);
       try{ localStorage.setItem(TKEY, mode); }catch(e){}
@@ -2542,6 +3074,7 @@
     btn.addEventListener("click", function(){
       apply(root.getAttribute("data-theme") === "light" ? "dark" : "light");
     });
+    naJazyk(function(){ apply(root.getAttribute("data-theme") === "light" ? "light" : "dark"); });
     var ulozeny = null;
     try{ ulozeny = localStorage.getItem(TKEY); }catch(e){}
     if(ulozeny === "light" || ulozeny === "dark"){
@@ -2593,9 +3126,9 @@
        Co klik udělá, zůstává v title a aria-label. */
     function mark(){
       var on = !!active();
-      btn.textContent = on ? "Zapnuto" : "Vypnuto";
+      btn.textContent = t(on ? "spol.zapnuto" : "nast.vypnuto");
       btn.classList.toggle("on", on);
-      var label = on ? "Zpět z celé obrazovky" : "Celá obrazovka";
+      var label = t(on ? "fs.zpet" : "fs.zapnout");
       btn.title = label;
       btn.setAttribute("aria-label", label);
     }
@@ -2610,6 +3143,7 @@
     ["fullscreenchange","webkitfullscreenchange"].forEach(function(ev){
       document.addEventListener(ev, mark);
     });
+    naJazyk(mark);
     mark();
   })();
 
@@ -2635,9 +3169,9 @@
     try{ zapnuto = localStorage.getItem(SKEY) === "1"; }catch(e){}
 
     function mark(){
-      btn.textContent = zapnuto ? "Zapnuto" : "Vypnuto";
+      btn.textContent = t(zapnuto ? "spol.zapnuto" : "nast.vypnuto");
       btn.classList.toggle("on", zapnuto);
-      var label = zapnuto ? "Nechat displej zhasínat" : "Nezhasínat displej";
+      var label = t(zapnuto ? "svit.nechat" : "svit.nezhasinat");
       btn.title = label;
       btn.setAttribute("aria-label", label);
     }
@@ -2699,6 +3233,7 @@
     document.addEventListener("pointerdown", aktivita, true);
     document.addEventListener("keydown", aktivita, true);
 
+    naJazyk(mark);
     mark();
     if(zapnuto){ vezmi(); odpocet(); }
   })();
@@ -2763,10 +3298,10 @@
     var best = nej === null ? 0 : nej;
     var avg = gPrumer(rec);
     if(avg === null) avg = 0;
-    return '<div><span>celkem</span><b>' + fmt(rec.banked || 0) + '</b></div>' +
-           '<div><span>nejlepší</span><b>' + fmt(best) + '</b></div>' +
-           '<div><span>průměr</span><b>' + fmt(avg) + '</b></div>' +
-           '<div><span>farklů</span><b>' + busts + '</b></div>';
+    return '<div><span>' + esc(t("souhrn.celkem")) + '</span><b>' + fmt(rec.banked || 0) + '</b></div>' +
+           '<div><span>' + esc(t("souhrn.nejlepsi")) + '</span><b>' + fmt(best) + '</b></div>' +
+           '<div><span>' + esc(t("souhrn.prumer")) + '</span><b>' + fmt(avg) + '</b></div>' +
+           '<div><span>' + esc(t("souhrn.farklu")) + '</span><b>' + busts + '</b></div>';
   }
   function renderStats(){ $("stats").innerHTML = statsHTML(snapshot()); }
 
@@ -2808,14 +3343,17 @@
     return nej;
   }
   /* Počet hodů se rekonstruuje z popisu kola, protože turns[i] nese jen
-     {p, bust, d}. turnDesc() spojuje hody přes " · " a prázdné hody vyhazuje —
+     {p, bust} a k tomu kódy v c (starý záznam text v d). Obojí spojuje hody
+     jedním oddělovačem a prázdné hody vyhazuje —
      u farklu je poslední hod prázdný z definice, proto se u něj přičítá
      jednička. Sedí to i na farkle prvním hodem: prázdný popis → jeden hod.
      Math.max(u, 1) je pojistka pro cizí zálohu s prázdným popisem u zapsaného
      kola; z aplikace takové kolo vzniknout nemůže. */
-  function hodyVKole(t){
-    var u = t.d ? String(t.d).split(" \u00B7 ").length : 0;
-    return t.bust ? u + 1 : Math.max(u, 1);
+  function hodyVKole(tah){
+    var u;
+    if(typeof tah.c === "string"){ u = tah.c ? tah.c.split(HODY_ODD).length : 0; }
+    else { u = tah.d ? String(tah.d).split(HODY_TXT).length : 0; }
+    return tah.bust ? u + 1 : Math.max(u, 1);
   }
   function gNejvicHodu(g){
     if(g.hodu !== undefined) return g.hodu;
@@ -2849,33 +3387,33 @@
 
   function cislo(v){ return String(v); }
   function fmtR(v){ return fmt(Math.round(v)); }
-  function desetina(v){ return (Math.round(v * 10) / 10).toString().replace(".", ","); }
+  function desetina(v){ return (Math.round(v * 10) / 10).toString().replace(".", kat("des")); }
 
   /* ---------- sledované statistiky ----------
      s: omezení na režim, m: hodnota jedné hry, a: způsob shrnutí,
      f: formát, dir: směr žebříčku, kol: dopsat do žebříčku počet kol */
   var STATY = [
-    { n:"Odehráno her",                 a:"pocet",      f:cislo },
-    { n:"Nejvíc her za den",            a:"denMax",     f:cislo },
-    { n:"Celkem nasbíráno bodů",        a:"soucet",     f:fmt,      num:gBody },
-    { n:"Nejvíc bodů za hru",           m:gBody,        a:"max",   f:fmt,      kol:true },
-    { n:"Nejvíc bodů — hra na body",    m:gBody,        a:"max",   f:fmt,      s:"points" },
-    { n:"Nejvíc bodů — hra na kola",    m:gBody,        a:"max",   f:fmt,      s:"rounds", kol:true },
-    { n:"Celkový průměr na kolo",       m:gPrumer,      a:"pomer", f:fmtR,     num:gBody, den:gKol },
-    { n:"Průměr na kolo — hra na body", m:gPrumer,      a:"pomer", f:fmtR,     num:gBody, den:gKol, s:"points" },
-    { n:"Průměr na kolo — hra na kola", m:gPrumer,      a:"pomer", f:fmtR,     num:gBody, den:gKol, s:"rounds" },
-    { n:"Nejvíc hodů v jednom kole",    m:gNejvicHodu,  a:"max",   f:cislo,    kol:true },
+    { n:"stat.n.pocet",                 a:"pocet",      f:cislo },
+    { n:"stat.n.denmax",                a:"denMax",     f:cislo },
+    { n:"stat.n.soucet",                a:"soucet",     f:fmt,      num:gBody },
+    { n:"stat.n.maxbody",               m:gBody,        a:"max",   f:fmt,      kol:true },
+    { n:"stat.n.maxbodybody",           m:gBody,        a:"max",   f:fmt,      s:"points" },
+    { n:"stat.n.maxbodykola",           m:gBody,        a:"max",   f:fmt,      s:"rounds", kol:true },
+    { n:"stat.n.prumer",                m:gPrumer,      a:"pomer", f:fmtR,     num:gBody, den:gKol },
+    { n:"stat.n.prumerbody",            m:gPrumer,      a:"pomer", f:fmtR,     num:gBody, den:gKol, s:"points" },
+    { n:"stat.n.prumerkola",            m:gPrumer,      a:"pomer", f:fmtR,     num:gBody, den:gKol, s:"rounds" },
+    { n:"stat.n.maxhodu",               m:gNejvicHodu,  a:"max",   f:cislo,    kol:true },
     /* Obě „kola v jedné hře na body“ stojí na gKolKCili(), která u nedokončené
        hry vrací null — tím se počítají jen hry, které cíle doopravdy dosáhly,
        a žádný zvláštní výběr her k tomu není potřeba. */
-    { n:"Nejméně kol v jedné hře na body", m:gKolKCili, a:"min",   f:cislo,    s:"points" },
-    { n:"Nejvíc kol v jedné hře na body",  m:gKolKCili, a:"max",   f:cislo,    s:"points" },
-    { n:"Nejlepší kolo",                m:gNejlepsiKolo,a:"max",   f:fmt },
-    { n:"Nejhorší kolo bez farklu",     m:gNejhorsiKolo,a:"min",   f:fmt },
-    { n:"Nejvíc farklů za hru",         m:gFarkle,      a:"max",   f:cislo,    kol:true },
-    { n:"Nejvíc bodů ztraceno farklem", m:gZtraceno,    a:"max",   f:fmt,      kol:true },
-    { n:"Nejdelší série bez farklu",    m:gSerie,       a:"max",   f:cislo,    kol:true },
-    { n:"Farklů na hru",                m:gFarkle,      a:"pomer", f:desetina, num:gFarkle, den:function(){ return 1; }, dir:"asc" }
+    { n:"stat.n.minkol",                m:gKolKCili,    a:"min",   f:cislo,    s:"points" },
+    { n:"stat.n.maxkol",                m:gKolKCili,    a:"max",   f:cislo,    s:"points" },
+    { n:"stat.n.nejlepsikolo",          m:gNejlepsiKolo,a:"max",   f:fmt },
+    { n:"stat.n.nejhorsikolo",          m:gNejhorsiKolo,a:"min",   f:fmt },
+    { n:"stat.n.maxfarklu",             m:gFarkle,      a:"max",   f:cislo,    kol:true },
+    { n:"stat.n.ztraceno",              m:gZtraceno,    a:"max",   f:fmt,      kol:true },
+    { n:"stat.n.serie",                 m:gSerie,       a:"max",   f:cislo,    kol:true },
+    { n:"stat.n.farkluhra",             m:gFarkle,      a:"pomer", f:desetina, num:gFarkle, den:function(){ return 1; }, dir:"asc" }
   ];
 
   /* ---------- seskupení po dnech ----------
@@ -2950,8 +3488,6 @@
      Soubor je čitelný text; poslední řádek nese data pro import.
      Kdyby ho někdo z přehledu smazal, import to pozná a řekne to. */
   var ZNACKA = "#DATA:";
-  function hrySlovo(n){ return n === 1 ? "hra" : ((n >= 2 && n < 5) ? "hry" : "her"); }
-  function novaSlovo(n){ return n === 1 ? "nová" : ((n >= 2 && n < 5) ? "nové" : "nových"); }
   function datumProNazev(){
     var d = new Date();
     return d.getFullYear() + "-" + ("0" + (d.getMonth() + 1)).slice(-2) + "-" + ("0" + d.getDate()).slice(-2);
@@ -2984,40 +3520,42 @@
      Soubor z dřívější verze musí jít naimportovat i potom. */
   function exportText(hry){
     var r = [];
-    r.push("Kostky \u2014 z\u00E1loha historie her");
-    r.push("vytvo\u0159eno " + dt(Date.now()) + ", her: " + hry.length);
+    r.push(t("exp.nadpis"));
+    r.push(t("exp.vytvoreno", { kdy: dt(Date.now()), n: hry.length }));
     r.push("");
     hry.forEach(function(rec, i){
       r.push((i + 1) + ") " + popisHry(rec));
-      r.push("   celkem " + fmt(rec.banked || 0) +
-             ", nejlep\u0161\u00ED kolo " + (gNejlepsiKolo(rec) === null ? "\u2014" : fmt(gNejlepsiKolo(rec))) +
-             ", farkl\u016F " + gFarkle(rec));
+      r.push("   " + t("exp.souhrn", {
+        b: fmt(rec.banked || 0),
+        nej: gNejlepsiKolo(rec) === null ? "\u2014" : fmt(gNejlepsiKolo(rec)),
+        f: gFarkle(rec) }));
       var run = 0;
-      (rec.turns || []).forEach(function(t, k){
-        if(!t.bust) run += t.p;
+      (rec.turns || []).forEach(function(tah, k){
+        if(!tah.bust) run += tah.p;
         /* Farkle stojí na konci závorky jako poslední hod, stejně jako
            v tabulce kol; ve sloupci bodů je nula, protože kolo nic nedalo. */
-        var popis = t.bust ? ((t.d ? t.d + " \u00B7 " : "") + "farkle") : (t.d || "");
-        r.push("   " + (k + 1) + ". " + fmt(t.bust ? 0 : (t.p || 0)) +
-               (popis ? "  (" + popis + ")" : "") + "   celkem " + fmt(run));
+        var text = popisKola(tah);
+        var popis = tah.bust ? ((text ? text + " \u00B7 " : "") + t("slovo.farkle")) : text;
+        r.push("   " + (k + 1) + ". " + fmt(tah.bust ? 0 : (tah.p || 0)) +
+               (popis ? "  (" + popis + ")" : "") + "   " + t("exp.mezisoucet", { b: fmt(run) }));
       });
       r.push("");
     });
     /* v čitelné části nechceme úzkou nezlomitelnou mezeru, v textovém
        souboru by se leckde zobrazila jako podivný znak */
     return r.join("\n").replace(/\u202F/g, " ") +
-           "\n--- data pro import, ne\u0161ahat ---\n" + ZNACKA + JSON.stringify(hry);
+           "\n" + t("exp.oddelovac") + "\n" + ZNACKA + JSON.stringify(hry);
   }
 
   /* Skládání může chvíli trvat, proto se tlačítko po tu dobu zablokuje. */
   function sTextemZalohy(btn, puvodni, hotovo){
     btn.disabled = true;
-    btn.textContent = "Připravuji zálohu\u2026";
+    btn.textContent = t("zal.pripravuji");
     slozHry(function(hry){
       btn.disabled = false;
       btn.textContent = puvodni;
       if(hry === null){
-        zalMsg("Zálohu se nepodařilo složit — historie teď není dostupná.", true);
+        zalMsg(t("zal.neslozit"), true);
         return;
       }
       hotovo(exportText(hry));
@@ -3040,14 +3578,8 @@
         goal: g.goal > 0 ? g.goal : 4000,
         roundGoal: g.roundGoal > 0 ? g.roundGoal : null,
         banked: typeof g.banked === "number" ? g.banked : 0,
-        turns: g.turns.map(function(t){
-          return {
-            p: (t && typeof t.p === "number") ? t.p : 0,
-            bust: !!(t && t.bust),
-            /* legitimní popis kola je do stovky znaků, delší je omyl */
-            d: (t && typeof t.d === "string") ? t.d.slice(0, 300) : ""
-          };
-        })
+        /* legitimní popis kola je do stovky znaků, delší je omyl */
+        turns: g.turns.map(function(tah){ return kopieKola(tah, 300); })
       });
     });
     return out;
@@ -3111,7 +3643,7 @@
     nactene = null;
     elImpBox.hidden = true;
     clearTimeout(repTimer); repTimer = null;
-    $("imprep").textContent = "Nahradit vše";
+    $("imprep").textContent = t("nast.nahraditvse");
   }
   function zavriVlozeni(){
     elPasteBox.hidden = true;
@@ -3293,16 +3825,17 @@
     });
   }
   function celkemText(o){
-    if(!o) return "Velikost se nedaří zjistit.";
-    return velikost(o.usage) +
-           (o.quota > 0 ? (" z " + velikost(o.quota) + " dostupných") : "");
+    if(!o) return t("misto.nezjistit");
+    return o.quota > 0
+      ? t("misto.zdostupnych", { u: velikost(o.usage), q: velikost(o.quota) })
+      : velikost(o.usage);
   }
   /* Celek nad tlačítkem. Volá se při každém otevření nastavení — čísla se
      mezi otevřeními mění a zastaralý údaj by mátl víc než chvilkové „Zjišťuji". */
   function celekMista(){
     var el = document.getElementById("mistocelkem");
     if(!el) return;
-    el.textContent = "Zjišťuji\u2026";
+    el.textContent = t("nast.misto.zjistuji");
     odhadMista(function(o){ el.textContent = celkemText(o); });
   }
   /* Zavřený stav: rozpis schovaný, tlačítko holé. Volá se i při otevření
@@ -3311,7 +3844,7 @@
     var b = document.getElementById("mistobtn");
     if(b){
       b.disabled = false;
-      b.textContent = "Detail";
+      b.textContent = t("nast.misto.btn");
       b.classList.remove("on");
       b.setAttribute("aria-expanded", "false");
     }
@@ -3320,47 +3853,47 @@
   }
   function spoctiMisto(){
     var b = document.getElementById("mistobtn");
-    if(b){ b.disabled = true; b.textContent = "Počítám\u2026"; }
+    if(b){ b.disabled = true; b.textContent = t("misto.pocitam"); }
     velikostHistorie(function(h){
       velikostAppky(function(appka){
         odhadMista(function(o){
           var radky = [];
-          radky.push({ k: "Historie:", v: h.pocet
-            ? (h.pocet + " " + hrySlovo(h.pocet) + ", " + (h.bajtu === null
-                ? "velikost se nedaří zjistit"
-                : ((h.presne ? "" : "přibližně ") + velikost(h.bajtu))))
-            : "zatím žádná hra" });
+          radky.push({ k: t("misto.historie"), v: h.pocet
+            ? (tn("slovo.hra", h.pocet) + ", " + (h.bajtu === null
+                ? t("misto.nezmeritmalo")
+                : (h.presne ? velikost(h.bajtu) : t("misto.priblizne", { v: velikost(h.bajtu) }))))
+            : t("misto.zadnahra") });
           var hra = lsBajtu([KEY]);
-          radky.push({ k: "Rozehraná hra:",
-                       v: hra === null ? "nedá se změřit" : velikost(hra) });
+          radky.push({ k: t("misto.rozehrana"),
+                       v: hra === null ? t("misto.nezmerit") : velikost(hra) });
           /* Prázdný koš v úložišti pořád leží, jen jako dvojznakové "[]" —
              pár desítek bajtů, které vypadají jako by v koši něco bylo.
              Když je prázdný, řekne se to rovnou. */
           var vKosi = kosAll().length + kosHistAll().length;
           var kose = lsBajtu([KKEY, KHKEY]);
-          radky.push({ k: "Koše:",
-                       v: !vKosi ? "prázdné"
-                          : (vKosi + " " + hrySlovo(vKosi) +
+          radky.push({ k: t("misto.kose"),
+                       v: !vKosi ? t("misto.prazdne")
+                          : (tn("slovo.hra", vKosi) +
                              (kose === null ? "" : ", " + velikost(kose))) });
           /* Historie v režimu ls sedí pod svým vlastním řádkem, dvakrát se
              počítat nesmí. V režimu idb pod tímhle klíčem nic není. */
           var zbytek = lsZbytek(rezim === "idb" ? [KEY, KKEY, KHKEY] : [KEY, KKEY, KHKEY, HKEY]);
-          radky.push({ k: "Nastavení a starší data:",
-                       v: zbytek === null ? "nedá se změřit" : velikost(zbytek) });
-          radky.push({ k: "Aplikace:",
+          radky.push({ k: t("misto.nastaveni"),
+                       v: zbytek === null ? t("misto.nezmerit") : velikost(zbytek) });
+          radky.push({ k: t("misto.aplikace"),
                        v: appka === null
-                          ? "nedá se změřit"
-                          : (velikost(appka) + ", uložená pro běh offline") });
+                          ? t("misto.nezmerit")
+                          : t("misto.offline", { v: velikost(appka) }) });
           /* Když estimate() není, řádek se vynechá — selhání hlásí podtitulek
              nad tlačítkem a psát totéž dvakrát pod sebe nemá smysl. */
           if(o){
-            radky.push({ k: "Celkem z této adresy:",
-              v: celkemText(o) + (trvale ? ". Prohlížeč je označil za trvalá." : "") });
+            radky.push({ k: t("misto.celkem"),
+              v: celkemText(o) + (trvale ? ". " + t("misto.trvale") : "") });
           }
           ukazMisto(radky);
           if(b){
             b.disabled = false;
-            b.textContent = "Detail";
+            b.textContent = t("nast.misto.btn");
             b.classList.add("on");
             b.setAttribute("aria-expanded", "true");
           }
@@ -3377,39 +3910,41 @@
   }
 
   /* společné pro import ze souboru i ze schránky */
-  function prijmiZalohu(text, cemu, vCem){
+  /* Zdroj („soubor" nebo „text") je součástí klíče: čeština u obou vět
+     skloňuje jinak a skládat je ze zvlášť přeložených kousků by slovosled
+     zafixovalo česky. */
+  function prijmiZalohu(text, zdroj){
     var list = parseZaloha(String(text || ""));
     if(!list){
       zavriImport();
-      zalMsg(cemu + " nerozumím — chybí v něm datový řádek.", true);
+      zalMsg(t("zal.nerozumim." + zdroj), true);
       return;
     }
     if(!list.length){
       zavriImport();
-      zalMsg("V " + vCem + " není žádná hra.", true);
+      zalMsg(t("zal.prazdno." + zdroj), true);
       return;
     }
     nactene = list;
     var nove = novychZ(list).length;
-    elImpInfo.textContent = "V " + vCem + " " + list.length + " " + hrySlovo(list.length) +
-      ", z toho " + nove + " " + novaSlovo(nove) + ".";
+    elImpInfo.textContent = t("zal.info." + zdroj, {
+      her: tn("slovo.hra", list.length), nove: tn("slovo.nova", nove) });
     $("impadd").disabled = nove === 0;
-    $("impadd").textContent = nove ? ("Přidat " + nove) : "Není co přidat";
+    $("impadd").textContent = nove ? t("zal.pridatn", { n: nove }) : t("zal.nenicopridat");
     elImpBox.hidden = false;
     zalMsg("");
   }
 
   $("expbtn").addEventListener("click", function(){
-    sTextemZalohy($("expbtn"), "Uložit", function(text){
-      var ok = stahni("kostky-historie-" + datumProNazev() + ".txt", text);
-      zalMsg(ok ? "Soubor se ukládá." : "Stažení se nepodařilo — zkus kopii do schránky.", !ok);
+    sTextemZalohy($("expbtn"), t("nast.exp.btn"), function(text){
+      var ok = stahni("farkle-history-" + datumProNazev() + ".txt", text);
+      zalMsg(t(ok ? "zal.ukladase" : "zal.stazenineslo"), !ok);
     });
   });
   $("copybtn").addEventListener("click", function(){
-    sTextemZalohy($("copybtn"), "Kopírovat", function(text){
+    sTextemZalohy($("copybtn"), t("nast.kop.btn"), function(text){
       doSchranky(text, function(ok){
-        zalMsg(ok ? "Záloha je ve schránce."
-                  : "Do schránky se to nepodařilo zkopírovat — zkus Stáhnout soubor.", !ok);
+        zalMsg(t(ok ? "zal.veschrance" : "zal.schrankaneslo"), !ok);
       });
     });
   });
@@ -3424,11 +3959,11 @@
     var fr = new FileReader();
     fr.onload = function(){
       zavriVlozeni();
-      prijmiZalohu(fr.result, "Souboru", "souboru");
+      prijmiZalohu(fr.result, "soubor");
     };
     fr.onerror = function(){
       zavriImport();
-      zalMsg("Soubor se nepodařilo přečíst.", true);
+      zalMsg(t("zal.souborneslo"), true);
     };
     fr.readAsText(f, "utf-8");
   });
@@ -3447,10 +3982,10 @@
   $("pasteload").addEventListener("click", function(){
     var text = elPasteArea.value;
     if(!text.trim()){
-      zalMsg("Pole je prázdné — vlož do něj text zálohy.", true);
+      zalMsg(t("zal.poleprazdne"), true);
       return;
     }
-    prijmiZalohu(text, "Textu", "textu");
+    prijmiZalohu(text, "text");
   });
   $("impadd").addEventListener("click", function(){
     if(!nactene) return;
@@ -3458,13 +3993,12 @@
     var pocet = nove.length;
     histWrite(histAll().concat(nove.map(proHistorii)), function(ok){
       if(!ok){
-        zalMsg(textSelhani("Nepodařilo se uložit — došlo místo") + ".", true);
+        zalMsg(t(klicSelhani("chyba.mistoulozit")) + ".", true);
         return;
       }
       zavriImport();
       zavriVlozeni();
-      zalMsg(pocet === 1 ? "Přidána 1 hra."
-        : (pocet < 5 ? ("Přidány " + pocet + " hry.") : ("Přidáno " + pocet + " her.")));
+      zalMsg(tn("zal.pridano", pocet));
       renderP2(); renderZaloha2();
     }, nove);
   });
@@ -3472,15 +4006,15 @@
     if(!nactene) return;
     var b = $("imprep");
     if(!repTimer){
-      b.textContent = "Opravdu nahradit?";
-      repTimer = setTimeout(function(){ repTimer = null; b.textContent = "Nahradit vše"; }, 5000);
+      b.textContent = t("zal.opravdunahradit");
+      repTimer = setTimeout(function(){ repTimer = null; b.textContent = t("nast.nahraditvse"); }, 5000);
       return;
     }
     clearTimeout(repTimer); repTimer = null;
     var pocet = nactene.length;
     histWrite(nactene.map(proHistorii), function(ok){
       if(!ok){
-        zalMsg(textSelhani("Nepodařilo se uložit — došlo místo") + ".", true);
+        zalMsg(t(klicSelhani("chyba.mistoulozit")) + ".", true);
         return;
       }
       /* rozehraná hra se mohla vázat na záznam, který import smetl —
@@ -3488,7 +4022,7 @@
       render();
       zavriImport();
       zavriVlozeni();
-      zalMsg("Historie nahrazena, " + pocet + " " + hrySlovo(pocet) + ".");
+      zalMsg(t("zal.nahrazeno", { her: tn("slovo.hra", pocet) }));
       renderP2(); renderZaloha2();
     }, nactene);
   });
@@ -3571,8 +4105,9 @@
     b.className = "morerow";
     /* u poslední dávky by „dalších 13 · zbývá 13" jen mátlo */
     b.innerHTML = zbyva > KROK
-      ? ("Zobrazit dalších " + KROK + '<span class="mz">zbývá ' + zbyva + "</span>")
-      : ("Zobrazit posledních " + zbyva);
+      ? (esc(t("dalsi.dalsich", { n: KROK })) +
+         '<span class="mz">' + esc(t("dalsi.zbyva", { n: zbyva })) + "</span>")
+      : esc(t("dalsi.poslednich", { n: zbyva }));
     var spusteno = false;
     function spust(){
       if(spusteno) return;
@@ -3617,10 +4152,8 @@
   function renderStatList(hry){
     elStatList.innerHTML = "";
     if(!hry.length){
-      elStatList.innerHTML = histAll().length
-        ? '<div class="empty">Tomuhle filtru neodpovídá žádná hra.</div>'
-        : '<div class="empty">Zatím žádná dohraná hra. ' +
-          'Hru zapíšeš do historie tlačítkem dole v Zápisu kol.</div>';
+      elStatList.innerHTML = '<div class="empty">' +
+        esc(t(histAll().length ? "stat.filtrprazdno" : "stat.zadnahra")) + '</div>';
       return;
     }
     STATY.forEach(function(def, i){
@@ -3631,7 +4164,7 @@
       b.className = "strow";
       b.disabled = !lze;
       b.innerHTML =
-        '<span class="sn">' + def.n +
+        '<span class="sn">' + esc(t(def.n)) +
           (h && h.kdy ? '<span class="sd">' + (h.den
               ? dtDen(h.kdy)
               : dt(h.kdy) + (h.g ? ' \u00B7 ' + esc(popisRezimu(h.g)) : '')) + '</span>' : '') +
@@ -3648,9 +4181,9 @@
   function otevriZebricek(i){
     var def = STATY[i], hry = histView(false), v = zebricek(def, hry);
     navZpet = null;
-    doDetailu(def.n);
+    doDetailu(t(def.n));
     if(!v.length){
-      elDetBody.innerHTML = '<div class="empty">Pro tuhle statistiku zatím nejsou data.</div>';
+      elDetBody.innerHTML = '<div class="empty">' + esc(t("stat.beznadat")) + '</div>';
       return;
     }
     elDetBody.innerHTML = '<table><tbody></tbody></table>';
@@ -3669,7 +4202,7 @@
       tr.innerHTML =
         '<td class="n">' + (k + 1) + '</td>' +
         '<td class="d">' + dt(r.g.savedAt) + ' \u00B7 ' + esc(popisRezimu(r.g)) +
-          (def.kol ? ' \u00B7 ' + gKol(r.g) + ' ' + kolSlovo(gKol(r.g)) : '') + '</td>' +
+          (def.kol ? ' \u00B7 ' + esc(tn("slovo.kolo", gKol(r.g))) : '') + '</td>' +
         '<td class="g">' + def.f(r.x) + '</td>' +
         '<td class="c">\u00BB</td>';
       function jdi(){
@@ -3721,10 +4254,8 @@
   function renderHistList(hry){
     elHistList.innerHTML = "";
     if(!hry.length){
-      elHistList.innerHTML = histAll().length
-        ? '<div class="empty">Tomuhle filtru neodpovídá žádná hra.</div>'
-        : '<div class="empty">Historie je prázdná. ' +
-          'Dohranou hru do ní zapíšeš tlačítkem dole v Zápisu kol.</div>';
+      elHistList.innerHTML = '<div class="empty">' +
+        esc(t(histAll().length ? "stat.filtrprazdno" : "hist.prazdna")) + '</div>';
       return;
     }
     /* Den se porovnává se skutečně předchozí položkou v poli, ne s poslední
@@ -3747,7 +4278,8 @@
       b.className = "grow";
       b.innerHTML = '<span class="gn"><b>' + dt(rec.savedAt) + '</b>' +
         esc(popisRezimu(rec)) +
-        ' \u00B7 ' + gKol(rec) + ' ' + kolSlovo(gKol(rec)) + ' \u00B7 ' + gFarkle(rec) + '\u00D7 farkle</span>' +
+        ' \u00B7 ' + esc(tn("slovo.kolo", gKol(rec))) +
+        ' \u00B7 ' + esc(t("hist.farklex", { n: gFarkle(rec) })) + '</span>' +
         '<b class="gv">' + fmt(rec.banked || 0) + '</b>';
       b.addEventListener("click", function(){ otevriHru(rec.id); });
       frag.appendChild(b);
@@ -3762,12 +4294,13 @@
     var hry = histAll(), i = histIndex(hry, id);
     if(i < 0) return;
     var sou = hry[i];
-    doDetailu("Hra z " + dt(sou.savedAt));
+    doDetailu(t("hist.hraz", { kdy: dt(sou.savedAt) }));
     elDetBody.innerHTML =
       '<div class="tally" id="dtally"></div><div class="tallycap" id="dtallycap"></div>' +
       '<div class="stats">' + statsHTML(sou) + '</div>' +
-      '<div id="detrows"><div class="empty">Načítám kola\u2026</div></div>' +
-      '<div class="archwrap"><button class="ghost arch" id="delgame" type="button" disabled>Smazat z historie</button></div>';
+      '<div id="detrows"><div class="empty">' + esc(t("hist.nactamkola")) + '</div></div>' +
+      '<div class="archwrap"><button class="ghost arch" id="delgame" type="button" disabled>' +
+        esc(t("hist.smazat")) + '</button></div>';
     tallyInto($("dtally"), $("dtallycap"), sou);
     var db = $("delgame");
 
@@ -3776,14 +4309,14 @@
     var plny = null;
     function sKoly(turns){
       if(turns === null){
-        $("detrows").innerHTML = '<div class="empty">Kola téhle hry se teď nedaří načíst.</div>';
+        $("detrows").innerHTML = '<div class="empty">' + esc(t("hist.kolanejdou")) + '</div>';
         return;
       }
       plny = { id: sou.id, savedAt: sou.savedAt, mode: sou.mode, goal: sou.goal,
                roundGoal: sou.roundGoal || null, banked: sou.banked || 0, turns: turns };
       $("detrows").innerHTML = turns.length
         ? ('<table><tbody>' + rowsHTML(turns) + '</tbody></table>')
-        : '<div class="empty">V téhle hře není zapsané žádné kolo.</div>';
+        : '<div class="empty">' + esc(t("hist.zadnekolo")) + '</div>';
       db.disabled = false;
     }
     if(Array.isArray(sou.turns)) sKoly(sou.turns);
@@ -3793,11 +4326,11 @@
       if(!plny) return;
       if(!delTimer){
         db.classList.add("warn");
-        db.textContent = "Opravdu smazat?";
+        db.textContent = t("hist.opravdu");
         delTimer = setTimeout(function(){
           delTimer = null;
           db.classList.remove("warn");
-          db.textContent = "Smazat z historie";
+          db.textContent = t("hist.smazat");
         }, 4000);
         return;
       }
@@ -3807,13 +4340,13 @@
          hra zůstala v historii i v koši, tedy dvakrát. */
       var predtim = kosHistAll();
       if(!kosHistPush(plny)){
-        hlaskaNaTlacitku(db, "Nepodařilo se uložit do koše", "Smazat z historie");
+        hlaskaNaTlacitku(db, t("chyba.dokose"), t("hist.smazat"));
         return;
       }
       histWrite(histAll().filter(function(g){ return g.id !== id; }), function(ok){
         if(!ok){
           kosHistWrite(predtim);
-          hlaskaNaTlacitku(db, textSelhani("Nepodařilo se smazat — došlo místo"), "Smazat z historie");
+          hlaskaNaTlacitku(db, t(klicSelhani("chyba.mistosmazat")), t("hist.smazat"));
           return;
         }
         /* Vazba rozehrané hry na záznam se nepřetrhává: hra ví, že její
@@ -3834,33 +4367,32 @@
   var elFbar = $("fbar"), elFdatum = $("fdatum"),
       elFtyp = $("ftyp"), elFraz = $("frazeni");
   function popisDatumu(){
-    if(FILTR.od === null || FILTR.do === null) return "Datum";
+    if(FILTR.od === null || FILTR.do === null) return t("filtr.datum");
     var a = new Date(FILTR.od), b = new Date(FILTR.do);
     if(denKlic(a) === denKlic(b)) return dtDen(FILTR.od);
-    if(a.getFullYear() !== b.getFullYear()) return dtDen(FILTR.od) + " \u2013 " + dtDen(FILTR.do);
-    if(a.getMonth() !== b.getMonth())
-      return a.getDate() + ". " + (a.getMonth() + 1) + ". \u2013 " + dtDen(FILTR.do);
-    return a.getDate() + ".\u2013" + dtDen(FILTR.do);
+    return kat("datumRozsah")(a, b);
   }
   function popisTypu(){
-    if(FILTR.typ === null) return "Typ hry";
+    if(FILTR.typ === null) return t("filtr.typhry");
     if(FILTR.typ === "points")
-      return FILTR.hodnota === null ? "na body" : ("do " + fmt(FILTR.hodnota));
-    if(FILTR.hodnota === null) return "na kola";
-    return "na kola \u00B7 " + (FILTR.hodnota === 0 ? "bez limitu" : FILTR.hodnota);
+      return FILTR.hodnota === null ? t("filtr.nabody") : t("rezim.dobodu", { b: fmt(FILTR.hodnota) });
+    if(FILTR.hodnota === null) return t("rezim.nakola");
+    return FILTR.hodnota === 0
+      ? (t("rezim.nakola") + " \u00B7 " + t("filtr.bezlimitu"))
+      : t("filtr.nakolan", { n: FILTR.hodnota });
   }
   /* Popisky řazení jsou jen tady — z nich se plní nabídka i tlačítko, aby
      se stejný text nepsal dvakrát. Výchozí řazení se na tlačítko nepíše;
      tam zůstává holé „Řazení" bez mosazného rámu. */
   var RAZ_POPIS = {
-    "datum:desc": "Od nejnovějších",
-    "datum:asc":  "Od nejstarších",
-    "body:desc":  "Od nejvíc bodů",
-    "body:asc":   "Od nejmíň bodů"
+    "datum:desc": "razeni.nejnovejsi",
+    "datum:asc":  "razeni.nejstarsi",
+    "body:desc":  "razeni.nejvic",
+    "body:asc":   "razeni.nejmin"
   };
   function popisRazeni(){
     var k = RAZENI.podle + ":" + RAZENI.smer;
-    return k === "datum:desc" ? "Řazení" : (RAZ_POPIS[k] || "Řazení");
+    return (k === "datum:desc" || !RAZ_POPIS[k]) ? t("filtr.razeni") : t(RAZ_POPIS[k]);
   }
   /* Na tlačítku zůstává krátký stálý popisek, aby se všechna vešla na jeden
      řádek; zvolený filtr nese mosazný rám. Plné znění jde do aria-label —
@@ -3873,14 +4405,14 @@
     var jsou = histAll().length > 0;
     elFbar.hidden = !jsou;
     if(!jsou) return;
-    popisTlacitka(elFdatum, popisDatumu(), "Datum");
+    popisTlacitka(elFdatum, popisDatumu(), t("filtr.datum"));
     /* Typ hry a řazení dávají smysl jen nad seznamem her. Skrytá tlačítka
        z řádku vypadnou úplně a zbylá dvě se o jeho šířku podělí sama. */
     var vSeznamu = segIdx === 1;
     elFtyp.hidden = !vSeznamu;
     elFraz.hidden = !vSeznamu;
-    popisTlacitka(elFtyp, popisTypu(), "Typ hry");
-    popisTlacitka(elFraz, popisRazeni(), "Řazení");
+    popisTlacitka(elFtyp, popisTypu(), t("filtr.typhry"));
+    popisTlacitka(elFraz, popisRazeni(), t("filtr.razeni"));
   }
 
   $("freset").addEventListener("click", function(){
@@ -3906,7 +4438,7 @@
         b.classList.toggle("on", (i === 0) === (r === "den"));
       });
       elDoRow.hidden = r === "den";
-      elOdL.textContent = r === "den" ? "Den" : "Od";
+      elOdL.textContent = t(r === "den" ? "datum.den" : "datum.od");
     }
     Array.prototype.forEach.call(elSegD.children, function(b, i){
       b.addEventListener("click", function(){ nastavRezim(i === 0 ? "den" : "rozsah"); });
@@ -3958,19 +4490,19 @@
 
     function typZIndexu(i){ return i === 0 ? null : (i === 1 ? "points" : "rounds"); }
 
-    function nastavTyp(t, hodnota){
-      typVolba = t;
+    function nastavTyp(typ, hodnota){
+      typVolba = typ;
       Array.prototype.forEach.call(elSegT.children, function(b, i){
-        b.classList.toggle("on", typZIndexu(i) === t);
+        b.classList.toggle("on", typZIndexu(i) === typ);
       });
-      elValRow.hidden = t === null;
-      if(t === null){ elVal.innerHTML = ""; return; }
-      elValL.textContent = t === "points" ? "Cíl" : "Limit";
-      var s = '<option value="">Všechny</option>';
-      hodnotyTypu(t).forEach(function(x){
+      elValRow.hidden = typ === null;
+      if(typ === null){ elVal.innerHTML = ""; return; }
+      elValL.textContent = t(typ === "points" ? "typ.cil" : "typ.limit");
+      var s = '<option value="">' + esc(t("typ.vsechny")) + '</option>';
+      hodnotyTypu(typ).forEach(function(x){
         s += '<option value="' + x + '">' +
-          (t === "rounds"
-            ? (x === 0 ? "bez limitu" : x + " " + kolSlovo(x))
+          esc(typ === "rounds"
+            ? (x === 0 ? t("filtr.bezlimitu") : tn("slovo.kolo", x))
             : fmt(x)) +
           '</option>';
       });
@@ -4011,7 +4543,7 @@
       otevriModal("sortmodal", this);
     });
     tlac.forEach(function(b){
-      b.textContent = RAZ_POPIS[b.getAttribute("data-podle") + ":" + b.getAttribute("data-smer")];
+      b.textContent = t(RAZ_POPIS[b.getAttribute("data-podle") + ":" + b.getAttribute("data-smer")]);
       b.addEventListener("click", function(){
         RAZENI.podle = b.getAttribute("data-podle");
         RAZENI.smer  = b.getAttribute("data-smer");
@@ -4041,27 +4573,29 @@
     elScore.textContent = fmt(S.banked);
     elTotal.classList.toggle("won", lock);
     if(S.mode === "rounds"){
-      elRestLabel.textContent = "odehráno kol";
+      elRestLabel.textContent = t("pocitadlo.odehranokol");
       elRest.textContent = S.roundGoal > 0
-        ? (S.turns.length + " z " + S.roundGoal)
+        ? t("pocitadlo.zkol", { n: S.turns.length, z: S.roundGoal })
         : S.turns.length;
     } else {
       var rest = S.goal - S.banked;
-      elRestLabel.textContent = rest > 0 ? "zbývá" : "nad cíl";
+      elRestLabel.textContent = t(rest > 0 ? "pocitadlo.zbyva" : "pocitadlo.nadcil");
       elRest.textContent = fmt(Math.abs(rest));
     }
     elPot.textContent = fmt(pot);
     elTurnNo.textContent = S.turns.length + 1;
 
-    elRollLine.innerHTML = "Hod " + S.rolls.length + " — házíš <b>" + kostkami(r.thrown) + "</b>" +
-      (l < r.thrown ? ' <span style="color:var(--dim)">· zbývá ' + l + '</span>' : "");
+    elRollLine.innerHTML = t("pocitadlo.hodradek", {
+        n: S.rolls.length, kostky: esc(tn("slovo.kostkami", r.thrown)) }) +
+      (l < r.thrown ? ' <span style="color:var(--dim)">' + esc(t("pocitadlo.hodzbyva", { n: l })) + '</span>' : "");
 
     /* v zámku tlačítko zůstává živé, protože vede na zápis kol */
     elRollOn.disabled = !lock && r.items.length === 0;
-    elRollOn.textContent = lock ? "Hra skončila — zobrazit zápis kol"
+    elRollOn.textContent = lock ? t("pocitadlo.hraskoncila")
       : (r.items.length === 0
-          ? "Nejdřív si z hodu něco odlož"
-          : (l > 0 ? "Házet dál — " + kostkami(l) : "Horké kostky — házet znovu všemi šesti"));
+          ? t("pocitadlo.nejdriv")
+          : (l > 0 ? t("pocitadlo.hazetdalx", { kostky: tn("slovo.kostkami", l) })
+                   : t("pocitadlo.horke")));
 
     /* Zapsat nad rozehraným hodem, ze kterého se nic neodložilo, nejde: takové
        kolo by v popisu neslo o jeden hod míň, než kolika se doopravdy házelo,
@@ -4069,16 +4603,15 @@
        stejně vždycky buď boduje, nebo farkluje — ven vedou Farkle a Zpět.
        Na prvním hodu kola se nic nemění, tam už tlačítko drží pot <= 0. */
     elBank.disabled = lock || pot <= 0 || r.items.length === 0;
-    elBank.textContent = pot > 0 ? ("Zapsat " + fmt(pot)) : "Zapsat a předat";
+    elBank.textContent = pot > 0 ? t("pocitadlo.zapsatx", { b: fmt(pot) }) : t("pocitadlo.zapsatapredat");
     elBust.disabled = lock;
     elUndo.disabled = !jdeZpet();
 
     elLock.hidden = !lock;
     if(lock){
       elLock.textContent = S.mode === "points"
-        ? ("Cíl " + fmt(S.goal) + " je dosažený — hra je u konce. Cíl se dá změnit v nastavení hry.")
-        : ("Odehráno všech " + S.roundGoal +
-           " kol — hra je u konce. Počet kol se dá změnit v nastavení hry.");
+        ? t("pocitadlo.konecbody", { b: fmt(S.goal) })
+        : t("pocitadlo.koneckola", { n: S.roundGoal });
     }
 
     document.querySelectorAll("[data-single]").forEach(function(b){ b.disabled = lock || l < 1; });
@@ -4090,7 +4623,7 @@
     elMnum.disabled = manLock;
     if(manLock && !elManual.hidden){ elManual.hidden = true; elMToggle.classList.remove("sel"); }
     if(manualDice > Math.max(1, l)) manualDice = Math.max(1, l);
-    elMkost.textContent = (l > 0 ? manualDice : 0) + " kost.";
+    elMkost.textContent = t("pocitadlo.kostzkr", { n: l > 0 ? manualDice : 0 });
 
     renderKind(); renderFix(); renderRows(); renderStats(); renderTally(); renderArch();
     save();
@@ -4100,15 +4633,15 @@
   document.querySelectorAll("[data-single]").forEach(function(b){
     b.addEventListener("click", function(){
       var v = Number(b.dataset.single);
-      keep(v === 1 ? "jednička" : "pětka", v === 1 ? 100 : 50, 1);
+      keep(v === 1 ? "j" : "p", v === 1 ? 100 : 50, 1);
     });
   });
   document.querySelectorAll("[data-str]").forEach(function(b){
-    b.addEventListener("click", function(){ var s = STRAIGHTS[b.dataset.str]; keep(s.l, s.p, s.d); });
+    b.addEventListener("click", function(){ var s = STRAIGHTS[b.dataset.str]; keep(s.k, s.p, s.d); });
   });
   elAddKind.addEventListener("click", function(){
     if(selValue === null) return;
-    keep(selCount + "× " + selValue, kindPoints(selValue, selCount), selCount);
+    keep("n" + selCount + selValue, kindPoints(selValue, selCount), selCount);
     selValue = null; renderKind();
   });
   elMToggle.addEventListener("click", function(){
@@ -4122,7 +4655,7 @@
   $("madd").addEventListener("click", function(){
     var v = parseInt(elMnum.value, 10);
     if(!v || v <= 0){ elMnum.focus(); return; }
-    keep("vlastní", v, Math.min(manualDice, left()));
+    keep("v", v, Math.min(manualDice, left()));
     elMnum.value = "";
   });
   elMnum.addEventListener("keydown", function(e){ if(e.key === "Enter") $("madd").click(); });
@@ -4149,7 +4682,7 @@
     zapisHru(function(ok){
       b.disabled = false;
       if(!ok){
-        hlaskaNaTlacitku(b, textSelhani("Nepodařilo se uložit — došlo místo"), "Uložit a začít novou");
+        hlaskaNaTlacitku(b, t(klicSelhani("chyba.mistoulozit")), t("nova.ulozit"));
         return;
       }
       zavriModal();
@@ -4227,13 +4760,40 @@
     if(v && v > 0){ S.roundGoal = v; render(); zkusAutoUlozit(); }
   });
 
+  /* ---------- přepínač jazyka ----------
+     Volby se skládají z JAZYKY, ne z HTML: přidání jazyka se tak obejde bez
+     zásahu do <body>. Do localStorage se zapisuje teprve tady — dokud
+     uživatel na přepínač nesáhne, aplikace každý start následuje systém. */
+  (function(){
+    var sel = $("jazyksel");
+    JAZYKY.forEach(function(kod){
+      var o = document.createElement("option");
+      o.value = kod;
+      o.textContent = NAZVY[kod] || kod;
+      sel.appendChild(o);
+    });
+    naJazyk(function(){ sel.value = jazyk; });
+    sel.value = jazyk;
+    sel.addEventListener("change", function(){ nastavJazyk(sel.value, true); });
+  })();
+
+  /* Co se skládá až za běhu, se po přepnutí musí přepsat vlastní funkcí.
+     render() si stránku Zápisu kol dotáhne sám, renderP2() obstará statistiky
+     i historii včetně filtrů. renderZaloha() se sem záměrně nedostal: zavírá
+     rozpracovaný import a mazal by hlášku, což je na přepnutí jazyka příliš.
+     Stavové popisky tří přepínačů nahoře se registrují uvnitř svých bloků —
+     jejich mark() zvenku vidět není. */
+  naJazyk(function(){ syncGoalUI(); render(); });
+  naJazyk(function(){ renderP2(); });
+  naJazyk(function(){ renderKos(); });
+
   $("toastx").addEventListener("click", schovejToast);
   (function(){
     var btn = $("auto");
     function mark(){
-      btn.textContent = autoZap ? "Zapnuto" : "Vypnuto";
+      btn.textContent = t(autoZap ? "spol.zapnuto" : "nast.vypnuto");
       btn.classList.toggle("on", autoZap);
-      var label = autoZap ? "Vypnout automatické ukládání" : "Zapnout automatické ukládání";
+      var label = t(autoZap ? "auto.vypnout" : "auto.zapnout");
       btn.title = label;
       btn.setAttribute("aria-label", label);
     }
@@ -4242,6 +4802,7 @@
       try{ localStorage.setItem(AUKEY, autoZap ? "1" : "0"); }catch(e){}
       mark();
     });
+    naJazyk(mark);
     mark();
   })();
 
