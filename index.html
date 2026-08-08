@@ -786,7 +786,7 @@
 
 <section class="turn">
   <div class="turnbar">
-    <div class="l">Kolo <span id="turnno">1</span> — na stole</div>
+    <div class="l" id="turnlabel">Kolo 1 — na stole</div>
     <div class="p" id="pot">0</div>
   </div>
 
@@ -845,7 +845,7 @@
 <div class="lock warn" id="nosave" hidden data-i18n="pocitadlo.neuklada">Ukládání nefunguje — rozehraná hra po zavření prohlížeče zmizí. Historii si zazálohuj v nastavení.</div>
 
 <div class="acts">
-  <button class="ghost" id="undo" style="flex:0 0 auto;padding:0 14px" data-i18n="spol.zpet">Zpět</button>
+  <button class="ghost" id="undo" style="flex:0 0 auto;padding:0 14px" data-i18n="pocitadlo.zpet">Zpět</button>
   <button class="act bank" id="bank" disabled data-i18n="pocitadlo.zapsatapredat">Zapsat a předat</button>
   <button class="act bust" id="bust" data-i18n="pocitadlo.farkle">Farkle</button>
 </div>
@@ -1201,9 +1201,6 @@
     return MESICE_EN[a.getMonth()] + " " + a.getDate() + " \u2013 " + b.getDate() + ", " + b.getFullYear();
   };
 
-  I18N.en.wordmark = "Dice";
-  I18N.en.titulek  = "Dice \u2014 counter";
-
   var jazyk = VYCHOZI;
 
   /* Hodnoty se do textu doplňují pojmenovaně, ne zřetězením: pořadí čísel
@@ -1280,6 +1277,7 @@
     "rezim.nakolalimit": "na kola \u00B7 limit {n}",
 
     /* počítadlo */
+    "pocitadlo.kolonastole": "Kolo {n} \u2014 na stole",
     "pocitadlo.odehranokol": "odehráno kol",
     "pocitadlo.nadcil":      "nad cíl",
     "pocitadlo.zkol":        "{n} z {z}",
@@ -1291,7 +1289,10 @@
     "pocitadlo.horke":       "Horké kostky — házet znovu všemi šesti",
     "pocitadlo.zapsatx":     "Zapsat {b}",
     "pocitadlo.plus":        "+ {b}",
-    "pocitadlo.kostzkr":     "{n} kost.",
+    /* Čeština má zkratku ve všech tvarech stejnou, angličtina ne („1 die“
+       vs. „2 dice“). Klíč proto stojí jako pole, i když se české tvary
+       neliší — jinak by se u jedničky psalo „1 dice“. */
+    "pocitadlo.kostzkr":     ["{n} kost.", "{n} kost.", "{n} kost."],
     "pocitadlo.konecbody":   "Cíl {b} je dosažený — hra je u konce. Cíl se dá změnit v nastavení hry.",
     "pocitadlo.koneckola":   "Odehráno všech {n} kol — hra je u konce. Počet kol se dá změnit v nastavení hry.",
 
@@ -1453,6 +1454,401 @@
   };
   for(var rucniKlic in RUCNI){
     if(Object.prototype.hasOwnProperty.call(RUCNI, rucniKlic)) I18N.cs[rucniKlic] = RUCNI[rucniKlic];
+  }
+
+  /* ---------- angličtina ----------
+     Čeština se sbírá z <body> a doplňuje z RUCNI; každý další jazyk se píše
+     celý sem. Klíče drží pořadí protějšku: nejdřív to, co stojí ve <body>,
+     pak to, co vzniká za běhu. Strážní test hlídá, že katalog pokrývá
+     češtinu klíč po klíči a že pole mají tvarů podle plural() daného jazyka.
+
+     Čísla v pevných textech (tabulka pravidel, nabídka cílů) se nesázejí
+     přes fmt() — jsou napsaná rovnou, a proto je tu oddělovač tisíců
+     anglický. Formátovače dat a oddělovače pro fmt() leží výš u ostatních
+     věcí, které textem nejsou. */
+  var EN = {
+    /* základní / rotace obrazovky */
+    "titulek":  "Dice \u2014 counter",
+    "wordmark": "Dice",
+    "rot.nadpis": "Rotate your phone to portrait",
+    "rot.text":   "The counter only works in portrait orientation.",
+
+    /* nastavení hry */
+    "hra.hrajese":   "playing",
+    "hra.dobodu":    "to points",
+    "hra.nakola":    "by turns",
+    "hra.cil2000":   "2,000",
+    "hra.cil4000":   "4,000",
+    "hra.cil6000":   "6,000",
+    "hra.cil8000":   "8,000",
+    "hra.cil10000":  "10,000",
+    "hra.vlastni":   "custom\u2026",
+    "hra.neomezene": "unlimited",
+
+    /* záložky */
+    "zalozka.pocitadlo":  "Counter",
+    "zalozka.zapis":      "Turn log",
+    "zalozka.statistiky": "Statistics",
+
+    /* počítadlo */
+    "pocitadlo.zapsano":       "banked",
+    "pocitadlo.zbyva":         "remaining",
+    "pocitadlo.zadat":         "enter",
+    "pocitadlo.opravit":       "edit",
+    "pocitadlo.zhodu":         "What you\u2019re keeping from the roll",
+    "pocitadlo.stejne":        "Matching values",
+    "pocitadlo.postupky":      "Straights",
+    "pocitadlo.pridat":        "Add",
+    "pocitadlo.hazetdal":      "Keep rolling",
+    "pocitadlo.neuklada":      "Saving isn\u2019t working \u2014 the game in progress will be lost when you close the browser. Back up your history in Settings.",
+    "pocitadlo.zpet":          "Undo",
+    "pocitadlo.zapsatapredat": "Bank and pass",
+    "pocitadlo.farkle":        "Farkle",
+    "pocitadlo.body.ph":       "points",
+
+    /* čipy klávesnice — malé písmeno stejně jako v češtině */
+    "pocitadlo.chip.jednicka": "single 1<span class=\"v\">100</span>",
+    "pocitadlo.chip.petka":    "single 5<span class=\"v\">50</span>",
+    "pocitadlo.chip.s15":      "1\u20135<span class=\"v\">500</span>",
+    "pocitadlo.chip.s26":      "2\u20136<span class=\"v\">750</span>",
+    "pocitadlo.chip.s16":      "1\u20136<span class=\"v\">1,500</span>",
+    "pocitadlo.chip.rucne":    "manual<span class=\"v\">custom</span>",
+
+    /* zápis kol */
+    "zapis.nadpis":      "Turn log",
+    "zapis.opravit":     "Edit",
+    "zapis.prazdno":     "No turns yet. Roll all six dice.",
+    "zapis.nicknulozeni": "Nothing to save to history yet",
+    "zapis.novahra":     "New game",
+
+    /* statistiky */
+    "stat.nedostupna":     "History can\u2019t be loaded right now. Nothing has been lost \u2014 the app just can\u2019t reach it at the moment, so finished games aren\u2019t being saved yet. Try closing the app and opening it again.",
+    "stat.seg.statistiky": "Statistics",
+    "stat.seg.historie":   "Game history",
+    "stat.zpetseznam":     "\u00AB Back",
+
+    /* lišta filtrů */
+    "filtr.datum":      "Date",
+    "filtr.typ":        "Type",
+    "filtr.razeni":     "Sort",
+    "filtr.reset":      "Reset",
+    "filtr.reset.aria": "Reset filters",
+
+    /* pravidla */
+    "pravidla.nadpis":        "Rules & how to play",
+    "pravidla.seg.pravidla":  "Rules",
+    "pravidla.seg.navod":     "How to play",
+    "pravidla.t1n": "Every 1",              "pravidla.t1v": "100",
+    "pravidla.t2n": "Every 5",              "pravidla.t2v": "50",
+    "pravidla.t3n": "Three 1s",             "pravidla.t3v": "1,000",
+    "pravidla.t4n": "Three 2s / 3s / 4s / 5s / 6s", "pravidla.t4v": "200\u2013600",
+    "pravidla.t5n": "1\u20135 straight",    "pravidla.t5v": "500",
+    "pravidla.t6n": "2\u20136 straight",    "pravidla.t6v": "750",
+    "pravidla.t7n": "1\u20136 straight",    "pravidla.t7v": "1,500",
+    "pravidla.p1":    "You roll six dice and set aside at least one scoring die or combination. If the roll scores nothing at all, it\u2019s a <b>Farkle</b> \u2014 everything you have on the table this turn is lost and the turn passes on.",
+    "pravidla.p2":    "After every roll you decide: <b>bank</b> the points and pass the turn, or <b>keep rolling</b> with just the dice you haven\u2019t set aside.",
+    "pravidla.p3":    "Set aside even the last die and you get <b>hot dice</b> \u2014 you roll all six again and the points keep adding up in the same turn.",
+    "pravidla.pozn1": "Three of a kind = value \u00D7 100 (three 1s are 1,000). Each further matching die <b>doubles</b> the value: four 5s 1,000, five 5s 2,000, six 5s 4,000. Six 1s are 8,000.",
+    "pravidla.pozn2": "Pairs and \u201Cnear-triples\u201D don\u2019t score \u2014 you can only set aside a single 1, a single 5, a completed three of a kind or higher, or a straight.",
+
+    /* návod */
+    "navod.kolo.h":   "Turn",
+    "navod.kolo.p":   "The keypad records what you set aside from the roll. Points add up in the <b>table</b> row and the dice you used drop out of the remaining ones.",
+    "navod.kolo.li1": "<b>Keep rolling</b> \u2014 opens a new roll and its label says how many dice with. Once all six are set aside, it offers hot dice and you roll all six again.",
+    "navod.kolo.li2": "<b>Bank</b> \u2014 moves the points from the table into the score and opens a new turn.",
+    "navod.kolo.li3": "<b>Farkle</b> \u2014 the points on the table are lost and the log keeps a turn worth zero.",
+    "navod.klavesnice.h":    "Keypad",
+    "navod.klavesnice.p":    "<b>single 1</b> and <b>single 5</b> add one die at a time. <b>Matching values</b> take the count in the first row and the value in the second; the button on the right shows the result and adds it. <b>Straights</b> are three fixed combinations. <b>manual</b> opens a field for points and arrows for the number of dice.",
+    "navod.klavesnice.pozn": "Combinations that don\u2019t fit into the remaining dice are greyed out.",
+    "navod.opravy.h":  "Corrections",
+    "navod.opravy.p1": "The <b>enter / edit</b> switch beside the roll description flips the inner card of the panel. The <i>edit</i> card shows every set-aside item as a button with a cross, grouped by rolls; deleting an item also recounts the dice in the rolls that follow.",
+    "navod.opravy.p2": "<b>Undo</b> takes back one step at a time from the end of the current turn \u2014 items first, then whole rolls. It doesn\u2019t touch banked turns; once nothing is left in the turn, the button greys out.",
+    "navod.opravy.p3": "<b>Edit</b> in the Turn log switches on the crosses beside individual turns. A cross asks for confirmation; a deleted turn is subtracted from the score and the remaining turns are renumbered. With no turns played the button is hidden.",
+    "navod.hra.h": "Game settings",
+    "navod.hra.p": "The dice icon opens the panel with the mode and the target, even in the middle of a game. <b>To points</b> plays to 2,000 up to 10,000 or to a number of your own, and the second row of the score shows how much is left. The turn that crosses the target counts in full; once it is banked, the game is over. <b>By turns</b> only counts turns; an optional limit locks the game after the last one, without a limit the game never ends by itself.",
+    "navod.stranky.h":   "Three pages",
+    "navod.stranky.p":   "The tabs at the top and a swipe sideways switch between:",
+    "navod.stranky.li1": "<b>Counter</b> \u2014 the score and the playing.",
+    "navod.stranky.li2": "<b>Turn log</b> \u2014 four figures and the table of turns, New game and Save to history.",
+    "navod.stranky.li3": "<b>Statistics</b> \u2014 a switch between the records and the list of finished games. A record opens into a leaderboard, a game into its detail.",
+    "navod.historie.h":  "History",
+    "navod.historie.p1": "The statistics come only from games in history; a game you don\u2019t save leaves no mark on the records.",
+    "navod.historie.p2": "<b>Save to history</b> asks for a second tap only when there are unbanked points on the table. Once saved it turns into <b>Saved to history</b>, and after more play into <b>Update in history</b>, which overwrites the same record instead of starting a new one. If that game gets deleted from history in the meantime, the button offers <b>Restore to history</b> \u2014 it brings the same record back from the trash, so a game is never written down twice.",
+    "navod.historie.p3": "<b>Autosave</b> in the settings writes the game into history by itself as soon as it ends \u2014 after the last turn, or after the turn that crosses the target. A little window that disappears on its own announces it. A game on an unlimited number of turns can\u2019t be saved this way, because it has no end. What was deleted from history by hand, autosave never brings back.",
+    "navod.kos.h":  "Trash",
+    "navod.kos.p1": "<b>New game</b> puts the deleted game into the settings, into <i>Deleted games in progress</i> \u2014 the last five are kept. <b>Delete from history</b> puts the game into <i>Games deleted from history</i>, where ten of them stay. In both sections the <i>Restore</i> button brings a game back; <i>Delete permanently</i> throws it away for good once confirmed.",
+    "navod.kos.p2": "When a game isn\u2019t in history yet, <b>New game</b> asks once more after the confirmation and offers to save it right away.",
+    "navod.zaloha.h": "Backup",
+    "navod.zaloha.p": "The data lives only in this browser. <b>Export to file</b> makes a text file with an overview of the games whose last line carries the data for the import \u2014 without it the file can\u2019t be read back. <b>Copy to clipboard</b> gives the same content without downloading. Both <b>Import from file</b> and <b>Import from clipboard</b> offer a choice between adding the new games and replacing the whole history.",
+    "navod.drobnosti.h": "Odds and ends",
+    "navod.drobnosti.p": "The icon in the top right switches the light and dark look. <b>Full screen</b> in the settings hides the browser bars; on an iPhone it isn\u2019t there, Safari can\u2019t do it. <b>Keep screen on</b> in the same place holds the screen lit while the game runs; after three minutes without a touch it lets go and the phone goes dark as usual. The app works offline and can be added to the home screen.",
+
+    /* nastavení */
+    "nast.nadpis":        "Settings",
+    "nast.jazyk.n":       "Language",
+    "nast.jazyk.p":       "Changes at once, without restarting the app.",
+    "nast.jazyk.aria":    "Interface language",
+    "nast.fs.n":          "Full screen",
+    "nast.fs.p":          "Hides the browser bars.",
+    "nast.vypnuto":       "Off",
+    "nast.svit.n":        "Keep screen on",
+    "nast.svit.p":        "The screen stays lit while the app is in use. After three minutes without a touch it lets go and the phone goes dark as usual.",
+    "nast.auto.n":        "Autosave",
+    "nast.auto.p":        "Writes the game into history as soon as it ends. A game on an unlimited number of turns isn\u2019t saved automatically.",
+    "nast.koshry":        "Deleted games in progress",
+    "nast.koshist":       "Games deleted from history",
+    "nast.zaloha":        "History backup",
+    "nast.exp.n":         "Export to file",
+    "nast.exp.p":         "A text file with an overview of the games and the data for a later import.",
+    "nast.exp.btn":       "Save",
+    "nast.kop.n":         "Copy to clipboard",
+    "nast.kop.p":         "In case downloading doesn\u2019t work.",
+    "nast.kop.btn":       "Copy",
+    "nast.impf.n":        "Import from file",
+    "nast.impf.p":        "Reads a backup and offers to add or to replace.",
+    "nast.impf.btn":      "Choose file",
+    "nast.imps.n":        "Import from clipboard",
+    "nast.imps.p":        "Paste the backup text into the field and read it in.",
+    "nast.imps.btn":      "Paste text",
+    "nast.vlozit.ph":     "Paste the copied backup here",
+    "nast.nacist":        "Load",
+    "nast.pridatnove":    "Add new",
+    "nast.nahraditvse":   "Replace all",
+    "nast.misto.n":       "Storage used",
+    "nast.misto.zjistuji": "Checking\u2026",
+    "nast.misto.btn":     "Detail",
+
+    /* okna filtrů a nové hry */
+    "datum.nadpis":     "Filter by date",
+    "datum.jedenden":   "One day",
+    "datum.rozsah":     "Range",
+    "datum.den":        "Day",
+    "datum.do":         "To",
+    "typ.nadpis":       "Filter by game type",
+    "typ.vse":          "All",
+    "typ.nabody":       "To points",
+    "typ.nakola":       "By turns",
+    "typ.cil":          "Target",
+    "razeni.nadpis":    "Sort history",
+    "razeni.nejnovejsi": "Newest first",
+    "razeni.nejstarsi": "Oldest first",
+    "razeni.nejvic":    "Most points first",
+    "razeni.nejmin":    "Fewest points first",
+    "nova.nadpis":      "The game isn\u2019t saved",
+    "nova.ulozit":      "Save and start a new one",
+    "nova.bezulozeni":  "Start a new one without saving",
+
+    /* společné */
+    "spol.zpet":    "Back",
+    "spol.zrusit":  "Cancel",
+    "spol.pouzit":  "Apply",
+    "spol.zavrit":  "Close",
+    "spol.smazat":  "Delete",
+    "spol.obnovit": "Restore",
+    "spol.zapnuto": "On",
+
+    /* hlavička okna */
+    "hlav.nastavenihry": "Game settings",
+    "hlav.pravidla":     "Rules",
+    "hlav.nastaveni":    "Settings",
+    "hlav.svetlyrezim":  "Light mode",
+    "hlav.tmavyrezim":   "Dark mode",
+
+    /* slova s více tvary — angličtina má dva */
+    "slovo.kolo":     ["{n} turn", "{n} turns"],
+    "slovo.hra":      ["{n} game", "{n} games"],
+    "slovo.nova":     ["{n} new", "{n} new"],
+    "slovo.kostkami": ["{n} die", "{n} dice"],
+    "slovo.farkle":   "farkle",
+
+    /* štítky odložených položek */
+    "stitek.j":   "single 1",
+    "stitek.p":   "single 5",
+    "stitek.v":   "custom",
+    "stitek.s15": "1\u20135 straight",
+    "stitek.s26": "2\u20136 straight",
+    "stitek.s16": "1\u20136 straight",
+    "stitek.n":   "{p}\u00D7 {h}",
+
+    /* režim hry */
+    "rezim.dobodu":      "to {b}",
+    "rezim.nakola":      "by turns",
+    "rezim.nakolalimit": "by turns \u00B7 limit {n}",
+
+    /* počítadlo za běhu */
+    "pocitadlo.kolonastole": "Turn {n} \u2014 on the table",
+    "pocitadlo.odehranokol": "turns played",
+    "pocitadlo.nadcil":      "over target",
+    "pocitadlo.zkol":        "{n} of {z}",
+    "pocitadlo.hodradek":    "Roll {n} \u2014 rolling <b>{kostky}</b>",
+    "pocitadlo.hodzbyva":    "\u00B7 {n} left",
+    "pocitadlo.hraskoncila": "Game over \u2014 show the turn log",
+    "pocitadlo.nejdriv":     "Set something aside from the roll first",
+    "pocitadlo.hazetdalx":   "Keep rolling \u2014 {kostky}",
+    "pocitadlo.horke":       "Hot dice \u2014 roll all six again",
+    "pocitadlo.zapsatx":     "Bank {b}",
+    "pocitadlo.plus":        "+ {b}",
+    "pocitadlo.kostzkr":     ["{n} die", "{n} dice"],
+    "pocitadlo.konecbody":   "The target of {b} is reached \u2014 the game is over. The target can be changed in the game settings.",
+    "pocitadlo.koneckola":   "All {n} turns are played \u2014 the game is over. The number of turns can be changed in the game settings.",
+
+    /* vrubovka */
+    "tally.kolzn":     "turns played: {n} of {z}",
+    "tally.koln":      "turns played: {n}",
+    "tally.zadnekolo": "no turns yet",
+    "tally.docile":    "{b} left to the target",
+    "tally.prekonano": "target beaten by {b}",
+
+    /* karta opravit a tabulka kol */
+    "oprava.nic":           "Nothing recorded in this turn yet.",
+    "oprava.hod":           "roll {n} \u00B7 {k}d",
+    "oprava.horke":         "hot",
+    "oprava.smazatpolozku": "Delete item",
+    "zapis.hotovo":         "Done",
+    "zapis.opravdusmazat":  "Really delete turn {n}?",
+    "zapis.smazatkolo":     "Delete turn {n}",
+
+    /* přehledové dlaždice */
+    "souhrn.celkem":   "total",
+    "souhrn.nejlepsi": "best",
+    "souhrn.prumer":   "average",
+    "souhrn.farklu":   "farkles",
+
+    /* tlačítko zápisu do historie */
+    "arch.propadne":     "There is {b} on the table and it will be lost \u2014 bank it?",
+    "arch.obnovit":      "Restore to history",
+    "arch.ulozeno":      "Saved to history",
+    "arch.aktualizovat": "Update in history",
+    "arch.zapsat":       "Save to history",
+
+    /* hlášky o selhání zápisu */
+    "chyba.mistoulozit":  "Couldn\u2019t save \u2014 out of storage",
+    "chyba.mistosmazat":  "Couldn\u2019t delete \u2014 out of storage",
+    "chyba.nedostupna":   "History isn\u2019t available right now",
+    "chyba.zalohovathru": "Couldn\u2019t back up the game in progress",
+    "chyba.smazat":       "Couldn\u2019t delete",
+    "chyba.dokose":       "Couldn\u2019t move to the trash",
+
+    /* koš */
+    "kos.opravdutrvale": "Delete permanently?",
+    "kos.trvalesmazat":  "Delete permanently",
+    "kos.prazdny":       "Nothing to restore yet. A game deleted with the New game button lands here by itself.",
+    "kos.prazdnyhist":   "Nothing to restore yet. A game deleted from history lands here by itself.",
+
+    /* nová hra */
+    "nova.nezalohovano": "Couldn\u2019t back it up \u2014 the game stays",
+    "nova.opravdu":      "Really a new one?",
+    "nova.text":         "This game isn\u2019t in history yet, so it won\u2019t count towards the statistics. " +
+                         "A new game puts it into the settings, among the deleted games in progress \u2014 the last five are kept.",
+    "nova.propadne":     "There is {b} on the table and it will be lost.",
+
+    /* bublina */
+    "toast.aktualizovan": "Record in history updated",
+    "toast.ulozena":      "Game saved to history",
+
+    /* stavové popisky přepínačů */
+    "fs.zpet":         "Leave full screen",
+    "fs.zapnout":      "Full screen",
+    "svit.nechat":     "Let the screen go dark",
+    "svit.nezhasinat": "Keep screen on",
+    "auto.vypnout":    "Turn autosave off",
+    "auto.zapnout":    "Turn autosave on",
+
+    /* názvy sledovaných statistik */
+    "stat.n.pocet":        "Games played",
+    "stat.n.denmax":       "Most games in a day",
+    "stat.n.soucet":       "Points collected in total",
+    "stat.n.maxbody":      "Most points in a game",
+    "stat.n.maxbodybody":  "Most points \u2014 game to points",
+    "stat.n.maxbodykola":  "Most points \u2014 game by turns",
+    "stat.n.prumer":       "Overall average per turn",
+    "stat.n.prumerbody":   "Average per turn \u2014 game to points",
+    "stat.n.prumerkola":   "Average per turn \u2014 game by turns",
+    "stat.n.maxhodu":      "Most rolls in one turn",
+    "stat.n.minkol":       "Fewest turns in one game to points",
+    "stat.n.maxkol":       "Most turns in one game to points",
+    "stat.n.nejlepsikolo": "Best turn",
+    "stat.n.nejhorsikolo": "Worst turn without a farkle",
+    "stat.n.maxfarklu":    "Most farkles in a game",
+    "stat.n.ztraceno":     "Most points lost to a farkle",
+    "stat.n.serie":        "Longest run without a farkle",
+    "stat.n.farkluhra":    "Farkles per game",
+
+    /* seznamy statistik a historie */
+    "stat.filtrprazdno": "No game matches this filter.",
+    "stat.zadnahra":     "No finished game yet. A game goes into history with the button at the bottom of the Turn log.",
+    "stat.beznadat":     "There is no data for this statistic yet.",
+    "hist.prazdna":      "History is empty. A finished game goes into it with the button at the bottom of the Turn log.",
+    "hist.farklex":      "{n}\u00D7 farkle",
+    "hist.hraz":         "Game from {kdy}",
+    "hist.nactamkola":   "Loading turns\u2026",
+    "hist.kolanejdou":   "The turns of this game can\u2019t be loaded right now.",
+    "hist.zadnekolo":    "No turn is recorded in this game.",
+    "hist.smazat":       "Delete from history",
+    "hist.opravdu":      "Really delete?",
+
+    /* dolití dlouhého seznamu */
+    "dalsi.dalsich":    "Show {n} more",
+    "dalsi.zbyva":      "{n} left",
+    "dalsi.poslednich": "Show the last {n}",
+
+    /* lišta filtrů za běhu */
+    "filtr.typhry":    "Game type",
+    "filtr.nabody":    "to points",
+    "filtr.nakolan":   "by turns \u00B7 {n}",
+    "filtr.bezlimitu": "no limit",
+    "datum.od":        "From",
+    "typ.limit":       "Limit",
+    "typ.vsechny":     "All",
+
+    /* záloha a import */
+    "zal.pripravuji":       "Preparing the backup\u2026",
+    "zal.neslozit":         "The backup couldn\u2019t be put together \u2014 history isn\u2019t available right now.",
+    "zal.opravdunahradit":  "Really replace?",
+    "zal.ukladase":         "The file is being saved.",
+    "zal.stazenineslo":     "The download failed \u2014 try the copy to the clipboard.",
+    "zal.veschrance":       "The backup is on the clipboard.",
+    "zal.schrankaneslo":    "Copying to the clipboard failed \u2014 try Export to file.",
+    "zal.souborneslo":      "The file couldn\u2019t be read.",
+    "zal.poleprazdne":      "The field is empty \u2014 paste the backup text into it.",
+    "zal.nerozumim.soubor": "The file makes no sense \u2014 the data line is missing.",
+    "zal.nerozumim.text":   "The text makes no sense \u2014 the data line is missing.",
+    "zal.prazdno.soubor":   "There is no game in the file.",
+    "zal.prazdno.text":     "There is no game in the text.",
+    "zal.info.soubor":      "The file holds {her}, {nove} of them.",
+    "zal.info.text":        "The text holds {her}, {nove} of them.",
+    "zal.pridatn":          "Add {n}",
+    "zal.nenicopridat":     "Nothing to add",
+    "zal.pridano":          ["{n} game added.", "{n} games added."],
+    "zal.nahrazeno":        "History replaced, {her}.",
+
+    /* čitelná část souboru zálohy */
+    "exp.nadpis":     "Dice \u2014 backup of the game history",
+    "exp.vytvoreno":  "created {kdy}, games: {n}",
+    "exp.souhrn":     "total {b}, best turn {nej}, farkles {f}",
+    "exp.mezisoucet": "total {b}",
+    "exp.oddelovac":  "--- data for the import, do not touch ---",
+
+    /* zabrané místo */
+    "misto.nezjistit":    "The size can\u2019t be found out.",
+    "misto.zdostupnych":  "{u} of {q} available",
+    "misto.pocitam":      "Counting\u2026",
+    "misto.historie":     "History:",
+    "misto.nezmeritmalo": "the size can\u2019t be found out",
+    "misto.priblizne":    "about {v}",
+    "misto.zadnahra":     "no game yet",
+    "misto.rozehrana":    "Game in progress:",
+    "misto.nezmerit":     "can\u2019t be measured",
+    "misto.kose":         "Trash:",
+    "misto.prazdne":      "empty",
+    "misto.nastaveni":    "Settings and older data:",
+    "misto.aplikace":     "App:",
+    "misto.offline":      "{v}, kept for running offline",
+    "misto.celkem":       "Total from this address:",
+    "misto.trvale":       "The browser has marked it as permanent."
+  };
+  for(var enKlic in EN){
+    if(Object.prototype.hasOwnProperty.call(EN, enKlic)) I18N.en[enKlic] = EN[enKlic];
   }
 
   function primarni(kod){ return String(kod || "").toLowerCase().split("-")[0]; }
@@ -2231,7 +2627,7 @@
   /* ---------- prvky ---------- */
   var $ = function(id){ return document.getElementById(id); };
   var elScore=$("score"), elTotal=$("total"), elRest=$("rest"), elRestLabel=$("restlabel"),
-      elPot=$("pot"), elTurnNo=$("turnno"),
+      elPot=$("pot"), elTurnLabel=$("turnlabel"),
       elRollLine=$("rollline"), elFix=$("fix"),
       elRollOn=$("rollon"), elBank=$("bank"), elBust=$("bust"), elUndo=$("undo"), elLock=$("lock"),
       elRows=$("rows"), elEmpty=$("empty"), elArch=$("arch"), elKosList=$("koslist"), elKosHistList=$("koshistlist"),
@@ -4583,7 +4979,7 @@
       elRest.textContent = fmt(Math.abs(rest));
     }
     elPot.textContent = fmt(pot);
-    elTurnNo.textContent = S.turns.length + 1;
+    elTurnLabel.textContent = t("pocitadlo.kolonastole", { n: S.turns.length + 1 });
 
     elRollLine.innerHTML = t("pocitadlo.hodradek", {
         n: S.rolls.length, kostky: esc(tn("slovo.kostkami", r.thrown)) }) +
@@ -4623,7 +5019,7 @@
     elMnum.disabled = manLock;
     if(manLock && !elManual.hidden){ elManual.hidden = true; elMToggle.classList.remove("sel"); }
     if(manualDice > Math.max(1, l)) manualDice = Math.max(1, l);
-    elMkost.textContent = t("pocitadlo.kostzkr", { n: l > 0 ? manualDice : 0 });
+    elMkost.textContent = tn("pocitadlo.kostzkr", l > 0 ? manualDice : 0);
 
     renderKind(); renderFix(); renderRows(); renderStats(); renderTally(); renderArch();
     save();
