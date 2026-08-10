@@ -395,6 +395,20 @@
   .seg button:hover{border-color:var(--brass);color:var(--brass)}
   .seg button.on{background:var(--brass);border-color:var(--brass);color:var(--onbrass)}
 
+  /* přepínač Statistiky/Historie (#seg) je podmenu tří hlavních záložek
+     (.tabs/.tab výše), takže po něm i vzhledem sáhne: sdílená spodní linka
+     a mosazné podtržení aktivní položky místo orámovaných pilulek. Cíleno
+     na #id, ne na .seg, protože tu třídu sdílí i přepínače v jiných oknech
+     (Pravidla/Návod, filtr data, filtr typu), kterých se redesign netýká. */
+  #seg{gap:0;border-bottom:1px solid var(--edge)}
+  #seg button{
+    border:none;border-radius:0;border-bottom:2px solid transparent;
+    margin-bottom:-1px;min-height:40px;
+    font-size:12px;letter-spacing:.2em;
+  }
+  #seg button:hover{background:transparent;border-bottom-color:var(--brass);color:var(--brass)}
+  #seg button.on{background:transparent;border-bottom-color:var(--brass);color:var(--bone)}
+
   /* lišta filtrů pod přepínačem. Všechna tlačítka na jednom řádku, stejně
      široká. Popisky jsou krátké a stálé, zvolený filtr prozradí třída on
      a s ní mosazný rám — stejný idiom jako přepínače v nastavení.
@@ -517,6 +531,9 @@
   #pastearea:focus{outline:none;border-color:var(--brass)}
   .msg{font-size:13px;color:var(--bone);padding:8px 0 2px;line-height:1.4}
   .msg.bad{color:var(--danger)}
+  /* mezera nad rozpisem zabraného místa, cca o 60 % menší než u ostatních
+     zpráv (.msg) — ten odstup byl zbytečně velký proti řádku nad ním */
+  .msg.misto{padding:3px 0 1px}
   /* údaj o místě: řádek s tlačítkem drží linku nahoře jako oddíly harmoniky,
      dolní čáru nemá, aby výpis pod ním patřil viditelně k němu */
   .mistorow{border-top:1px solid var(--edge);border-bottom:none}
@@ -639,6 +656,7 @@
     :root{--tap:40px}
     body{padding:calc(9px + env(safe-area-inset-top)) calc(13px + env(safe-area-inset-right)) calc(5px + env(safe-area-inset-bottom)) calc(13px + env(safe-area-inset-left))}
     .tab{min-height:36px;font-size:11px}
+    #seg button{min-height:36px;font-size:11px}
     .score .line{padding:3px 1px}
     .score .line b{font-size:31px}
     .score .sub b{font-size:20px}
@@ -664,6 +682,7 @@
     .wordmark{font-size:20px}
     .fs{min-height:32px}
     .tab{min-height:30px}
+    #seg button{min-height:30px}
     .score .sub{display:none}          /* „zbývá“ ustoupí; skóre a kolo zůstávají */
     .score .line b{font-size:26px}
     .turn{margin-top:7px}
@@ -1383,6 +1402,8 @@
     "stat.n.nejlepsikolo":  "Nejlepší kolo",
     "stat.n.nejhorsikolo":  "Nejhorší kolo bez farklu",
     "stat.n.maxfarklu":     "Nejvíc farklů za hru",
+    "stat.n.farkleprvni":    "Farkle prvním hodem celkem",
+    "stat.n.maxfarkleprvni": "Nejvíc farklů prvním hodem za hru",
     "stat.n.ztraceno":      "Nejvíc bodů ztraceno farklem",
     "stat.n.serie":         "Nejdelší série bez farklu",
     "stat.n.farkluhra":     "Farklů na hru",
@@ -1782,6 +1803,8 @@
     "stat.n.nejlepsikolo": "Best turn",
     "stat.n.nejhorsikolo": "Worst turn without a farkle",
     "stat.n.maxfarklu":    "Most farkles in a game",
+    "stat.n.farkleprvni":    "First-roll farkles in total",
+    "stat.n.maxfarkleprvni": "Most first-roll farkles in a game",
     "stat.n.ztraceno":     "Most points lost to a farkle",
     "stat.n.serie":        "Longest run without a farkle",
     "stat.n.farkluhra":    "Farkles per game",
@@ -2095,7 +2118,7 @@
   var HIST = [];
   var UKEY  = "farkle-uloziste-v1";   /* "idb", jakmile migrace proběhla */
   var HZAL  = HKEY + "-zaloha";       /* přejmenovaný původní klíč */
-  var IDB_JMENO = "kostky", IDB_VERZE = 3;
+  var IDB_JMENO = "kostky", IDB_VERZE = 4;
   var SOUHRNY = "souhrny", DETAILY = "detaily";
   /* Firefox v soukromém okně umí na open() viset donekonečna, proto strop */
   var IDB_STROP = 3000;
@@ -2113,7 +2136,7 @@
       id: rec.id, savedAt: rec.savedAt,
       mode: rec.mode, goal: rec.goal, roundGoal: rec.roundGoal || null,
       banked: rec.banked || 0,
-      kol: gKol(rec), farklu: gFarkle(rec),
+      kol: gKol(rec), farklu: gFarkle(rec), farkluprvni: gFarklePrvni(rec),
       nejlepsi: gNejlepsiKolo(rec), nejhorsi: gNejhorsiKolo(rec),
       serie: gSerie(rec),
       kolKCili: kolKCili,
@@ -2166,20 +2189,20 @@
     req.onblocked = function(){ konec(null); };
   }
 
-  /* Doplnění polí `hodu` a `ztraceno` do souhrnů uložených starší verzí.
-     Běží uvnitř versionchange transakce: když cokoli selže, transakce se zruší
-     celá a databáze zůstane na předchozí verzi — nevznikne stav, kdy má
-     polovina her nová pole a druhá ne. Mapa se staví celá dopředu a teprve
-     pak se sahá na souhrny; dva otevřené kurzory nad dvěma policemi v téže
-     transakci se nemíchají. Na čerstvé instalaci jsou obě police prázdné,
-     takže dopočet nestojí nic. */
+  /* Doplnění polí `hodu`, `ztraceno` a `farkluprvni` do souhrnů uložených
+     starší verzí. Běží uvnitř versionchange transakce: když cokoli selže,
+     transakce se zruší celá a databáze zůstane na předchozí verzi —
+     nevznikne stav, kdy má polovina her nová pole a druhá ne. Mapa se staví
+     celá dopředu a teprve pak se sahá na souhrny; dva otevřené kurzory nad
+     dvěma policemi v téže transakci se nemíchají. Na čerstvé instalaci jsou
+     obě police prázdné, takže dopočet nestojí nic. */
   function dopoctiHody(tx){
     var mapa = {}, kd = tx.objectStore(DETAILY).openCursor();
     kd.onsuccess = function(){
       var c = kd.result;
       if(c){
         var d = c.value;
-        mapa[d.id] = { hodu: gNejvicHodu(d), ztraceno: gZtraceno(d) };
+        mapa[d.id] = { hodu: gNejvicHodu(d), ztraceno: gZtraceno(d), farkluprvni: gFarklePrvni(d) };
         c.continue();
         return;
       }
@@ -2188,10 +2211,11 @@
         var s = ks.result;
         if(!s) return;
         var v = s.value;
-        if(v.hodu === undefined || v.ztraceno === undefined){
+        if(v.hodu === undefined || v.ztraceno === undefined || v.farkluprvni === undefined){
           var m = mapa[v.id];
           v.hodu = m ? m.hodu : null;
           v.ztraceno = m ? m.ztraceno : null;
+          v.farkluprvni = m ? m.farkluprvni : null;
           s.update(v);
         }
         s.continue();
@@ -3756,6 +3780,16 @@
     (g.turns || []).forEach(function(t){ if(t.bust) n++; });
     return n;
   }
+  /* Farkle prvním hodem: kolo skončí farklem a nemá jediný bod (t.p === 0).
+     Jiná kombinace nastat nemůže — kdyby v kole padl druhý hod (hot dice
+     nebo pokračování), musel by před ním ležet aspoň jeden bodující odklad,
+     takže by t.p bylo kladné. Netřeba sahat do rolls[]. */
+  function gFarklePrvni(g){
+    if(typeof g.farkluprvni === "number") return g.farkluprvni;
+    var n = 0;
+    (g.turns || []).forEach(function(t){ if(t.bust && t.p === 0) n++; });
+    return n;
+  }
   /* null je platná hodnota (hra bez jediného bodovaného kola), takže se
      nedá ptát na pravdivost — jen na to, jestli údaj vůbec je */
   function gNejlepsiKolo(g){
@@ -3847,6 +3881,8 @@
     { n:"stat.n.nejlepsikolo",          m:gNejlepsiKolo,a:"max",   f:fmt },
     { n:"stat.n.nejhorsikolo",          m:gNejhorsiKolo,a:"min",   f:fmt },
     { n:"stat.n.maxfarklu",             m:gFarkle,      a:"max",   f:cislo,    kol:true },
+    { n:"stat.n.farkleprvni",           a:"soucet",     f:cislo,   num:gFarklePrvni },
+    { n:"stat.n.maxfarkleprvni",        m:gFarklePrvni, a:"max",   f:cislo,    kol:true },
     { n:"stat.n.ztraceno",              m:gZtraceno,    a:"max",   f:fmt,      kol:true },
     { n:"stat.n.serie",                 m:gSerie,       a:"max",   f:cislo,    kol:true },
     { n:"stat.n.farkluhra",             m:gFarkle,      a:"pomer", f:desetina, num:gFarkle, den:function(){ return 1; }, dir:"asc" }
@@ -5222,6 +5258,11 @@
   naJazyk(function(){ syncGoalUI(); render(); });
   naJazyk(function(){ renderP2(); });
   naJazyk(function(){ renderKos(); });
+  /* resetMisto() sbalí případně otevřený rozpis a přepočítá „Zabrané místo“ —
+     bez toho zůstane text zaseknutý na placeholderu „Zjišťuji…“, protože
+     prelozStatiku() ho jen přepíše na (opět nepřeložený) placeholder, ale
+     samo se nedopočítá. */
+  naJazyk(resetMisto);
 
   $("toastx").addEventListener("click", schovejToast);
   (function(){
@@ -5253,8 +5294,11 @@
     syncGoalUI(); render(); zkontrolujNavod();
     /* renderP2() čte historii, takže musí počkat na úložiště. V režimu ls
        se hotovo() zavolá ještě synchronně, takže se pořadí proti dřívějšku
-       nemění. */
-    pripravUloziste(function(){ renderP2(); renderZaloha2(); });
+       nemění. renderArch() se dřív o dokončení nezajímal — tlačítko
+       Zápisu kol se tak spočítalo z prázdného HIST a ukazovalo „Zapsat do
+       historie“ i u hry, která už uložená byla, dokud ho nepřepočítal
+       nějaký jiný render(). */
+    pripravUloziste(function(){ renderArch(); renderP2(); renderZaloha2(); });
   });
 
   /* ---------- offline režim ---------- */
