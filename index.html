@@ -1402,7 +1402,7 @@
     "stat.n.nejlepsikolo":  "Nejlepší kolo",
     "stat.n.nejhorsikolo":  "Nejhorší kolo bez farklu",
     "stat.n.maxfarklu":     "Nejvíc farklů za hru",
-    "stat.n.farkleprvni":    "Farkle prvním hodem celkem",
+    "stat.n.farkleprvni":    "Farklů prvním hodem",
     "stat.n.maxfarkleprvni": "Nejvíc farklů prvním hodem za hru",
     "stat.n.ztraceno":      "Nejvíc bodů ztraceno farklem",
     "stat.n.serie":         "Nejdelší série bez farklu",
@@ -3783,13 +3783,19 @@
   /* Farkle prvním hodem: kolo skončí farklem a nemá jediný bod (t.p === 0).
      Jiná kombinace nastat nemůže — kdyby v kole padl druhý hod (hot dice
      nebo pokračování), musel by před ním ležet aspoň jeden bodující odklad,
-     takže by t.p bylo kladné. Netřeba sahat do rolls[]. */
+     takže by t.p bylo kladné. Netřeba sahat do rolls[]. Nula je tu platná
+     a ukládá se jako nula (na rozdíl od gZtraceno níž) — je to prostá
+     četnost jako farklu/kol/hodu, ne rekord, kde by nula matla. */
   function gFarklePrvni(g){
     if(typeof g.farkluprvni === "number") return g.farkluprvni;
     var n = 0;
     (g.turns || []).forEach(function(t){ if(t.bust && t.p === 0) n++; });
     return n;
   }
+  /* Do žebříčku smí jen hry, kde k tomu opravdu došlo — nula by se jinak
+     řadila na konec jako řada nul. Samostatná obálka, ne úprava
+     gFarklePrvni: uložený souhrn i celkový součet mají nulu držet dál. */
+  function gFarklePrvniRekord(g){ return gFarklePrvni(g) || null; }
   /* null je platná hodnota (hra bez jediného bodovaného kola), takže se
      nedá ptát na pravdivost — jen na to, jestli údaj vůbec je */
   function gNejlepsiKolo(g){
@@ -3881,8 +3887,8 @@
     { n:"stat.n.nejlepsikolo",          m:gNejlepsiKolo,a:"max",   f:fmt },
     { n:"stat.n.nejhorsikolo",          m:gNejhorsiKolo,a:"min",   f:fmt },
     { n:"stat.n.maxfarklu",             m:gFarkle,      a:"max",   f:cislo,    kol:true },
-    { n:"stat.n.farkleprvni",           a:"soucet",     f:cislo,   num:gFarklePrvni },
-    { n:"stat.n.maxfarkleprvni",        m:gFarklePrvni, a:"max",   f:cislo,    kol:true },
+    { n:"stat.n.farkleprvni",           m:gFarklePrvniRekord, a:"soucet",f:cislo, num:gFarklePrvni, kol:true },
+    { n:"stat.n.maxfarkleprvni",        m:gFarklePrvniRekord, a:"max",   f:cislo, kol:true },
     { n:"stat.n.ztraceno",              m:gZtraceno,    a:"max",   f:fmt,      kol:true },
     { n:"stat.n.serie",                 m:gSerie,       a:"max",   f:cislo,    kol:true },
     { n:"stat.n.farkluhra",             m:gFarkle,      a:"pomer", f:desetina, num:gFarkle, den:function(){ return 1; }, dir:"asc" }
@@ -3954,7 +3960,7 @@
     v.sort(function(a, b){ return dir === "asc" ? a.x - b.x : b.x - a.x; });
     return v;
   }
-  function jdeRozkliknout(def){ return def.a !== "pocet" && def.a !== "soucet"; }
+  function jdeRozkliknout(def){ return def.a !== "pocet" && (def.a !== "soucet" || typeof def.m === "function"); }
 
   /* ---------- záloha historie ----------
      Soubor je čitelný text; poslední řádek nese data pro import.
@@ -4515,6 +4521,10 @@
      seznamu her, nebo ze žebříčku statistiky. Zásobník je proto jednoúrovňový
      — víc úrovní vzniknout nemůže, protože z detailu hry se dál nikam nejde. */
   var navZpet = null;   // null | { statIdx: i }
+  /* Scroll seznamu a scroll žebříčku, než se z nich vyšlo do detailu —
+     #p2list a #p2detail scrolluje společný rodič #page2, takže bez
+     uložení by se po *Zpět* vždycky spadlo na 0 (viz doDetailu). */
+  var scrollList = 0, scrollZebricek = 0;
   function zrusNav(){ navZpet = null; }
   function zpetNaSeznam(){
     clearTimeout(delTimer); delTimer = null;
@@ -4522,11 +4532,13 @@
       var i = navZpet.statIdx;
       navZpet = null;
       otevriZebricek(i);
+      $("page2").scrollTop = scrollZebricek;
       return;
     }
     elP2Detail.hidden = true;
     elP2List.hidden = false;
     renderP2();
+    $("page2").scrollTop = scrollList;
   }
   function doDetailu(titulek){
     odpojPozorovatele();
@@ -4644,7 +4656,10 @@
         '<b class="sv">' + (h ? h.txt : "\u2014") + '</b>' +
         (lze ? '<span class="chev">\u00BB</span>' : '');
       if(lze){
-        b.addEventListener("click", function(){ otevriZebricek(i); });
+        b.addEventListener("click", function(){
+          scrollList = $("page2").scrollTop;
+          otevriZebricek(i);
+        });
       }
       elStatList.appendChild(b);
     });
@@ -4678,6 +4693,7 @@
         '<td class="g">' + def.f(r.x) + '</td>' +
         '<td class="c">\u00BB</td>';
       function jdi(){
+        scrollZebricek = $("page2").scrollTop;
         navZpet = { statIdx: statIdx };
         otevriHru(r.g.id);
       }
@@ -4753,7 +4769,10 @@
         ' \u00B7 ' + esc(tn("slovo.kolo", gKol(rec))) +
         ' \u00B7 ' + esc(t("hist.farklex", { n: gFarkle(rec) })) + '</span>' +
         '<b class="gv">' + esc(fmt(rec.banked || 0)) + '</b>';
-      b.addEventListener("click", function(){ otevriHru(rec.id); });
+      b.addEventListener("click", function(){
+        scrollList = $("page2").scrollTop;
+        otevriHru(rec.id);
+      });
       frag.appendChild(b);
       return frag;
     });
