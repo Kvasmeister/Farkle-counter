@@ -285,6 +285,14 @@
   .chip:active:not(:disabled){background:var(--press)}
   .chip:disabled{opacity:.28;cursor:not-allowed}
   .chip.sel{border-color:var(--brass);background:var(--selbg)}
+  /* Symetrické zalomení řady čipů. Samo od sebe by se pět zalomilo jako 4 + 1
+     a osamělý čip by se roztáhl přes celou šířku. Třídu podle počtu
+     viditelných čipů nasazuje JS — počet sourozenců CSS nezná. Basis je
+     o kousek menší než podíl šířky, aby se do řádku vešly mezery. */
+  .row.k5 .chip,.row.k6 .chip{flex:1 1 calc(33.333% - 8px)}
+  .row.k7 .chip,.row.k8 .chip{flex:1 1 calc(25% - 8px)}
+  /* .row má display:flex z autorského listu, takže samotné [hidden] nestačí */
+  .row[hidden]{display:none}
 
   .kind{display:flex;gap:6px;align-items:stretch}
   .kind .col{display:flex;flex-direction:column;gap:6px;flex:1}
@@ -299,6 +307,11 @@
   .manual{display:flex;gap:6px}
   .manual[hidden]{display:none}
   #manualwrap{margin-top:8px}
+  #manualwrap[hidden]{display:none}
+  /* Vlastní vzory bydlí v panelu, ne v řádku s čipy: jejich popisek je
+     dlouhý (1,1,1+5,5) a je jich až osm, takže by rozpočet šířky řady
+     přestal platit. V panelu dlouhý popisek nevadí. */
+  #vlastnirow{margin-bottom:6px}
   .manual input{
     flex:1;min-width:0;background:var(--field);border:1px solid var(--edge);border-radius:var(--r);
     color:var(--bone);font-family:inherit;font-size:16px;padding:0 10px;min-height:44px;
@@ -346,6 +359,11 @@
   }
   .rollbtn:hover:not(:disabled){background:var(--brass);color:var(--onbrass)}
   .rollbtn:disabled{border-color:var(--edge);color:var(--dim);cursor:not-allowed}
+  /* Riziko farklu sedí na tlačítku, ne v popisu hodu: #rollline se pod
+     540 px skrývá, kdežto tlačítko nemizí nikdy — a je to údaj právě
+     o tom rozhodnutí, které se tím tlačítkem dělá. Barva jde z currentColor
+     přes opacity, aby přežila i překlopení pozadí při hoveru. */
+  .rollbtn .v{display:block;font-size:11px;font-weight:400;opacity:.72;margin-top:2px}
 
   /* akce */
   .lock{
@@ -387,6 +405,7 @@
   /* dvě velké části stránky Statistiky */
   .seg{display:flex;gap:6px;margin:14px 0 2px;flex:0 0 auto}
   .seg button{
+    display:flex;align-items:center;justify-content:center;
     flex:1;min-height:46px;padding:0 6px;
     background:transparent;border:1px solid var(--edge);border-radius:var(--r);
     color:var(--dim);font-family:"IM Fell English SC",Georgia,serif;
@@ -610,6 +629,77 @@
   .setsec summary .cnt{margin-left:auto;font-size:11px;letter-spacing:.1em}
   .setsec .secbody{padding-bottom:6px}
 
+  /* dvě karty nastavení; název zvoleného herního režimu sedí na druhém
+     tlačítku, ať jde z první karty poznat, podle čeho se hraje */
+  .setcard[hidden]{display:none}
+  #setseg button{flex-direction:column;justify-content:center;gap:2px;min-height:54px}
+  #setseg .cnt{font-size:11px;letter-spacing:.06em;opacity:.75;text-transform:none}
+  /* .cap má margin-top nulový, ale hned pod přepínačem karet by seděl natěsno */
+  #setcardrezimy > #rezlist > .cap:first-child{margin-top:14px}
+
+  /* Karta Herní režimy má dvě podstránky jako Statistiky: seznam a detail
+     jednoho režimu. Přepínají se atributem hidden, ne dalším oknem. */
+  #rezlist[hidden],#rezdetail[hidden]{display:none}
+  #rezdetail .dethead{margin-bottom:4px}
+  #rezdetail h3{margin:0;font-family:"IM Fell English",Georgia,serif;font-weight:400;font-size:19px;color:var(--bone)}
+  #reznazevpole{
+    flex:1 1 120px;min-width:0;
+    background:var(--field);border:1px solid var(--edge);border-radius:var(--r);
+    color:var(--bone);font-family:inherit;font-size:16px;padding:0 8px;min-height:40px;
+  }
+  #reznazevpole:focus{outline:none;border-color:var(--brass)}
+  /* Šest polí trojic vedle sebe by na 320 px nešlo přečíst; dvě do řádku ano. */
+  .skupcap{display:flex;align-items:center;gap:8px}
+  .skupcap button{margin-left:auto}
+  /* Kulaté „i“ u výběru pravidla pro čtyři a víc stejných. */
+  .ghost.info{
+    flex:0 0 34px;min-width:34px;padding:0;border-radius:50%;
+    font-family:"IM Fell English",Georgia,serif;font-size:15px;letter-spacing:0;
+  }
+  #reznadnapoveda{margin-top:-2px}
+  .trojgrid{display:flex;flex-wrap:wrap;gap:8px}
+  .trojpole{
+    flex:1 1 calc(50% - 4px);display:flex;align-items:center;gap:8px;
+    min-width:0;font-size:14px;color:var(--dim);
+  }
+  .trojpole .kombsazba{flex:1 1 0}
+  .trojpole > span{flex:0 0 44px;font-family:"IM Fell English",Georgia,serif;font-size:16px;color:var(--bone)}
+  /* název režimu nad tabulkou pravidel */
+  .rezpruh{
+    font-family:"IM Fell English",Georgia,serif;font-size:17px;color:var(--brass);
+    margin-bottom:8px;letter-spacing:.02em;
+  }
+
+  /* Oddíl kombinací: řádek nese název, pole se sazbou a tlačítka. U vlastního
+     vzoru jsou tlačítka dvě, takže se řádek na úzkém displeji musí umět
+     zalomit — stejná úvaha jako u .kosrow. */
+  .kombrow{flex-wrap:wrap}
+  .kombrow .t{flex:1 1 130px}
+  /* .setrow span je blokový; zápis kombinace má zůstat v řádku s počtem kostek.
+     U vlastního vzoru je zápis rovnou nadpisem řádku, a ten blokový zůstává. */
+  .kombrow .zapis{display:inline;font-family:"IM Fell English",Georgia,serif;font-size:15px;color:var(--bone)}
+  .kombrow b.zapis{display:block;font-size:17px}
+  .kombrow .riziko{color:var(--brass)}
+  .kombsazba{
+    flex:0 0 76px;min-width:0;text-align:right;
+    background:var(--field);border:1px solid var(--edge);border-radius:var(--r);
+    color:var(--bone);font-family:inherit;font-size:16px;padding:0 8px;min-height:40px;
+  }
+  .kombsazba:focus{outline:none;border-color:var(--brass)}
+  .kombsazba:disabled{opacity:.35;cursor:not-allowed}
+  .kombnovy{padding:10px 0 4px}
+  .kombnovy .cap{margin-bottom:6px}
+  .kombnovy .pips{margin-bottom:6px}
+  .kombnovy .manual{margin-top:6px}
+  .kombstav{
+    display:flex;align-items:baseline;gap:8px;margin-bottom:6px;
+    font-family:"IM Fell English",Georgia,serif;font-size:17px;color:var(--bone);
+  }
+  /* náhled rozdělaného vzoru: zápis hodnot patkově, slovní název prózou */
+  .kombstav .proza{font-family:"Alegreya Sans","Segoe UI",system-ui,sans-serif;font-size:15px}
+  .kombstav .hint{font-family:"Alegreya Sans","Segoe UI",system-ui,sans-serif;font-size:12.5px;color:var(--dim)}
+  #kombzprava{margin-top:6px}
+
   #rulesmodal .modalbox{height:100%}
   #rulesmodal .modalbody{flex:1 1 auto;min-height:0}
 
@@ -692,7 +782,7 @@
     .pad{padding:7px 12px}
     .cap{font-size:10px;letter-spacing:.14em}
     .cap.gap{margin-top:6px}
-    .chip .v{font-size:10px}
+    .chip .v,.rollbtn .v{font-size:10px}
     .act,.rollbtn{min-height:42px}
     .rollbtnwrap{padding-top:5px}
     /* přilepená dvojice na Zápisu kol nesmí sníst půl obrazovky */
@@ -828,10 +918,20 @@
   <div class="sheets" id="sheets">
   <div class="sheet">
   <div class="pad">
-    <div class="cap" data-i18n="pocitadlo.zhodu">Co si z hodu necháváš</div>
-    <div class="row">
-      <button class="chip" data-single="1" data-i18n-html="pocitadlo.chip.jednicka">jednička<span class="v">100</span></button>
-      <button class="chip" data-single="5" data-i18n-html="pocitadlo.chip.petka">pětka<span class="v">50</span></button>
+    <!-- Samostatně bodující hodnoty. Šest čipů stojí staticky tady a jen se
+         skrývají, stejně jako postupky a kombinace. Popisek i sazbu dopisuje
+         renderKombi() z režimu, takže data-i18n na nich není: prvek, do
+         kterého zapisuje vykreslení, nesmí patřit katalogu.
+         Do řady se vejdou tři, aniž by se čipy zmenšily — při čtyřech a víc
+         se celá řada schová a zadává se přes 1× ve Stejných hodnotách. -->
+    <div class="cap" id="singlecap" data-i18n="pocitadlo.zhodu">Co si z hodu necháváš</div>
+    <div class="row" id="singlerow">
+      <button class="chip" data-single="1"><span></span><span class="v"></span></button>
+      <button class="chip" data-single="2" hidden><span></span><span class="v"></span></button>
+      <button class="chip" data-single="3" hidden><span></span><span class="v"></span></button>
+      <button class="chip" data-single="4" hidden><span></span><span class="v"></span></button>
+      <button class="chip" data-single="5"><span></span><span class="v"></span></button>
+      <button class="chip" data-single="6" hidden><span></span><span class="v"></span></button>
     </div>
 
     <div class="cap gap" data-i18n="pocitadlo.stejne">Stejné hodnoty</div>
@@ -843,20 +943,35 @@
       <button class="addbtn" id="addkind" disabled>+ 0</button>
     </div>
 
-    <div class="cap gap" data-i18n="pocitadlo.postupky">Postupky</div>
-    <div class="row">
-      <button class="chip" data-str="15" data-i18n-html="pocitadlo.chip.s15">1–5<span class="v">500</span></button>
-      <button class="chip" data-str="26" data-i18n-html="pocitadlo.chip.s26">2–6<span class="v">750</span></button>
-      <button class="chip" data-str="16" data-i18n-html="pocitadlo.chip.s16">1–6<span class="v">1 500</span></button>
-      <button class="chip" id="mtoggle" data-i18n-html="pocitadlo.chip.rucne">ručně<span class="v">vlastní</span></button>
+    <div class="cap gap" id="strcap" data-i18n="pocitadlo.postupky">Postupky</div>
+    <!-- Přednastavené kombinace stojí staticky tady a jen se skrývají: je jich
+         pevný počet, takže snapshot prvků při startu i sběr češtiny fungují
+         beze změny. Do stejné řady jako postupky proto, aby náklad na šířku
+         nerostl skokem, ale postupně podle toho, kolik si kdo zapnul.
+         Popisky (2+2+2, 3+2, …) jsou jazykově neutrální a nepřekládají se;
+         sazba v .v se dopisuje z JS, protože je editovatelná.
+         Čip „vlastní“ stojí schválně až za nimi: otevírá panel pod řadou,
+         takže má být poslední, ať je zapnutých kombinací kolik chce. -->
+    <div class="row" id="strrow">
+      <button class="chip" data-str="15"><span>1–5</span><span class="v">500</span></button>
+      <button class="chip" data-str="26"><span>2–6</span><span class="v">750</span></button>
+      <button class="chip" data-str="16"><span>1–6</span><span class="v">1 500</span></button>
+      <button class="chip" data-kombi="3p" hidden>2+2+2<span class="v"></span></button>
+      <button class="chip" data-kombi="32" hidden>3+2<span class="v"></span></button>
+      <button class="chip" data-kombi="33" hidden>3+3<span class="v"></span></button>
+      <button class="chip" data-kombi="42" hidden>4+2<span class="v"></span></button>
+      <button class="chip" id="mtoggle"><span data-i18n="pocitadlo.chip.rucne">vlastní</span><span class="v" data-i18n="pocitadlo.chip.rucnev">body</span></button>
     </div>
 
-    <div class="manual" id="manualwrap" hidden>
-      <input id="mnum" type="number" inputmode="numeric" data-i18n-ph="pocitadlo.body.ph" placeholder="body" data-i18n-aria="pocitadlo.body.ph" aria-label="body" min="0" step="50">
-      <button class="chip" id="mless" style="flex:0 0 40px">−</button>
-      <button class="chip" id="mkost" style="flex:0 0 74px">1 kost.</button>
-      <button class="chip" id="mmore" style="flex:0 0 40px">+</button>
-      <button class="addbtn" id="madd" data-i18n="pocitadlo.pridat">Přidat</button>
+    <div id="manualwrap" hidden>
+      <div class="row" id="vlastnirow" hidden></div>
+      <div class="manual">
+        <input id="mnum" type="number" inputmode="numeric" data-i18n-ph="pocitadlo.body.ph" placeholder="body" data-i18n-aria="pocitadlo.body.ph" aria-label="body" min="0" step="50">
+        <button class="chip" id="mless" style="flex:0 0 40px">−</button>
+        <button class="chip" id="mkost" style="flex:0 0 74px">1 kost.</button>
+        <button class="chip" id="mmore" style="flex:0 0 40px">+</button>
+        <button class="addbtn" id="madd" data-i18n="pocitadlo.pridat">Přidat</button>
+      </div>
     </div>
   </div>
   </div>
@@ -941,21 +1056,12 @@
         <button type="button" class="on" data-i18n="pravidla.seg.pravidla">Pravidla</button>
         <button type="button" data-i18n="pravidla.seg.navod">Návod</button>
       </div>
+      <!-- Pravidla se skládají z herního režimu (pravidlaHTML). Statické tu
+           zůstat nemůžou: každý režim boduje jinak a tabulka by lhala. Texty
+           proto stojí v RUCNI, ne v data-i18n. -->
       <div class="rules infocard" id="cardrules">
-    <p data-i18n-html="pravidla.p1">Hodíš šesti kostkami a odložíš si z hodu aspoň jednu bodující kostku nebo kombinaci. Když hod nedá vůbec nic, je to <b>Farkle</b> — všechno, co máš v kole na stole, propadá a hraje soupeř.</p>
-    <p data-i18n-html="pravidla.p2">Po každém hodu se rozhoduješ: <b>zapsat</b> body a předat kolo, nebo <b>házet dál</b> jen těmi kostkami, které jsi neodložil.</p>
-    <p data-i18n-html="pravidla.p3">Když odložíš i poslední kostku, přicházejí <b>horké kostky</b> — házíš znovu všemi šesti a body se sčítají dál v tomtéž kole.</p>
-    <table>
-      <tr><td data-i18n="pravidla.t1n">Každá jednička</td><td data-i18n="pravidla.t1v">100</td></tr>
-      <tr><td data-i18n="pravidla.t2n">Každá pětka</td><td data-i18n="pravidla.t2v">50</td></tr>
-      <tr><td data-i18n="pravidla.t3n">Tři jedničky</td><td data-i18n="pravidla.t3v">1 000</td></tr>
-      <tr><td data-i18n="pravidla.t4n">Tři dvojky / trojky / čtyřky / pětky / šestky</td><td data-i18n="pravidla.t4v">200–600</td></tr>
-      <tr><td data-i18n="pravidla.t5n">Postupka 1–5</td><td data-i18n="pravidla.t5v">500</td></tr>
-      <tr><td data-i18n="pravidla.t6n">Postupka 2–6</td><td data-i18n="pravidla.t6v">750</td></tr>
-      <tr><td data-i18n="pravidla.t7n">Postupka 1–6</td><td data-i18n="pravidla.t7v">1 500</td></tr>
-    </table>
-    <p class="note" data-i18n-html="pravidla.pozn1">Trojice = hodnota × 100 (jedničky 1 000). Každá další kostka navíc hodnotu <b>zdvojnásobí</b>: čtyři pětky 1 000, pět pětek 2 000, šest pětek 4 000. Šest jedniček je 8 000.</p>
-    <p class="note" data-i18n="pravidla.pozn2">Dvojice ani „skoro trojice“ neboduje — odložit jde jen jednička, pětka, hotová trojice a výš, nebo postupka.</p>
+    <div class="rezpruh" id="pravidlarezim"></div>
+    <div id="pravidlatelo"></div>
   </div>
 
       <div class="rules infocard" id="cardguide" hidden>
@@ -969,15 +1075,20 @@
 
     <h3 data-i18n="navod.klavesnice.h">Klávesnice</h3>
     <p data-i18n-html="navod.klavesnice.p"><b>jednička</b> a <b>pětka</b> přidávají po jedné kostce. <b>Stejné hodnoty</b> mají v prvním řádku počet, ve druhém hodnotu; tlačítko vpravo ukazuje výsledek a přidá ho. <b>Postupky</b> jsou tři pevné kombinace. <b>ručně</b> otevře pole pro body a šipky pro počet kostek.</p>
-    <p class="note" data-i18n="navod.klavesnice.pozn">Kombinace, které se nevejdou do zbývajících kostek, jsou zašedlé.</p>
+    <p class="note" data-i18n="navod.klavesnice.pozn">Kombinace, které se nevejdou do zbývajících kostek, jsou zašedlé. Které čipy v řadě vůbec jsou a za kolik bodují, řídí herní režim.</p>
 
     <h3 data-i18n="navod.opravy.h">Opravy</h3>
     <p data-i18n-html="navod.opravy.p1">Přepínač <b>zadat / opravit</b> vedle popisu hodu přepíná vnitřní kartu panelu. Karta <i>opravit</i> ukazuje každou odloženou položku jako tlačítko s křížkem, seskupené po hodech; smazání položky přepočítá i počty kostek v následujících hodech.</p>
     <p data-i18n-html="navod.opravy.p2"><b>Zpět</b> ubírá po jednom odzadu v rozehraném kole — nejdřív položky, pak celé hody. Na zapsaná kola nesahá; jakmile v kole nic nezbývá, tlačítko zšedne.</p>
     <p data-i18n-html="navod.opravy.p3"><b>Opravit</b> v Zápisu kol zapíná křížky u jednotlivých kol. Křížek vyvolá potvrzení; smazané kolo se odečte ze skóre a zbylá kola se přečíslují. Bez odehraných kol je tlačítko schované.</p>
 
-    <h3 data-i18n="navod.hra.h">Nastavení hry</h3>
-    <p data-i18n-html="navod.hra.p">Ikona kostky otevírá panel s režimem a cílem, a to i uprostřed hry. <b>Do bodů</b> hraje na 2 000 až 10 000 nebo na vlastní číslo a druhý řádek skóre ukazuje, kolik zbývá. Kolo, kterým se cíl překročí, se počítá celé; po jeho zapsání je hra u konce. <b>Na kola</b> jen počítá kola; volitelný limit hru po posledním kole zamkne, bez limitu hra neskončí sama.</p>
+    <h3 data-i18n="navod.hra.h">Typ hry</h3>
+    <p data-i18n-html="navod.hra.p">Ikona kostky otevírá panel s typem hry a cílem, a to i uprostřed hry. <b>Do bodů</b> hraje na 2 000 až 10 000 nebo na vlastní číslo a druhý řádek skóre ukazuje, kolik zbývá. Kolo, kterým se cíl překročí, se počítá celé; po jeho zapsání je hra u konce. <b>Na kola</b> jen počítá kola; volitelný limit hru po posledním kole zamkne, bez limitu hra neskončí sama.</p>
+
+    <h3 data-i18n="navod.rezimy.h">Herní režimy</h3>
+    <p data-i18n-html="navod.rezimy.p1">Farkle se hraje v několika verzích a každá boduje jinak. <b>Herní režim</b> v nastavení drží celou tabulku: kolika kostkami se hází, kolik platí jednička, pětka a jednotlivé trojice, co dělá čtvrtá a další stejná kostka, které postupky bodují a jaké kombinace navíc jsou zapnuté. Přednastavené jsou tři — <i>KCD2</i>, <i>Klasická Farkle</i> a <i>Pět kostek</i>; vlastních jde přidat dvacet a každý se dá předělat celý.</p>
+    <p data-i18n-html="navod.rezimy.p2">Tlačítko <b>Pravidla</b> u režimu ukáže jeho tabulku, <b>Upravit</b> otevře jeho nastavení a <b>Zvolit režim</b> ho postaví do hry. Kombinace navíc i vlastní vzory patří vždycky jednomu režimu, ne aplikaci — přepnutím režimu se tedy vymění i ony.</p>
+    <p data-i18n-html="navod.rezimy.p3">Přepnout režim jde jen tehdy, když není co rozehrané: kolo zapsané podle jedněch pravidel a další podle jiných by dalo skóre, které nic neznamená. Rozehranou hru proto nejdřív dohraj a začni <b>Novou hrou</b>. Každá hra si režim odnese do historie a statistika <i>Nejhranější režim</i> počítá, čeho je nejvíc.</p>
 
     <h3 data-i18n="navod.stranky.h">Tři stránky</h3>
     <p data-i18n="navod.stranky.p">Záložky nahoře a swipenutí do stran přepínají mezi:</p>
@@ -1013,6 +1124,15 @@
       <button class="modalx" type="button" data-close data-i18n-aria="spol.zavrit" aria-label="Zavřít">×</button>
     </div>
     <div class="modalbody">
+      <!-- Dvě karty jako podmenu Statistik. Kombinace mají vlastní kartu,
+           protože jinak se okno nedalo projít bez rolování přes cizí oddíly. -->
+      <div class="seg" id="setseg">
+        <button type="button" class="on" data-i18n="nast.seg.obecne">Obecné</button>
+        <!-- název zvoleného režimu sedí vedle popisku, ne v něm: do katalogu
+             se tak nedostane žádná značka a překlad nepřepíše ten prvek -->
+        <button type="button"><span data-i18n="nast.seg.rezimy">Herní režimy</span><span class="cnt" id="reznazev"></span></button>
+      </div>
+      <div class="setcard" id="setcardobecne">
       <div class="setrow" id="jazykrow">
         <div class="t"><b data-i18n="nast.jazyk.n">Jazyk</b><span data-i18n="nast.jazyk.p">Změní se hned, bez restartu aplikace.</span></div>
         <select id="jazyksel" data-i18n-aria="nast.jazyk.aria" aria-label="Jazyk rozhraní"></select>
@@ -1082,6 +1202,101 @@
       </div>
       <div class="msg misto" hidden></div>
       <input type="file" id="impfile" accept=".txt,text/plain" hidden>
+      </div>
+
+      <!-- Herní režimy: seznam a detail jednoho režimu jako podstránky téže
+           karty, stejným vzorem jako dvojice #p2list a #p2detail ve Statistikách.
+           Řádky se staví z uzlů v renderRezimy(); staticky tu stojí jen to,
+           co se nemění, aby to mohlo nést data-i18n a sebrat se do češtiny
+           při startu. -->
+      <div class="setcard" id="setcardrezimy" hidden>
+        <div id="rezlist">
+          <div class="cap" data-i18n="rezim.nadpis">Herní režim</div>
+          <div class="msg" id="rezzamek" hidden></div>
+          <div id="rezrows"></div>
+          <div class="setrow">
+            <div class="t">
+              <b data-i18n="rezim.novy.n">Vlastní režim</b>
+              <span data-i18n="rezim.novy.p">Postaví se od pravidel KCD2 a dá se předělat celý.</span>
+            </div>
+            <div class="setbtns"><button class="ghost" id="reznovy" type="button" data-i18n="rezim.novy.btn">Přidat</button></div>
+          </div>
+          <div class="msg" id="rezstrop" hidden></div>
+        </div>
+
+        <div id="rezdetail" hidden>
+          <div class="dethead">
+            <button class="ghost back" id="rezback" type="button" data-i18n="rezim.zpetseznam">« Zpět</button>
+            <h3 id="reztitul"></h3>
+          </div>
+
+          <div class="setrow" id="reznazevrow" hidden>
+            <div class="t">
+              <b data-i18n="rezim.nazev.n">Název</b>
+              <span data-i18n="rezim.nazev.p">Pod tímhle jménem se režim ukáže v historii.</span>
+            </div>
+            <input id="reznazevpole" type="text" maxlength="40" data-i18n-aria="rezim.nazev.n" aria-label="Název">
+          </div>
+          <div class="setrow">
+            <div class="t">
+              <b data-i18n="rezim.kostek.n">Počet kostek</b>
+              <span data-i18n="rezim.kostek.p">Kolika kostkami se hází na začátku kola i po horkých kostkách.</span>
+            </div>
+            <select id="rezkostek" data-i18n-aria="rezim.kostek.n" aria-label="Počet kostek">
+              <option value="5">5</option>
+              <option value="6">6</option>
+            </select>
+          </div>
+
+          <!-- Tři skupiny bodovací tabulky: samostatné kostky, dvojice, trojice.
+               Nadpis, přepínač celé skupiny a mřížka šesti polí staví
+               renderRezDetail() z SKUPINY, aby se to nepsalo třikrát. -->
+          <div id="rezskupiny"></div>
+
+          <div class="setrow">
+            <div class="t">
+              <b data-i18n="rezim.nad.n">Čtyři a víc stejných</b>
+              <span data-i18n="rezim.nad.p">Co udělá každá další kostka nad trojici.</span>
+            </div>
+            <select id="reznad" data-i18n-aria="rezim.nad.n" aria-label="Čtyři a víc stejných">
+              <option value="x2" data-i18n="rezim.nad.x2">zdvojnásobí</option>
+              <option value="nasobek" data-i18n="rezim.nad.nasobek">násobí trojici</option>
+              <option value="pevne" data-i18n="rezim.nad.pevne">pevné body</option>
+            </select>
+            <button class="ghost info" id="reznadinfo" type="button" data-i18n-aria="rezim.nad.info" aria-label="Co ta pravidla znamenají">i</button>
+          </div>
+          <div class="msg" id="reznadnapoveda" hidden></div>
+          <div class="trojgrid" id="reznadp" hidden></div>
+
+          <div class="cap gap" data-i18n="rezim.cap.post">Postupky</div>
+          <div id="rezpost"></div>
+
+          <div class="cap gap" data-i18n="nast.komb">Kombinace navíc</div>
+          <div id="komblist"></div>
+          <div class="kombnovy">
+            <div class="cap" data-i18n="komb.nadpisvlastni">Vlastní kombinace</div>
+            <div id="kombvlastni"></div>
+            <div class="kombstav"><span id="kombvzor"></span><span class="hint" id="kombvzorhint"></span></div>
+            <div class="pips" id="kombpips"></div>
+            <div class="setrow">
+              <div class="t">
+                <b data-i18n="komb.libovolne.n">Libovolné hodnoty</b>
+                <span data-i18n="komb.libovolne.p">Rozhodne jen tvar kombinace, ne to, které hodnoty padly. Tři dvojice tak sednou na jakékoli tři páry.</span>
+              </div>
+              <button class="ghost" id="kombany" type="button" data-i18n="nast.vypnuto">Vypnuto</button>
+            </div>
+            <div class="manual">
+              <input id="kombbody" type="number" inputmode="numeric" data-i18n-ph="pocitadlo.body.ph" placeholder="body" data-i18n-aria="pocitadlo.body.ph" aria-label="body" min="0" step="50">
+              <button class="chip" id="kombzrus" style="flex:0 0 92px" data-i18n="komb.vymazat">Vymazat</button>
+              <button class="addbtn" id="kombpridat" data-i18n="pocitadlo.pridat">Přidat</button>
+            </div>
+            <div class="msg" id="kombzprava" hidden></div>
+          </div>
+
+          <div class="setrow" id="rezduplrow"></div>
+          <div class="setrow" id="rezkonecrow"></div>
+        </div>
+      </div>
     </div>
   </div>
 </div>
@@ -1287,23 +1502,129 @@
     "slovo.hra":      ["{n} hra", "{n} hry", "{n} her"],
     "slovo.nova":     ["{n} nová", "{n} nové", "{n} nových"],
     "slovo.kostkami": ["{n} kostkou", "{n} kostkami"],
+    /* první pád — pro výčty v nastavení; „kostkami“ je sedmý a jinam nesedne */
+    "slovo.kostek":   ["{n} kostka", "{n} kostky", "{n} kostek"],
     "slovo.farkle":   "farkle",
 
     /* štítky odložených položek — kolo si ukládá kód, slova vznikají až tady */
     "stitek.j":   "jednička",
     "stitek.p":   "pětka",
+    /* Jednička a pětka mají kódy j a p odjakživa; zbylé čtyři hodnoty umí
+       bodovat samostatně teprve od volné bodovací tabulky, proto d2–d6. */
+    "stitek.d2":  "dvojka",
+    "stitek.d3":  "trojka",
+    "stitek.d4":  "čtyřka",
+    "stitek.d6":  "šestka",
     "stitek.v":   "vlastní",
     "stitek.s15": "postupka 1\u20135",
     "stitek.s26": "postupka 2\u20136",
     "stitek.s16": "postupka 1\u20136",
     "stitek.n":   "{p}\u00D7 {h}",
 
-    /* režim hry — jediné místo, kde se skládá */
-    "rezim.dobodu":      "do {b}",
-    "rezim.nakola":      "na kola",
-    "rezim.nakolalimit": "na kola \u00B7 limit {n}",
+    /* kombinace navíc: preset má pevný kód, vlastní vzor veze body a počet
+       kostek přímo v kódu (k1500x5), aby se přečetl i bez svého vzoru */
+    "stitek.c3p": "tři dvojice",
+    "stitek.c32": "trojice a dvojice",
+    "stitek.c33": "dvě trojice",
+    "stitek.c42": "čtveřice a dvojice",
+    "stitek.k":   "vlastní {b} · {d}",
+
+    /* typ hry (do bodů / na kola) — jediné místo, kde se skládá. Herní režim
+       je něco jiného, viz rezim.* níž. */
+    "typhry.dobodu":      "do {b}",
+    "typhry.nakola":      "na kola",
+    "typhry.nakolalimit": "na kola \u00B7 limit {n}",
 
     /* počítadlo */
+    /* herní režimy — názvy přednastavených, jejich poznámky a celá karta
+       v nastavení. Název vlastního režimu si píše uživatel a katalogem
+       neprochází. */
+    "rezim.n.kcd2":    "KCD",
+    "rezim.n.klasika": "Klasické kostky",
+    "rezim.n.pet":     "Pět kostek",
+    "rezim.pozn.kcd2":    "Vážené kostky a odznaky z Kingdom Come: Deliverance II jsou nadstavba nad pravidly a počítadlo je neřeší.",
+    "rezim.pozn.klasika": "Piggyback je tatáž hra s jinou stavbou kola: místo šesti čerstvých kostek můžeš navázat na kostky a body předchozího hráče. Přebrané body si zadej ručním zadáním, čipem <b>vlastní</b>.",
+    "rezim.pozn.pet":     "Hraje se obvykle do 5 000. Pět stejných kostek na první hod v kole bývá okamžitá výhra \u2014 to si pohlídej sám, počítadlo ji nezná.",
+    "rezim.neznamy":   "neznámý režim",
+    "rezim.beznazvu":  "Vlastní režim",
+    "rezim.postupek":  ["{n} postupka", "{n} postupky", "{n} postupek"],
+    "rezim.kombinaci": ["{n} kombinace navíc", "{n} kombinace navíc", "{n} kombinací navíc"],
+    "rezim.pravidla":  "Pravidla",
+    "rezim.upravit":   "Upravit",
+    "rezim.zvolit":    "Zvolit režim",
+    "rezim.zvoleno":   "Zvoleno",
+    "rezim.zamceno":   "Režim jde přepnout jen před začátkem hry. Rozehranou hru dohraj, zapiš do historie a začni Novou hrou.",
+    "rezim.strop":     "Víc než {n} vlastních režimů nejde.",
+    "rezim.opravdusmazat": "Opravdu smazat režim?",
+    "rezim.nesmazat":  "Zvolený režim smazat nejde. Zvol nejdřív jiný.",
+    "rezim.nulaneboduje": "0 = neboduje",
+    "rezim.trojaria":  "Body za tři {v}",
+    "rezim.skupina.sam":  "Samostatné kostky",
+    "rezim.skupina.dvoj": "Dvojice",
+    "rezim.skupina.troj": "Trojice",
+    "rezim.skupina.zapnout":  "Zapnout celou skupinu",
+    "rezim.skupina.vypnout":  "Vypnout celou skupinu",
+    "rezim.samaria":   "Body za samostatnou {v}",
+    "rezim.dvojaria":  "Body za dvě {v}",
+    "rezim.zvolitkratce": "Zvolit",
+    "rezim.kopie":     "{n} (kopie)",
+    "rezim.dupl.n":    "Duplikovat režim",
+    "rezim.dupl.p":    "Vyrobí vlastní kopii, kterou jde předělat. Původní zůstane, jak je.",
+    "rezim.dupl.btn":  "Duplikovat",
+    "rezim.nad.napoveda": "Trojice pětek platí 500. <b>Zdvojnásobí</b>: čtyři pětky 1 000, pět 2 000, šest 4 000. <b>Násobí trojici</b>: čtyři pětky 1 000, pět 1 500, šest 2 000. <b>Pevné body</b>: platí tři čísla níž bez ohledu na to, které hodnoty padly.",
+    "rezim.nadaria":   "Body za {n} stejných",
+
+    "rezim.vychozi.n":  "Obnovit výchozí",
+    "rezim.vychozi.p":  "Zahodí všechny úpravy tohohle režimu.",
+    "rezim.vychozi.btn": "Obnovit",
+    "rezim.smazat.n":   "Smazat režim",
+    "rezim.smazat.p":   "Hry, které už jsou v historii, si svůj název ponechají.",
+    "komb.nevejde":     "víc kostek, než režim má",
+    "pocitadlo.postupkykomb": "Postupky a kombinace",
+    "pocitadlo.kombinace":    "Kombinace",
+
+    /* tabulka pravidel — skládá se z režimu, takže texty nemůžou stát
+       staticky v <body> jako dřív */
+    "pravidla.p1":    "Hodíš {kostky} a odložíš si z hodu aspoň jednu bodující kostku nebo kombinaci. Když hod nedá vůbec nic, je to <b>Farkle</b> \u2014 všechno, co máš v kole na stole, propadá a hraje soupeř.",
+    "pravidla.p2":    "Po každém hodu se rozhoduješ: <b>zapsat</b> body a předat kolo, nebo <b>házet dál</b> jen těmi kostkami, které jsi neodložil.",
+    "pravidla.p3":    "Když odložíš i poslední kostku, přicházejí <b>horké kostky</b> \u2014 házíš znovu {kostky} a body se sčítají dál v tomtéž kole.",
+    "pravidla.sam.1": "Každá jednička",
+    "pravidla.sam.2": "Každá dvojka",
+    "pravidla.sam.3": "Každá trojka",
+    "pravidla.sam.4": "Každá čtyřka",
+    "pravidla.sam.5": "Každá pětka",
+    "pravidla.sam.6": "Každá šestka",
+    "pravidla.dvoj.1": "Dvě jedničky",
+    "pravidla.dvoj.2": "Dvě dvojky",
+    "pravidla.dvoj.3": "Dvě trojky",
+    "pravidla.dvoj.4": "Dvě čtyřky",
+    "pravidla.dvoj.5": "Dvě pětky",
+    "pravidla.dvoj.6": "Dvě šestky",
+    "pravidla.t4n":   "Tři dvojky / trojky / čtyřky / pětky / šestky",
+    "pravidla.troj.1": "Tři jedničky",
+    "pravidla.troj.2": "Tři dvojky",
+    "pravidla.troj.3": "Tři trojky",
+    "pravidla.troj.4": "Tři čtyřky",
+    "pravidla.troj.5": "Tři pětky",
+    "pravidla.troj.6": "Tři šestky",
+    "pravidla.stejnych.4": "Čtyři stejné",
+    "pravidla.stejnych.5": "Pět stejných",
+    "pravidla.stejnych.6": "Šest stejných",
+    "pravidla.nadhod.x2.4":      "dvojnásobek trojice",
+    "pravidla.nadhod.x2.5":      "čtyřnásobek trojice",
+    "pravidla.nadhod.x2.6":      "osminásobek trojice",
+    "pravidla.nadhod.nasobek.4": "dvojnásobek trojice",
+    "pravidla.nadhod.nasobek.5": "trojnásobek trojice",
+    "pravidla.nadhod.nasobek.6": "čtyřnásobek trojice",
+    "pravidla.post.15": "Postupka 1\u20135",
+    "pravidla.post.26": "Postupka 2\u20136",
+    "pravidla.post.16": "Postupka 1\u20136",
+    "pravidla.nicneboduje": "V tomhle režimu neboduje nic",
+    "pravidla.pozn2": "Dvojice ani \u201Eskoro trojice\u201C neboduje \u2014 odložit jde jen jednička, pětka, hotová trojice a výš, nebo postupka.",
+
+    /* statistika nejhranějšího režimu */
+    "stat.n.rezim":   "Nejhranější režim",
+
     "pocitadlo.kolonastole": "Kolo {n} \u2014 na stole",
     "pocitadlo.odehranokol": "odehráno kol",
     "pocitadlo.nadcil":      "nad cíl",
@@ -1322,6 +1643,41 @@
     "pocitadlo.kostzkr":     ["{n} kost.", "{n} kost.", "{n} kost."],
     "pocitadlo.konecbody":   "Cíl {b} je dosažený — hra je u konce. Cíl se dá změnit v nastavení hry.",
     "pocitadlo.koneckola":   "Odehráno všech {n} kol — hra je u konce. Počet kol se dá změnit v nastavení hry.",
+
+    /* riziko farklu na tlačítku Házet dál */
+    "pocitadlo.farkleproc": "farkle {p} %",
+
+    /* kombinace navíc v nastavení */
+    "komb.zapnout":       "Zapnout kombinaci",
+    "komb.vypnout":       "Vypnout kombinaci",
+    "komb.sazba":         "Body za kombinaci",
+    "komb.riziko3p":      "Riziko farklu na šesti kostkách klesne z {a} % na {b} %.",
+    "komb.zadne":         "Zatím žádná vlastní kombinace.",
+    "komb.naukej":        "Naťukej kostky, ze kterých se kombinace skládá.",
+    "komb.strop":         "Víc než {n} vlastních kombinací nejde.",
+    "komb.jakekoli":      "Rozhodovat jen podle tvaru",
+    "komb.pevne":         "Rozhodovat podle konkrétních hodnot",
+    "komb.libovolnemale": "libovolné hodnoty",
+    "komb.opravdusmazat": "Opravdu smazat kombinaci?",
+
+    /* Slovník, ze kterého nazevTvaru() skládá název vzoru s libovolnými
+       hodnotami. Číslovka je slovem, aby generovaný název seděl znak po znaku
+       na ručně psané názvy presetů („tři dvojice"); hlídá to sada 18.
+       Skupina o velikosti 1 může být až šestkrát (tvar postupky), proto má
+       české pole i pátý tvar; větší skupiny se do šesti kostek tolikrát
+       nevejdou. */
+    "komb.skup.1": ["samostatná kostka", "samostatné kostky", "samostatných kostek"],
+    "komb.skup.2": ["dvojice", "dvojice", "dvojic"],
+    "komb.skup.3": ["trojice", "trojice", "trojic"],
+    "komb.skup.4": ["čtveřice", "čtveřice", "čtveřic"],
+    "komb.skup.5": ["pětice", "pětice", "pětic"],
+    "komb.skup.6": ["šestice", "šestice", "šestic"],
+    "komb.pocet.2": "dvě",
+    "komb.pocet.3": "tři",
+    "komb.pocet.4": "čtyři",
+    "komb.pocet.5": "pět",
+    "komb.pocet.6": "šest",
+    "komb.spoj":   "{a} a {b}",
 
     /* vrubovka */
     "tally.kolzn":     "odehráno kol: {n} z {z}",
@@ -1540,12 +1896,11 @@
     "pocitadlo.body.ph":       "points",
 
     /* čipy klávesnice — malé písmeno stejně jako v češtině */
-    "pocitadlo.chip.jednicka": "single 1<span class=\"v\">100</span>",
-    "pocitadlo.chip.petka":    "single 5<span class=\"v\">50</span>",
-    "pocitadlo.chip.s15":      "1\u20135<span class=\"v\">500</span>",
-    "pocitadlo.chip.s26":      "2\u20136<span class=\"v\">750</span>",
-    "pocitadlo.chip.s16":      "1\u20136<span class=\"v\">1,500</span>",
-    "pocitadlo.chip.rucne":    "manual<span class=\"v\">custom</span>",
+    /* Popisky čipů kombinací (2+2+2, 3+2, …) jsou jazykově neutrální a stojí
+       v HTML bez anotace — překládají se jen názvy v nastavení a štítky
+       v historii. */
+    "pocitadlo.chip.rucne":    "custom",
+    "pocitadlo.chip.rucnev":   "points",
 
     /* zápis kol */
     "zapis.nadpis":      "Turn log",
@@ -1571,20 +1926,106 @@
     "pravidla.nadpis":        "Rules & how to play",
     "pravidla.seg.pravidla":  "Rules",
     "pravidla.seg.navod":     "How to play",
-    "pravidla.t1n": "Every 1",              "pravidla.t1v": "100",
-    "pravidla.t2n": "Every 5",              "pravidla.t2v": "50",
-    "pravidla.t3n": "Three 1s",             "pravidla.t3v": "1,000",
-    "pravidla.t4n": "Three 2s / 3s / 4s / 5s / 6s", "pravidla.t4v": "200\u2013600",
-    "pravidla.t5n": "1\u20135 straight",    "pravidla.t5v": "500",
-    "pravidla.t6n": "2\u20136 straight",    "pravidla.t6v": "750",
-    "pravidla.t7n": "1\u20136 straight",    "pravidla.t7v": "1,500",
-    "pravidla.p1":    "You roll six dice and set aside at least one scoring die or combination. If the roll scores nothing at all, it\u2019s a <b>Farkle</b> \u2014 everything you have on the table this turn is lost and the turn passes on.",
-    "pravidla.p2":    "After every roll you decide: <b>bank</b> the points and pass the turn, or <b>keep rolling</b> with just the dice you haven\u2019t set aside.",
-    "pravidla.p3":    "Set aside even the last die and you get <b>hot dice</b> \u2014 you roll all six again and the points keep adding up in the same turn.",
-    "pravidla.pozn1": "Three of a kind = value \u00D7 100 (three 1s are 1,000). Each further matching die <b>doubles</b> the value: four 5s 1,000, five 5s 2,000, six 5s 4,000. Six 1s are 8,000.",
-    "pravidla.pozn2": "Pairs and \u201Cnear-triples\u201D don\u2019t score \u2014 you can only set aside a single 1, a single 5, a completed three of a kind or higher, or a straight.",
 
     /* návod */
+    "rezim.n.kcd2":    "KCD",
+    "rezim.n.klasika": "Classic farkle",
+    "rezim.n.pet":     "Five dice",
+    "rezim.pozn.kcd2":    "The weighted dice and badges from Kingdom Come: Deliverance II sit on top of the rules; the counter leaves them alone.",
+    "rezim.pozn.klasika": "Piggyback is the same game with a different turn structure: instead of six fresh dice you may carry on from the dice and points the previous player left. Enter the points you take over by hand, with the <b>custom</b> chip.",
+    "rezim.pozn.pet":     "Usually played to 5,000. Five of a kind on the first roll of a turn is often an instant win \u2014 keep an eye on that yourself, the counter doesn\u2019t know it.",
+    "rezim.neznamy":   "unknown mode",
+    "rezim.beznazvu":  "Custom mode",
+    "rezim.postupek":  ["{n} straight", "{n} straights"],
+    "rezim.kombinaci": ["{n} extra combination", "{n} extra combinations"],
+    "rezim.pravidla":  "Rules",
+    "rezim.upravit":   "Edit",
+    "rezim.zvolit":    "Use this mode",
+    "rezim.zvoleno":   "In use",
+    "rezim.zamceno":   "The mode can only be switched before a game starts. Finish the game in progress, save it to the history and start a New game.",
+    "rezim.strop":     "No more than {n} custom modes.",
+    "rezim.opravdusmazat": "Really delete this mode?",
+    "rezim.nesmazat":  "The mode in use can\u2019t be deleted. Pick another one first.",
+    "rezim.nulaneboduje": "0 = doesn\u2019t score",
+    "rezim.trojaria":  "Points for three {v}s",
+    "rezim.skupina.sam":  "Single dice",
+    "rezim.skupina.dvoj": "Pairs",
+    "rezim.skupina.troj": "Three of a kind",
+    "rezim.skupina.zapnout":  "Turn the whole group on",
+    "rezim.skupina.vypnout":  "Turn the whole group off",
+    "rezim.samaria":   "Points for a single {v}",
+    "rezim.dvojaria":  "Points for two {v}s",
+    "rezim.zvolitkratce": "Use",
+    "rezim.kopie":     "{n} (copy)",
+    "rezim.dupl.n":    "Duplicate mode",
+    "rezim.dupl.p":    "Makes a custom copy you can rebuild. The original stays as it is.",
+    "rezim.dupl.btn":  "Duplicate",
+    "rezim.nad.info":  "What those rules mean",
+    "rezim.nad.napoveda": "Three 5s are worth 500. <b>Doubles</b>: four 5s 1,000, five 2,000, six 4,000. <b>Multiplies the triple</b>: four 5s 1,000, five 1,500, six 2,000. <b>Fixed points</b>: the three numbers below apply whatever the value.",
+    "rezim.nadaria":   "Points for {n} of a kind",
+    "rezim.nadpis":    "Game mode",
+    "rezim.novy.n":    "Custom mode",
+    "rezim.novy.p":    "Starts from the KCD2 rules and can be rebuilt completely.",
+    "rezim.novy.btn":  "Add",
+    "rezim.zpetseznam": "\u00AB Back",
+    "rezim.nazev.n":   "Name",
+    "rezim.nazev.p":   "The history shows the mode under this name.",
+    "rezim.kostek.n":  "Number of dice",
+    "rezim.kostek.p":  "How many dice you roll at the start of a turn and after hot dice.",
+    "rezim.cap.post":  "Straights",
+    "rezim.nad.n":     "Four or more of a kind",
+    "rezim.nad.p":     "What each further die above three does.",
+    "rezim.nad.x2":    "doubles",
+    "rezim.nad.nasobek": "multiplies the triple",
+    "rezim.nad.pevne": "fixed points",
+    "rezim.vychozi.n": "Restore defaults",
+    "rezim.vychozi.p": "Throws away every change made to this mode.",
+    "rezim.vychozi.btn": "Restore",
+    "rezim.smazat.n":  "Delete mode",
+    "rezim.smazat.p":  "Games already in the history keep their name.",
+
+    "pravidla.p1":    "You roll {kostky} and set aside at least one scoring die or combination. If the roll scores nothing at all, it\u2019s a <b>Farkle</b> \u2014 everything you have on the table this turn is lost and the turn passes on.",
+    "pravidla.p2":    "After every roll you decide: <b>bank</b> the points and pass the turn, or <b>keep rolling</b> with just the dice you haven\u2019t set aside.",
+    "pravidla.p3":    "Set aside even the last die and you get <b>hot dice</b> \u2014 you roll {kostky} again and the points keep adding up in the same turn.",
+    "pravidla.sam.1": "Every 1",
+    "pravidla.sam.2": "Every 2",
+    "pravidla.sam.3": "Every 3",
+    "pravidla.sam.4": "Every 4",
+    "pravidla.sam.5": "Every 5",
+    "pravidla.sam.6": "Every 6",
+    "pravidla.dvoj.1": "Two 1s",
+    "pravidla.dvoj.2": "Two 2s",
+    "pravidla.dvoj.3": "Two 3s",
+    "pravidla.dvoj.4": "Two 4s",
+    "pravidla.dvoj.5": "Two 5s",
+    "pravidla.dvoj.6": "Two 6s",
+    "pravidla.t4n":   "Three 2s / 3s / 4s / 5s / 6s",
+    "pravidla.troj.1": "Three 1s",
+    "pravidla.troj.2": "Three 2s",
+    "pravidla.troj.3": "Three 3s",
+    "pravidla.troj.4": "Three 4s",
+    "pravidla.troj.5": "Three 5s",
+    "pravidla.troj.6": "Three 6s",
+    "pravidla.stejnych.4": "Four of a kind",
+    "pravidla.stejnych.5": "Five of a kind",
+    "pravidla.stejnych.6": "Six of a kind",
+    "pravidla.nadhod.x2.4":      "twice the triple",
+    "pravidla.nadhod.x2.5":      "four times the triple",
+    "pravidla.nadhod.x2.6":      "eight times the triple",
+    "pravidla.nadhod.nasobek.4": "twice the triple",
+    "pravidla.nadhod.nasobek.5": "three times the triple",
+    "pravidla.nadhod.nasobek.6": "four times the triple",
+    "pravidla.post.15": "1\u20135 straight",
+    "pravidla.post.26": "2\u20136 straight",
+    "pravidla.post.16": "1\u20136 straight",
+    "pravidla.nicneboduje": "Nothing scores in this mode",
+    "pravidla.pozn2": "Pairs and \u201Cnear-triples\u201D don\u2019t score \u2014 you can only set aside a single 1, a single 5, a completed three of a kind or higher, or a straight.",
+
+    "komb.nevejde":   "more dice than the mode has",
+    "pocitadlo.postupkykomb": "Straights and combinations",
+    "pocitadlo.kombinace":    "Combinations",
+    "stat.n.rezim":   "Most played mode",
+
     "navod.kolo.h":   "Turn",
     "navod.kolo.p":   "The keypad records what you set aside from the roll. Points add up in the <b>table</b> row and the dice you used drop out of the remaining ones.",
     "navod.kolo.li1": "<b>Keep rolling</b> \u2014 opens a new roll and its label says how many dice with. Once all six are set aside, it offers hot dice and you roll all six again.",
@@ -1599,6 +2040,10 @@
     "navod.opravy.p3": "<b>Edit</b> in the Turn log switches on the crosses beside individual turns. A cross asks for confirmation; a deleted turn is subtracted from the score and the remaining turns are renumbered. With no turns played the button is hidden.",
     "navod.hra.h": "Game settings",
     "navod.hra.p": "The dice icon opens the panel with the mode and the target, even in the middle of a game. <b>To points</b> plays to 2,000 up to 10,000 or to a number of your own, and the second row of the score shows how much is left. The turn that crosses the target counts in full; once it is banked, the game is over. <b>By turns</b> only counts turns; an optional limit locks the game after the last one, without a limit the game never ends by itself.",
+    "navod.rezimy.h":  "Game modes",
+    "navod.rezimy.p1": "Farkle is played in several versions and each one scores differently. The <b>game mode</b> in the settings holds the whole table: how many dice you roll, what a single 1, a single 5 and each three of a kind are worth, what the fourth and further matching dice do, which straights score and which extra combinations are on. Three come ready-made \u2014 <i>KCD2</i>, <i>Classic Farkle</i> and <i>Five dice</i>; you can add twenty of your own and rebuild any of them completely.",
+    "navod.rezimy.p2": "<b>Rules</b> next to a mode shows its table, <b>Edit</b> opens its settings and <b>Use this mode</b> puts it into play. Extra combinations and custom patterns always belong to one mode, not to the app \u2014 switching modes swaps them too.",
+    "navod.rezimy.p3": "The mode can only be switched with nothing in progress: one turn scored under one set of rules and the next under another would add up to nothing meaningful. So finish the game in progress and start a <b>New game</b>. Every game carries its mode into the history, and the <i>Most played mode</i> statistic counts which one wins.",
     "navod.stranky.h":   "Three pages",
     "navod.stranky.p":   "The tabs at the top and a swipe sideways switch between:",
     "navod.stranky.li1": "<b>Counter</b> \u2014 the score and the playing.",
@@ -1647,6 +2092,13 @@
     "nast.nacist":        "Load",
     "nast.pridatnove":    "Add new",
     "nast.nahraditvse":   "Replace all",
+    "nast.seg.obecne":    "General",
+    "nast.seg.rezimy":    "Game modes",
+    "nast.komb":          "Extra combinations",
+    "komb.nadpisvlastni": "Custom combinations",
+    "komb.libovolne.n":   "Any values",
+    "komb.libovolne.p":   "Only the shape of the combination decides, not which values came up. Three pairs then match any three pairs.",
+    "komb.vymazat":       "Clear",
     "nast.misto.n":       "Storage used",
     "nast.misto.zjistuji": "Checking\u2026",
     "nast.misto.btn":     "Detail",
@@ -1660,7 +2112,7 @@
     "typ.nadpis":       "Filter by game type",
     "typ.vse":          "All",
     "typ.nabody":       "To points",
-    "typ.nakola":       "By turns",
+    "typ.nakola":          "By turns",
     "typ.cil":          "Target",
     "razeni.nadpis":    "Sort history",
     "razeni.nejnovejsi": "Newest first",
@@ -1692,21 +2144,32 @@
     "slovo.hra":      ["{n} game", "{n} games"],
     "slovo.nova":     ["{n} new", "{n} new"],
     "slovo.kostkami": ["{n} die", "{n} dice"],
+    "slovo.kostek":   ["{n} die", "{n} dice"],
     "slovo.farkle":   "farkle",
 
     /* štítky odložených položek */
     "stitek.j":   "single 1",
     "stitek.p":   "single 5",
+    "stitek.d2":  "single 2",
+    "stitek.d3":  "single 3",
+    "stitek.d4":  "single 4",
+    "stitek.d6":  "single 6",
     "stitek.v":   "custom",
     "stitek.s15": "1\u20135 straight",
     "stitek.s26": "2\u20136 straight",
     "stitek.s16": "1\u20136 straight",
     "stitek.n":   "{p}\u00D7 {h}",
 
+    "stitek.c3p": "three pairs",
+    "stitek.c32": "triple and pair",
+    "stitek.c33": "two triples",
+    "stitek.c42": "quad and pair",
+    "stitek.k":   "custom {b} · {d}",
+
     /* režim hry */
-    "rezim.dobodu":      "to {b}",
-    "rezim.nakola":      "by turns",
-    "rezim.nakolalimit": "by turns \u00B7 limit {n}",
+    "typhry.dobodu":      "to {b}",
+    "typhry.nakola":      "by turns",
+    "typhry.nakolalimit": "by turns \u00B7 limit {n}",
 
     /* počítadlo za běhu */
     "pocitadlo.kolonastole": "Turn {n} \u2014 on the table",
@@ -1724,6 +2187,37 @@
     "pocitadlo.kostzkr":     ["{n} die", "{n} dice"],
     "pocitadlo.konecbody":   "The target of {b} is reached \u2014 the game is over. The target can be changed in the game settings.",
     "pocitadlo.koneckola":   "All {n} turns are played \u2014 the game is over. The number of turns can be changed in the game settings.",
+
+    /* riziko farklu na tlačítku Házet dál — angličtina píše procento bez mezery */
+    "pocitadlo.farkleproc": "farkle {p}%",
+
+    /* kombinace navíc v nastavení */
+    "komb.zapnout":       "Turn the combination on",
+    "komb.vypnout":       "Turn the combination off",
+    "komb.sazba":         "Points for the combination",
+    "komb.riziko3p":      "Farkle risk on six dice drops from {a}% to {b}%.",
+    "komb.zadne":         "No custom combination yet.",
+    "komb.naukej":        "Tap in the dice the combination is made of.",
+    "komb.strop":         "No more than {n} custom combinations.",
+    "komb.jakekoli":      "Decide by shape only",
+    "komb.pevne":         "Decide by exact values",
+    "komb.libovolnemale": "any values",
+    "komb.opravdusmazat": "Really delete the combination?",
+
+    /* slovník pro nazevTvaru() — musí vyrobit i názvy presetů:
+       three pairs, triple and pair, two triples, quad and pair */
+    "komb.skup.1": ["lone die", "lone dice"],
+    "komb.skup.2": ["pair", "pairs"],
+    "komb.skup.3": ["triple", "triples"],
+    "komb.skup.4": ["quad", "quads"],
+    "komb.skup.5": ["quint", "quints"],
+    "komb.skup.6": ["sextet", "sextets"],
+    "komb.pocet.2": "two",
+    "komb.pocet.3": "three",
+    "komb.pocet.4": "four",
+    "komb.pocet.5": "five",
+    "komb.pocet.6": "six",
+    "komb.spoj":   "{a} and {b}",
 
     /* vrubovka */
     "tally.kolzn":     "turns played: {n} of {z}",
@@ -1986,6 +2480,10 @@
   /* ---------- stav ----------
      rolls = hody v rozehraném kole, poslední je ten, který právě řeším
      roll  = { thrown: kolika kostkami se hází, hot: bool, items: [...] }  */
+  /* Herní režim ve stavu není: jeho jedinou pravdou je REZIMY.akt. Dvě
+     proměnné na tutéž věc by se dřív nebo později rozešly, a rozejít se
+     nemají — přepnout režim jde jen nad prázdnou hrou. Do záznamu se režim
+     dopisuje až v snapshot(). */
   var S = { mode:"points", goal:4000, roundGoal:null, banked:0, turns:[],
             rolls:[{thrown:6, hot:false, items:[]}], archivedId:null, dirty:false,
             autoUlozeno:false };
@@ -2038,9 +2536,11 @@
     });
 
     S.rolls = (Array.isArray(S.rolls) && S.rolls.length ? S.rolls : [{}]).map(function(r){
-      var thrown = naCislo(r && r.thrown, 6);
+      /* Strop je počet kostek režimu, ne šestka: hra uložená v šestikostkovém
+         režimu se nesmí přenést do pětikostkového s hodem na šest kostek. */
+      var max = kostek(), thrown = naCislo(r && r.thrown, max);
       return {
-        thrown: (thrown >= 1 && thrown <= 6) ? Math.floor(thrown) : 6,
+        thrown: (thrown >= 1 && thrown <= max) ? Math.floor(thrown) : max,
         hot: !!(r && r.hot),
         items: (Array.isArray(r && r.items) ? r.items : []).map(function(i){
           var o = { p: naCislo(i && i.p, 0),
@@ -2135,6 +2635,9 @@
     return {
       id: rec.id, savedAt: rec.savedAt,
       mode: rec.mode, goal: rec.goal, roundGoal: rec.roundGoal || null,
+      /* Chybějící `rezim` se dopočítá až při čtení (gRezim), takže se kvůli
+         němu nezvedá IDB_VERZE — všechny dřívější hry se hrály podle KCD2. */
+      rezim: gRezim(rec), rezimN: rec.rezimN || null,
       banked: rec.banked || 0,
       kol: gKol(rec), farklu: gFarkle(rec), farkluprvni: gFarklePrvni(rec),
       nejlepsi: gNejlepsiKolo(rec), nejhorsi: gNejhorsiKolo(rec),
@@ -2508,11 +3011,18 @@
   }
   /* otisk rozehrané hry pro historii nebo koš; rozehrané kolo se nezapočítává */
   function snapshot(){
-    return {
+    var rez = aktRezim();
+    var r = {
       mode: S.mode, goal: S.goal, roundGoal: S.roundGoal || null,
+      rezim: rez.id,
       banked: S.banked,
       turns: S.turns.map(function(tah){ return kopieKola(tah); })
     };
+    /* Název vlastního režimu se veze se záznamem, ne odkazem do nastavení —
+       stejná úvaha jako u kódu k1500x5. Smazání režimu ani import zálohy na
+       cizí telefon nesmí nechat v historii id, ke kterému neexistuje text. */
+    if(rez.vlastni) r.rezimN = nazevRezimu(rez);
+    return r;
   }
   function makeRecord(id){
     var r = snapshot();
@@ -2524,28 +3034,581 @@
     return S.turns.length === 0 && S.rolls.length === 1 && cur().items.length === 0;
   }
 
-  /* ---------- bodování ---------- */
-  function kindPoints(value, count){
-    var base = (value === 1) ? 1000 : value * 100;
-    return base * Math.pow(2, count - 3);
+  /* ---------- bodování ----------
+     Bodovací tabulka není konstanta — řídí ji herní režim (CLAUDE.md část 14).
+     Každá funkce tady proto bere pravidla; když je nedostane, vezme si
+     aktivní režim sama, aby volající, kterých se to netýká, zůstali beze změny. */
+  function kindPoints(value, count, rez){
+    rez = rez || aktRezim();
+    /* Tři tabulky po šesti hodnotách: samostatná kostka, dvojice, trojice.
+       Nula znamená „neboduje“ — žádný zvláštní příznak vedle sazby, tedy ani
+       stav, který si může protiřečit. */
+    if(count === 1) return rez.sam[value] || 0;
+    if(count === 2) return rez.dvoj[value] || 0;
+    var base = rez.troj[value] || 0;
+    if(count === 3) return base;
+    /* Vypnuté trojice dají u obou násobicích pravidel nulu samy od sebe;
+       u pevných bodů se platí dál, a to je správně. */
+    /* tři pravidla, která se v praxi hrají: KCD2 zdvojnásobuje každou kostkou
+       nad trojici, klasika násobí hodnotu trojice, domácí varianta dává pevné
+       body bez ohledu na hodnotu */
+    if(rez.nad === "pevne")   return rez.nadP[count - 4] || 0;
+    if(rez.nad === "nasobek") return base * (count - 2);      /* čtyři dvakrát, pět třikrát, šest čtyřikrát */
+    return base * Math.pow(2, count - 3);                     /* x2: ×2, ×4, ×8 */
   }
-  var STRAIGHTS = { "15":{p:500,d:5,k:"s15"}, "26":{p:750,d:5,k:"s26"}, "16":{p:1500,d:6,k:"s16"} };
+  /* Postupka nese jen tvar a kód štítku; body leží v režimu, protože každá
+     verze hry je má jinak a v klasické Farkle pětikostkové postupky vůbec
+     nebodují. Kódy s15/s26/s16 se nemění, aby historie četla dál. */
+  var STRAIGHTS = { "15":{d:5,k:"s15",v:[1,2,3,4,5]},
+                    "26":{d:5,k:"s26",v:[2,3,4,5,6]},
+                    "16":{d:6,k:"s16",v:[1,2,3,4,5,6]} };
+  var POST_PORADI = ["15", "26", "16"];
+  function maPostupku(c, s){
+    for(var i = 0; i < s.v.length; i++){ if(!c[s.v[i]]) return false; }
+    return true;
+  }
+
+  /* ---------- kombinace navíc ----------
+     Pevný inventář čtyř položek, který se nikdy nerozroste. Logických
+     kombinací kostek totiž není mnoho; krom toho, co aplikace umí dnes, se
+     jich reálně hraje právě těchhle pár. Editor vlastních vzorů zůstává
+     jako úniková cesta, ne jako hlavní vchod.
+
+     `d` je počet kostek, `def` výchozí sazba, `k` kód štítku a `je()`
+     predikát nad polem počtů výskytů. Predikát používá **jen výpočet
+     rizika**, klávesnice ne: sazba i počet kostek jsou pevné, takže
+     tlačítko hodnoty kostek vůbec znát nemusí. Cena za to je, že čtveřice
+     šestek a čtveřice jedniček platí stejně — a že „čtveřice a dvojice“ je
+     při čtyřech jedničkách past (1 500 proti 2 000 za samotnou čtveřici).
+     Proto je sazba editovatelná a čip svoje body ukazuje. */
+  function poctuAspon(c, n){
+    var k = 0, v;
+    for(v = 1; v <= 6; v++){ if(c[v] >= n) k++; }
+    return k;
+  }
+  /* hodnota s aspoň `a` kostkami a k ní **jiná** hodnota s aspoň `b` */
+  function dvojiceRuznych(c, a, b){
+    var v, w;
+    for(v = 1; v <= 6; v++){
+      if(c[v] < a) continue;
+      for(w = 1; w <= 6; w++){ if(w !== v && c[w] >= b) return true; }
+    }
+    return false;
+  }
+  var PRESETY = {
+    "3p": { d:6, def: 500, k:"c3p", zapis:"2+2+2", je: function(c){ return poctuAspon(c, 2) >= 3; } },
+    "32": { d:5, def:1200, k:"c32", zapis:"3+2",   je: function(c){ return dvojiceRuznych(c, 3, 2); } },
+    "33": { d:6, def:2000, k:"c33", zapis:"3+3",   je: function(c){ return poctuAspon(c, 3) >= 2; } },
+    "42": { d:6, def:1500, k:"c42", zapis:"4+2",   je: function(c){ return dvojiceRuznych(c, 4, 2); } }
+  };
+  var PRESET_PORADI = ["3p", "32", "33", "42"];
+  var KOMBKEY = "farkle-kombinace-v1";   /* starý klíč, čte se jen při migraci */
+  var VLASTNI_MAX = 8;         /* strop vlastních vzorů v jednom režimu */
+  var BODY_MAX = 999999;       /* šest číslic — víc se do kódu k…x… nevejde */
+
+  /* Přítomnost klíče v `p` je zapnutí. Žádný zvláštní boolean vedle sazby,
+     tedy ani žádný stav, který si může protiřečit. Kombinace i sazby patří
+     režimu, ne aplikaci — každý režim si drží svoje. */
+  function kombZap(rez, k){ return Object.prototype.hasOwnProperty.call(rez.p, k); }
+  function sazba(rez, k){ return kombZap(rez, k) ? rez.p[k] : PRESETY[k].def; }
+  /* Kombinace na šest kostek nemá v pětikostkovém režimu co dělat: nikdy by
+     nešla odložit a v seznamu by jen mátla. */
+  function kombVRezimu(rez, k){ return PRESETY[k].d <= rez.kostek; }
+
+  /* Setříděné počty výskytů: vzor 1,1,1+5,5 má tvar [3,2]. U „libovolných
+     hodnot“ se porovnává právě tenhle tvar, ne konkrétní hodnoty. */
+  function tvarZPoctu(pocty){
+    var out = [], v;
+    for(v = 1; v <= 6; v++){ if(pocty[v]) out.push(pocty[v]); }
+    out.sort(function(a, b){ return b - a; });
+    return out;
+  }
+  /* Vzor z cizí zálohy ani z poškozeného úložiště nesmí projít dál nezkontrolovaný.
+     Vrací očištěnou kopii, nebo null. */
+  function cistyVzor(x){
+    if(!x || typeof x !== "object") return null;
+    var body = naCislo(x.b, 0), hodnoty = Array.isArray(x.v) ? x.v : [], pocty = [0,0,0,0,0,0,0], i, h, n = 0;
+    body = Math.floor(body);
+    if(!(body > 0) || body > BODY_MAX) return null;
+    for(i = 0; i < hodnoty.length && n < 6; i++){
+      h = Math.floor(naCislo(hodnoty[i], 0));
+      if(h < 1 || h > 6) continue;
+      pocty[h]++; n++;
+    }
+    if(n < 2) return null;
+    /* Chybějící `z` znamená zapnuto: vzory uložené dřív, než přepínač
+       existoval, se po aktualizaci nesmějí samy vypnout. */
+    return { id: (typeof x.id === "string" && x.id) ? x.id.slice(0, 40) : newId(),
+             b: body, v: rozbalPocty(pocty), any: !!x.any,
+             z: (x.z === undefined) ? true : !!x.z,
+             pocty: pocty, tvar: tvarZPoctu(pocty) };
+  }
+  function rozbalPocty(pocty){
+    var out = [], v, i;
+    for(v = 1; v <= 6; v++){ for(i = 0; i < pocty[v]; i++) out.push(v); }
+    return out;
+  }
+  /* Zápis vzoru přes konkrétní hodnoty: 1,1,1+5,5. Skupiny odděluje "+",
+     kostky uvnitř skupiny čárka. Jazykově neutrální. */
+  function zapisVzoru(vz){
+    var out = [], v, i, kus;
+    for(v = 1; v <= 6; v++){
+      if(!vz.pocty[v]) continue;
+      kus = [];
+      for(i = 0; i < vz.pocty[v]; i++) kus.push(v);
+      out.push(kus.join(","));
+    }
+    return out.join("+");
+  }
+  /* Slovní název z tvaru: [2,2,2] je „tři dvojice", [3,2] „trojice a dvojice".
+     Holý tvar (2+2+2) se nepoužívá, protože u jediné skupiny vyjde na samotné
+     „2" a z toho nejde poznat, že ty dvě kostky musí mít stejnou hodnotu —
+     vypadá to jako hodnota dvě.
+
+     Slovník je týž, jakým jsou pojmenované přednastavené kombinace, takže
+     generátor musí jejich čtyři názvy vyrobit znak po znaku stejně. Hlídá to
+     strážní test sady 18; ručně psané klíče `stitek.c3p`–`c42` proto zůstávají
+     zvlášť — jsou to štítky v historii a nemají viset na generátoru.
+
+     Číslovka je slovem, ne číslicí: „tři dvojice", ne „3 dvojice". */
+  function nazevTvaru(tvar){
+    var nasobnost = {}, velikosti = [], i, s, m, kus, text = null;
+    for(i = 0; i < tvar.length; i++){
+      s = tvar[i];
+      if(!nasobnost[s]){ nasobnost[s] = 0; velikosti.push(s); }
+      nasobnost[s]++;
+    }
+    for(i = 0; i < velikosti.length; i++){
+      s = velikosti[i]; m = nasobnost[s];
+      kus = (m === 1) ? tn("komb.skup." + s, 1)
+                      : t("komb.pocet." + m) + " " + tn("komb.skup." + s, m);
+      text = (text === null) ? kus : t("komb.spoj", { a: text, b: kus });
+    }
+    return text === null ? "" : text;
+  }
+  /* Nadpis vzoru: pevné hodnoty mluví samy za sebe, u libovolných hodnot
+     nastupuje slovní název. */
+  function nazevVzoru(vz){ return vz.any ? nazevTvaru(vz.tvar) : zapisVzoru(vz); }
+  /* Vlastní vzor má vlastní příznak `z`, kdežto preset se zapíná přítomností
+     klíče v `p`. Je to jediné místo, kde se oba modely liší, a nejde to
+     jinak: u vzoru musí být vypnutí a smazání dvě různé věci. */
+  function vzoryZap(rez){
+    return rez.v.filter(function(vz){ return vz.z && vz.v.length <= rez.kostek; });
+  }
+  function pocetKombinaci(rez){
+    var n = vzoryZap(rez).length, i;
+    for(i = 0; i < PRESET_PORADI.length; i++){
+      if(kombZap(rez, PRESET_PORADI[i]) && kombVRezimu(rez, PRESET_PORADI[i])) n++;
+    }
+    return n;
+  }
+
+  /* ---------- herní režimy ----------
+     Režim je celá sada pravidel: počet kostek, tři šestice sazeb (samostatná
+     kostka, dvojice, trojice), pravidlo pro čtyři a víc stejných, postupky,
+     kombinace navíc a vlastní vzory. Tři přednastavené vychází z
+     `docs/farkle-pravidla-verze.md`, vlastních jde přidat dvacet.
+
+     `post` a `p` jsou řídké mapy: přítomnost klíče znamená „boduje“. Stejná
+     úvaha jako u kombinací navíc — žádný boolean vedle sazby, tedy ani stav,
+     který si může protiřečit.
+
+     V paměti je každý režim úplný, sparse je až zápis (viz ulozRezimy).
+     Jeden objekt na režim, ne skládaná kopie při každém volání: editor
+     v nastavení do něj zapisuje přímo a druhá, zastaralá kopie by nesměla
+     vzniknout. */
+  var REZKEY = "farkle-rezimy-v1";
+  var REZIMY_MAX = 20;         /* strop vlastních režimů */
+  /* Kolik samostatně bodujících hodnot se ještě vejde do vlastní řady čipů,
+     aniž by se čipy zmenšily. Nad to se řada schová a zadává se přes 1×
+     ve Stejných hodnotách. */
+  var SAMOSTATNE_V_RADE = 3;
+  var NAZEV_MAX = 40;          /* strop délky názvu vlastního režimu */
+  var NAD_DRUHY = ["x2", "nasobek", "pevne"];
+  var VYCHOZI_REZIM = "kcd2";
+  var TROJ_ZAKLAD = [0, 1000, 200, 300, 400, 500, 600];
+  var SAM_ZAKLAD  = [0, 100, 0, 0, 0, 50, 0];   /* jednička a pětka */
+  var DVOJ_ZAKLAD = [0, 0, 0, 0, 0, 0, 0];      /* dvojice nikde nebodují */
+  /* Skupiny bodovací tabulky. Pořadí je i pořadí v nastavení a v pravidlech. */
+  var SKUPINY = [
+    { pole: "sam",  pocet: 1, vychozi: SAM_ZAKLAD },
+    { pole: "dvoj", pocet: 2, vychozi: DVOJ_ZAKLAD },
+    { pole: "troj", pocet: 3, vychozi: TROJ_ZAKLAD }
+  ];
+  /* Boduje v režimu aspoň jedna hodnota té skupiny? */
+  function skupinaZap(rez, pole){
+    for(var v = 1; v <= 6; v++){ if(rez[pole][v] > 0) return true; }
+    return false;
+  }
+  /* Kolik samostatných hodnot boduje — podle toho se řídí řada čipů. */
+  function pocetSamostatnych(rez){
+    var n = 0, v;
+    for(v = 1; v <= 6; v++){ if(rez.sam[v] > 0) n++; }
+    return n;
+  }
+
+  /* Dvě čísla zdrojový dokument u pětikostkové verze neurčuje a dosazují se:
+     sazba pětikostkové postupky (500 / 750 jako u KCD2) a pravidlo pro čtyři
+     a pět stejných (násobek jako u klasiky). Obojí je editovatelné. */
+  var PRESET_REZIMY = {
+    "kcd2":    { kostek:6, sam:SAM_ZAKLAD, dvoj:DVOJ_ZAKLAD, troj:TROJ_ZAKLAD, nad:"x2",
+                 nadP:[1000,2000,3000], post:{ "15":500, "26":750, "16":1500 }, p:{}, v:[] },
+    "klasika": { kostek:6, sam:SAM_ZAKLAD, dvoj:DVOJ_ZAKLAD, troj:TROJ_ZAKLAD, nad:"nasobek",
+                 nadP:[1000,2000,3000], post:{ "16":1000 }, p:{ "3p":750 }, v:[] },
+    "pet":     { kostek:5, sam:SAM_ZAKLAD, dvoj:DVOJ_ZAKLAD, troj:TROJ_ZAKLAD, nad:"nasobek",
+                 nadP:[1000,2000,3000], post:{ "15":500, "26":750 }, p:{}, v:[] }
+  };
+  var PRESET_REZ_PORADI = ["kcd2", "klasika", "pet"];
+
+  var REZIMY = { akt: VYCHOZI_REZIM, sez: [] };
+
+  function kopieMapy(m){
+    var out = {}, k;
+    for(k in m){ if(Object.prototype.hasOwnProperty.call(m, k)) out[k] = m[k]; }
+    return out;
+  }
+  function stejnaMapa(a, b){
+    var k;
+    for(k in a){ if(Object.prototype.hasOwnProperty.call(a, k) && a[k] !== b[k]) return false; }
+    for(k in b){ if(Object.prototype.hasOwnProperty.call(b, k) && a[k] !== b[k]) return false; }
+    return true;
+  }
+  function stejnePole(a, b){
+    if(a.length !== b.length) return false;
+    for(var i = 0; i < a.length; i++){ if(a[i] !== b[i]) return false; }
+    return true;
+  }
+  /* Čerstvý režim z presetu. Pole a mapy se kopírují, aby úprava jednoho
+     režimu nepřepsala výchozí tabulku ani sourozence. */
+  function zPresetu(id){
+    var d = PRESET_REZIMY[id];
+    return { id: id, nazev: null, vlastni: false,
+             kostek: d.kostek,
+             sam: d.sam.slice(), dvoj: d.dvoj.slice(), troj: d.troj.slice(),
+             nad: d.nad, nadP: d.nadP.slice(),
+             post: kopieMapy(d.post), p: kopieMapy(d.p), v: [] };
+  }
+  function rezimPodleId(id){
+    for(var i = 0; i < REZIMY.sez.length; i++){ if(REZIMY.sez[i].id === id) return REZIMY.sez[i]; }
+    return null;
+  }
+  /* Aktivní režim se nikdy nevrací jako null: neznámé id (smazaný vlastní
+     režim, cizí záloha) spadne na výchozí. */
+  function aktRezim(){ return rezimPodleId(REZIMY.akt) || rezimPodleId(VYCHOZI_REZIM); }
+  function kostek(){ return aktRezim().kostek; }
+  function seznamRezimu(){ return REZIMY.sez.slice(); }
+  function jePreset(id){ return Object.prototype.hasOwnProperty.call(PRESET_REZIMY, id); }
+
+  /* Cizí záloha ani poškozené úložiště nesmí projít dál nezkontrolované.
+     `zaklad` je preset, ze kterého se vychází u přednastaveného režimu;
+     u vlastního je to výchozí KCD2, aby chybějící pole měla čím být. */
+  function cistyRezim(x, id, zaklad){
+    var rez = zPresetu(zaklad || VYCHOZI_REZIM), v, b, k, i, pole;
+    rez.id = id;
+    rez.vlastni = !jePreset(id);
+    if(!x || typeof x !== "object") return rez;
+    if(typeof x.nazev === "string") rez.nazev = x.nazev.slice(0, NAZEV_MAX);
+    b = Math.floor(naCislo(x.kostek, 0));
+    if(b >= 2 && b <= 6) rez.kostek = b;
+    /* Dokud tabulka měla jen jedničku a pětku, ukládaly se pod jed/pet.
+       Čte se to dál, aby se režim uložený tehdejší verzí nerozbil. */
+    if(x.sam === undefined && (x.jed !== undefined || x.pet !== undefined)){
+      pole = rez.sam.slice();
+      if(x.jed !== undefined) pole[1] = mezeBodu(x.jed);
+      if(x.pet !== undefined) pole[5] = mezeBodu(x.pet);
+      rez.sam = pole;
+    }
+    for(i = 0; i < SKUPINY.length; i++){
+      var jm = SKUPINY[i].pole;
+      if(!Array.isArray(x[jm])) continue;
+      pole = rez[jm].slice();
+      for(v = 1; v <= 6; v++){ if(x[jm][v] !== undefined) pole[v] = mezeBodu(x[jm][v]); }
+      rez[jm] = pole;
+    }
+    if(NAD_DRUHY.indexOf(x.nad) >= 0) rez.nad = x.nad;
+    if(Array.isArray(x.nadP)){
+      pole = rez.nadP.slice();
+      for(i = 0; i < 3; i++){ if(x.nadP[i] !== undefined) pole[i] = mezeBodu(x.nadP[i]); }
+      rez.nadP = pole;
+    }
+    if(x.post && typeof x.post === "object"){
+      rez.post = {};
+      for(i = 0; i < POST_PORADI.length; i++){
+        k = POST_PORADI[i];
+        if(x.post[k] === undefined) continue;
+        b = mezeBodu(x.post[k]);
+        if(b > 0) rez.post[k] = b;
+      }
+    }
+    if(x.p && typeof x.p === "object"){
+      rez.p = {};
+      for(i = 0; i < PRESET_PORADI.length; i++){
+        k = PRESET_PORADI[i];
+        if(x.p[k] === undefined) continue;
+        b = mezeBodu(x.p[k]);
+        if(b > 0) rez.p[k] = b;
+      }
+    }
+    if(Array.isArray(x.v)){
+      for(i = 0; i < x.v.length && rez.v.length < VLASTNI_MAX; i++){
+        var vz = cistyVzor(x.v[i]);
+        if(vz) rez.v.push(vz);
+      }
+    }
+    return rez;
+  }
+  function mezeBodu(x){
+    var b = Math.floor(naCislo(typeof x === "string" ? parseInt(x, 10) : x, 0));
+    if(!(b > 0)) return 0;
+    return Math.min(b, BODY_MAX);
+  }
+
+  function nactiRezimy(){
+    var raw = null, o = null, i, id;
+    try{ raw = localStorage.getItem(REZKEY); }catch(e){}
+    if(raw){ try{ o = JSON.parse(raw); }catch(e){ o = null; } }
+    if(!o || typeof o !== "object") o = null;
+    /* Migrace: kombinace navíc byly dosud jedny pro celou aplikaci a hrálo se
+       s nimi podle KCD2 — stanou se tedy odchylkou toho režimu. Starý klíč se
+       nemaže, stejný záchranný idiom jako u farkle-hist-v1-zaloha. */
+    if(!o){
+      var stare = null;
+      try{ stare = localStorage.getItem(KOMBKEY); }catch(e){}
+      if(stare){
+        try{ var so = JSON.parse(stare); }catch(e){ so = null; }
+        if(so && typeof so === "object") o = { akt: VYCHOZI_REZIM, p: { kcd2: { p: so.p, v: so.v } }, v: [] };
+      }
+    }
+    REZIMY.sez = [];
+    for(i = 0; i < PRESET_REZ_PORADI.length; i++){
+      id = PRESET_REZ_PORADI[i];
+      REZIMY.sez.push(cistyRezim(o && o.p ? o.p[id] : null, id, id));
+    }
+    if(o && Array.isArray(o.v)){
+      for(i = 0; i < o.v.length && REZIMY.sez.length < PRESET_REZ_PORADI.length + REZIMY_MAX; i++){
+        var x = o.v[i];
+        if(!x || typeof x !== "object") continue;
+        id = (typeof x.id === "string" && x.id && !jePreset(x.id)) ? x.id.slice(0, 40) : novyIdRezimu();
+        if(rezimPodleId(id)) continue;
+        REZIMY.sez.push(cistyRezim(x, id, VYCHOZI_REZIM));
+      }
+    }
+    REZIMY.akt = (o && typeof o.akt === "string" && rezimPodleId(o.akt)) ? o.akt : VYCHOZI_REZIM;
+  }
+  function novyIdRezimu(){
+    return "r" + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+  }
+  /* U presetu se ukládají jen odchylky od výchozích hodnot. Kdyby se ukládal
+     celý, pozdější oprava výchozí tabulky by nedorazila k nikomu, kdo se
+     režimu jednou dotkl. Vlastní režim není proti čemu diffovat. */
+  function venVzor(vz){ return { id: vz.id, b: vz.b, v: vz.v, any: vz.any, z: vz.z }; }
+  function odchylkyRezimu(rez){
+    var d = PRESET_REZIMY[rez.id], out = {}, prazdno = true;
+    function dej(klic, hodnota){ out[klic] = hodnota; prazdno = false; }
+    if(rez.kostek !== d.kostek) dej("kostek", rez.kostek);
+    SKUPINY.forEach(function(sk){
+      if(!stejnePole(rez[sk.pole], d[sk.pole])) dej(sk.pole, rez[sk.pole].slice());
+    });
+    if(rez.nad !== d.nad) dej("nad", rez.nad);
+    if(!stejnePole(rez.nadP, d.nadP)) dej("nadP", rez.nadP.slice());
+    if(!stejnaMapa(rez.post, d.post)) dej("post", kopieMapy(rez.post));
+    if(!stejnaMapa(rez.p, d.p)) dej("p", kopieMapy(rez.p));
+    if(rez.v.length) dej("v", rez.v.map(venVzor));
+    return prazdno ? null : out;
+  }
+  function venRezim(rez){
+    return { id: rez.id, nazev: rez.nazev, kostek: rez.kostek,
+             sam: rez.sam.slice(), dvoj: rez.dvoj.slice(), troj: rez.troj.slice(),
+             nad: rez.nad, nadP: rez.nadP.slice(),
+             post: kopieMapy(rez.post), p: kopieMapy(rez.p), v: rez.v.map(venVzor) };
+  }
+  function ulozRezimy(){
+    var ven = { akt: REZIMY.akt, p: {}, v: [] }, o;
+    REZIMY.sez.forEach(function(rez){
+      if(rez.vlastni){ ven.v.push(venRezim(rez)); return; }
+      o = odchylkyRezimu(rez);
+      if(o) ven.p[rez.id] = o;
+    });
+    try{ localStorage.setItem(REZKEY, JSON.stringify(ven)); }catch(e){}
+  }
+
+  /* ---------- riziko farklu ----------
+     Změřeno vyčerpávajícím výčtem 6^n, ne opsáno odjinud. Tři ze čtyř
+     kombinací riziko nemění vůbec — trojice+dvojice, dvě trojice
+     i čtveřice+dvojice obsahují trojici, která už dnes boduje, takže hod,
+     který je splňuje, nikdy nebyl farkle. Mění ho jedině tři dvojice,
+     a to jen na šesti kostkách. Bez vlastních vzorů má tabulka proto
+     jen dvě podoby a při startu se nepočítá nic.
+
+     Konstanty platí pro **výchozí základ KCD2** — jednička, pětka i všech
+     šest trojic bodují. Ten základ mají všechny tři přednastavené režimy,
+     takže se pro ně nic nepočítá; teprve upravený režim nebo vlastní vzor
+     pošle na výčet. Počet kostek režimu na tabulku nemá vliv: riziko se ptá,
+     kolika kostkami se hází teď, ne kolik jich má hra celkem.
+
+     Že se konstanty po jakékoli změně pravidel tiše nerozejdou se
+     skutečností, hlídá strážní test sady 19 — ten si obě sady pokaždé
+     odvodí výčtem znovu. */
+  var RIZIKO    = [66.7, 44.4, 27.8, 15.7, 7.7, 3.1];
+  var RIZIKO_3P = [66.7, 44.4, 27.8, 15.7, 7.7, 2.3];
+  /* Cache i běžící výpočty klíčované podpisem pravidel: přepnutí režimu tam
+     a zpátky tak nespustí výčet podruhé. */
+  var rizikoCache = {}, rizikoBezi = {};
+
+  function poctyZHodu(hod){
+    var c = [0,0,0,0,0,0,0], i;
+    for(i = 0; i < hod.length; i++) c[hod[i]]++;
+    return c;
+  }
+  /* Boduje hod podle pravidel režimu? Postupky se sem dopsat musely: dřív je
+     pokrývala jednička a pětka, ale režim je může mít obě na nule. */
+  function bodujeZaklad(c, rez){
+    var v, i, k;
+    for(v = 1; v <= 6; v++){
+      if(!c[v]) continue;
+      if(rez.sam[v] > 0) return true;
+      if(c[v] >= 2 && rez.dvoj[v] > 0) return true;
+      if(c[v] >= 3 && rez.troj[v] > 0) return true;
+    }
+    for(i = 0; i < POST_PORADI.length; i++){
+      k = POST_PORADI[i];
+      if(rez.post[k] > 0 && maPostupku(c, STRAIGHTS[k])) return true;
+    }
+    return false;
+  }
+  /* Sedí vzor do hodu? U pevných hodnot test podmnožiny multimnožiny,
+     u „libovolných hodnot“ porovnání setříděných počtů — hladově po
+     největších, což je pro tenhle tvar úlohy správně. */
+  function sediVzor(vz, c){
+    var v, i, mam;
+    if(!vz.any){
+      for(v = 1; v <= 6; v++){ if(vz.pocty[v] && c[v] < vz.pocty[v]) return false; }
+      return true;
+    }
+    mam = tvarZPoctu(c);
+    if(mam.length < vz.tvar.length) return false;
+    for(i = 0; i < vz.tvar.length; i++){ if(mam[i] < vz.tvar[i]) return false; }
+    return true;
+  }
+  function bodujeSKombinacemi(c, rez, vzory){
+    var i, k;
+    if(bodujeZaklad(c, rez)) return true;
+    for(i = 0; i < PRESET_PORADI.length; i++){
+      k = PRESET_PORADI[i];
+      if(kombZap(rez, k) && kombVRezimu(rez, k) && PRESETY[k].je(c)) return true;
+    }
+    for(i = 0; i < vzory.length; i++){ if(sediVzor(vzory[i], c)) return true; }
+    return false;
+  }
+  /* 6^1 + … + 6^6 = 55 986 hodů, v JS jednotky až nízké desítky ms; na pěti
+     kostkách 9 330. Pouští se líně a jen tehdy, když se pravidla liší od
+     základu KCD2. Seznam vzorů se předává dovnitř, aby se filtr nedělal
+     desetitisíckrát znovu. */
+  function spocitejRiziko(rez){
+    var out = [], vzory = vzoryZap(rez), n, celkem, farkle, i, j, x, hod;
+    for(n = 1; n <= rez.kostek; n++){
+      celkem = Math.pow(6, n); farkle = 0; hod = new Array(n);
+      for(i = 0; i < celkem; i++){
+        x = i;
+        for(j = 0; j < n; j++){ hod[j] = (x % 6) + 1; x = Math.floor(x / 6); }
+        if(!bodujeSKombinacemi(poctyZHodu(hod), rez, vzory)) farkle++;
+      }
+      out.push(Math.round(farkle / celkem * 1000) / 10);
+    }
+    return out;
+  }
+  /* Riziko nezajímají sazby, jen co vůbec boduje — podpis proto nese
+     přítomnost, ne čísla. Bez toho by přepsání jedné sazby zahodilo cache. */
+  function podpisRezimu(rez){
+    var v, s = rez.kostek + "|";
+    SKUPINY.forEach(function(sk){
+      for(var v = 1; v <= 6; v++) s += rez[sk.pole][v] > 0 ? "1" : "0";
+      s += "-";
+    });
+    s += "|" + POST_PORADI.map(function(k){ return rez.post[k] > 0 ? "1" : "0"; }).join("");
+    s += "|" + PRESET_PORADI.map(function(k){
+      return (kombZap(rez, k) && kombVRezimu(rez, k)) ? "1" : "0"; }).join("");
+    s += "|" + vzoryZap(rez).map(function(vz){
+      return (vz.any ? "t" : "h") + vz.v.join(""); }).join(";");
+    return s;
+  }
+  /* Základ KCD: samostatně boduje **právě** jednička a pětka, žádná dvojice,
+     všech šest trojic, a není zapnutý žádný vlastní vzor. Pak platí konstanty
+     — postupky ani zbylé tři kombinace riziko nemění, protože každá z nich
+     nese jedničku, pětku nebo trojici. */
+  function zakladJakoKcd2(rez){
+    var v;
+    for(v = 1; v <= 6; v++){
+      if((rez.sam[v] > 0) !== (v === 1 || v === 5)) return false;
+      if(rez.dvoj[v] > 0) return false;
+      if(!(rez.troj[v] > 0)) return false;
+    }
+    return vzoryZap(rez).length === 0;
+  }
+  function tabulkaRizika(rez){
+    rez = rez || aktRezim();
+    var hotova = (kombZap(rez, "3p") && kombVRezimu(rez, "3p")) ? RIZIKO_3P : RIZIKO;
+    if(zakladJakoKcd2(rez)) return hotova;
+    var podpis = podpisRezimu(rez);
+    if(rizikoCache[podpis]) return rizikoCache[podpis];
+    /* Než výčet doběhne, platí konstanty jako horní odhad — kombinace navíc
+       riziko jen snižují. */
+    if(!rizikoBezi[podpis]){
+      rizikoBezi[podpis] = true;
+      setTimeout(function(){
+        rizikoBezi[podpis] = false;
+        rizikoCache[podpis] = spocitejRiziko(rez);
+        render();
+      }, 0);
+    }
+    return hotova;
+  }
+  /* Jediné dveře ke změně pravidel: uloží a překreslí obojí — nastavení
+     i klávesnici (tu přes render()). Cache rizika se nezahazuje, je klíčovaná
+     podpisem. */
+  function zmenaRezimu(){
+    ulozRezimy();
+    renderRezimy();
+    if(prekresliPravidla) prekresliPravidla();
+    render();
+  }
+  nactiRezimy();
+
+  /* Sonda pro testy, stejně jako window.__i18n: strážní test sady 19 si musí
+     obě konstantní tabulky rizika pokaždé odvodit výčtem z týchž pravidel,
+     která počítá aplikace. Bez toho by se čísla po jakékoli změně bodování
+     tiše rozešla a nic by to nechytlo. Aplikace sondu sama nepoužívá. */
+  try{
+    window.__pravidla = { kindPoints: kindPoints, STRAIGHTS: STRAIGHTS, PRESETY: PRESETY,
+                          RIZIKO: RIZIKO, RIZIKO_3P: RIZIKO_3P,
+                          PRESET_REZIMY: PRESET_REZIMY, REZIMY: REZIMY,
+                          aktRezim: function(){ return aktRezim(); },
+                          sediVzor: sediVzor, poctyZHodu: poctyZHodu,
+                          nazevTvaru: nazevTvaru, nazevVzoru: nazevVzoru,
+                          tabulka: function(rez){ return tabulkaRizika(rez); } };
+  }catch(e){}
   /* Vlastní formát místo toLocale*: na různých zařízeních by se lišil
      a font má omezenou sadu znaků. */
   function dt(ms){ return kat("datumCas")(new Date(ms)); }
   /* pro údaje, které nepatří jedné hře, ale celému dni */
   function dtDen(ms){ return kat("datum")(new Date(ms)); }
-  /* Jediné místo, kde se skládá text režimu hry. Používá ho popis hry
-     v Zápisu kol, řádek historie, podřádek statistiky i řádek žebříčku —
-     dřív se stejný výraz psal dvakrát zvlášť. */
-  function popisRezimu(rec){
+  /* Jediné místo, kde se skládá text typu hry (do bodů / na kola). Používá ho
+     popis hry v Zápisu kol, řádek historie, podřádek statistiky i řádek
+     žebříčku — dřív se stejný výraz psal dvakrát zvlášť.
+
+     Pozor na slovo: **typ hry** je do bodů / na kola, **herní režim** je sada
+     pravidel (část 14 CLAUDE.md). Dokud se to jmenovalo obojí „režim“, byla
+     to stejná past jako kdysi „tah“. Pole v datech se dál jmenuje `mode`,
+     protože leží v historii i v zálohách. */
+  function popisTypuHry(rec){
     return rec.mode === "rounds"
-      ? (rec.roundGoal ? t("rezim.nakolalimit", { n: rec.roundGoal }) : t("rezim.nakola"))
-      : t("rezim.dobodu", { b: fmt(rec.goal || 0) });
+      ? (rec.roundGoal ? t("typhry.nakolalimit", { n: rec.roundGoal }) : t("typhry.nakola"))
+      : t("typhry.dobodu", { b: fmt(rec.goal || 0) });
   }
   function popisHry(rec){
     var kol = gKol(rec);
-    return dt(rec.savedAt) + " \u00B7 " + popisRezimu(rec) + " \u00B7 " + tn("slovo.kolo", kol);
+    return dt(rec.savedAt) + " \u00B7 " + nazevRezimuZaznamu(rec) +
+           " \u00B7 " + popisTypuHry(rec) + " \u00B7 " + tn("slovo.kolo", kol);
   }
   function fmt(n){ return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, kat("sep")); }
   /* Popisy kol a názvy položek můžou pocházet z cizí zálohy nebo z poškozeného
@@ -2564,8 +3627,26 @@
 
      Kolo drží kódy v poli c: hody odděluje "|", položky ",". Je to kratší než
      dřívější český popis a triviálně rozebratelné. */
-  var KODY = ["j", "p", "v", "s15", "s26", "s16"];
-  var NKOD = /^n([3-6])([1-6])$/;
+  /* Samostatná jednička a pětka nesou j a p odjakživa a leží tak v historii;
+     zbylé čtyři hodnoty, které umí bodovat samostatně od zavedení volné
+     bodovací tabulky, dostaly kódy d2–d6. Ta asymetrie je záměrná: přepsat
+     j a p na d1 a d5 by znamenalo sáhnout na uložená data. */
+  var KODY = ["j", "p", "v", "d2", "d3", "d4", "d6",
+              "s15", "s26", "s16", "c3p", "c32", "c33", "c42"];
+  var SAM_KODY = ["", "j", "d2", "d3", "d4", "p", "d6"];
+  /* Dvojice se vejde do dnešní gramatiky „počet × hodnota“ — proto [2-6],
+     ne [3-6] jako dřív. */
+  var NKOD = /^n([2-6])([1-6])$/;
+  /* Jediné místo, kde vzniká kód pro „N kostek téže hodnoty“. Používá ho řada
+     čipů i tlačítko +, takže odložení trojky dá týž kód oběma cestami. */
+  function kodStejnych(count, value){
+    return count === 1 ? SAM_KODY[value] : ("n" + count + value);
+  }
+  /* Vlastní kombinace nese body a počet kostek přímo v kódu, ne odkaz na vzor
+     v nastavení. Kdyby odkazoval, smazání vzoru — nebo import zálohy na cizí
+     telefon — by nechalo v historii viset kód, ke kterému neexistuje text.
+     k1500x5 se přečte vždycky a všude. */
+  var KKOD = /^k(\d{1,6})x([1-6])$/;
   var HODY_ODD = "|", POLOZKY_ODD = ",";
   var HODY_TXT = " \u00B7 ", POLOZKY_TXT = " + ";
 
@@ -2585,6 +3666,11 @@
   function textKodu(k){
     var m = NKOD.exec(k);
     if(m) return t("stitek.n", { p: m[1], h: m[2] });
+    m = KKOD.exec(k);
+    /* Body jsou v it.p, ne v kódu — pozdější změna sazby v nastavení tedy
+       historii nepřepíše. V kódu jsou proto, aby se štítek přečetl i tam,
+       kde se položka rozpadla na samotný popis. */
+    if(m) return t("stitek.k", { b: fmt(Number(m[1])), d: tn("pocitadlo.kostzkr", Number(m[2])) });
     return KODY.indexOf(k) >= 0 ? t("stitek." + k) : String(k);
   }
   function stitek(it){
@@ -2688,9 +3774,12 @@
       elModeSel=$("modesel"), elGoalSel=$("goalsel"), elGoalNum=$("goalnum"),
       elRoundSel=$("roundsel"), elRoundNum=$("roundnum"),
       elPips=$("pips"), elCounts=$("counts"), elAddKind=$("addkind"),
-      elMnum=$("mnum"), elMkost=$("mkost"), elMToggle=$("mtoggle"), elManual=$("manualwrap");
+      elMnum=$("mnum"), elMkost=$("mkost"), elMToggle=$("mtoggle"), elManual=$("manualwrap"),
+      elStrRow=$("strrow"), elStrCap=$("strcap"), elVlastniRow=$("vlastnirow"),
+      elSingleRow=$("singlerow"), elSingleCap=$("singlecap");
   var elDataSingle = Array.prototype.slice.call(document.querySelectorAll("[data-single]")),
-      elDataStr    = Array.prototype.slice.call(document.querySelectorAll("[data-str]"));
+      elDataStr    = Array.prototype.slice.call(document.querySelectorAll("[data-str]")),
+      elDataKombi  = Array.prototype.slice.call(document.querySelectorAll("[data-kombi]"));
 
   var selValue = null, selCount = 3, manualDice = 1;
 
@@ -2700,7 +3789,10 @@
     b.addEventListener("click", function(){ selValue = (selValue === v ? null : v); renderKind(); });
     elPips.appendChild(b);
   });
-  [3,4,5,6].forEach(function(c){
+  /* Počty od jedné: 1× nastupuje, když se samostatné hodnoty nevejdou do
+     vlastní řady čipů, 2× když v režimu boduje dvojice. Co je z nich vidět,
+     rozhoduje renderKind(). */
+  [1,2,3,4,5,6].forEach(function(c){
     var b = document.createElement("button");
     b.className = "chip"; b.textContent = c + "×"; b.dataset.count = c;
     b.addEventListener("click", function(){ selCount = c; renderKind(); });
@@ -2735,7 +3827,7 @@
     if(locked()){ goTo(1); return; }
     if(cur().items.length === 0) return;
     var rest = left();
-    S.rolls.push({ thrown: rest > 0 ? rest : 6, hot: rest === 0, items: [] });
+    S.rolls.push({ thrown: rest > 0 ? rest : kostek(), hot: rest === 0, items: [] });
     render();
   }
 
@@ -2745,7 +3837,7 @@
     S.dirty = true;
     zapisKolo(p, false);
     S.banked += p;
-    S.rolls = [{thrown:6, hot:false, items:[]}];
+    S.rolls = [{thrown:kostek(), hot:false, items:[]}];
     render();
     zkusAutoUlozit();
   }
@@ -2753,7 +3845,7 @@
     if(locked()) return;
     S.dirty = true;
     zapisKolo(potTotal(), true);
-    S.rolls = [{thrown:6, hot:false, items:[]}];
+    S.rolls = [{thrown:kostek(), hot:false, items:[]}];
     render();
     zkusAutoUlozit();
   }
@@ -2770,7 +3862,7 @@
   }
   function wipe(){
     fixMode = false; pendingDel = null;
-    S.banked = 0; S.turns = []; S.rolls = [{thrown:6, hot:false, items:[]}];
+    S.banked = 0; S.turns = []; S.rolls = [{thrown:kostek(), hot:false, items:[]}];
     S.archivedId = null; S.dirty = false; S.autoUlozeno = false;
     render();
   }
@@ -2909,7 +4001,14 @@
     S.turns = (rec.turns || []).map(function(tah){
       return kopieKola(tah);
     });
-    S.rolls = [{thrown:6, hot:false, items:[]}];
+    /* Hra z koše se vrací i se svými pravidly: jinak by se dohrávala podle
+       něčeho jiného, než podle čeho se začala. Neznámý režim (cizí záloha,
+       smazaný vlastní) nechává volbu být. */
+    if(rezimPodleId(gRezim(rec))){
+      REZIMY.akt = gRezim(rec);
+      ulozRezimy();
+    }
+    S.rolls = [{thrown:kostek(), hot:false, items:[]}];
     /* Obnovená hra se hlásí ke svému původnímu záznamu, pokud si ho koš
        zapamatoval — jinak by šla zapsat podruhé. Do koše se ukládá jen hra
        s neuloženými změnami, takže rozdíl proti záznamu je jistý: dirty.
@@ -3062,6 +4161,517 @@
     });
   }
 
+  /* ---------- karta Herní režimy v nastavení ----------
+     Řádky se staví z uzlů jako kosRadek(), ne z innerHTML — je to zavedený
+     vzor v tomhle okně a nepotřebuje esc(). Přepínače hlásí stav, ne akci:
+     text říká Zapnuto/Vypnuto a v zapnutém stavu nese třídu `on`; co
+     klepnutí udělá, zůstává v title a aria-label. */
+  var kombAny = false, kombNovy = [];
+  /* Sazba upravená a pak vypnutá se v rámci sezení pamatuje, aby ji zpětné
+     zapnutí nepřepsalo výchozí hodnotou. Do úložiště nejde: uložený stav má
+     mít jednu pravdu, a tou je přítomnost klíče v `p` režimu. */
+  var kombSazbyPamet = {};
+  /* Rozdělaná otázka na smazání vzoru a na smazání celého režimu — jedna na
+     oddíl, stejně jako ptamSeKos v koších. */
+  var ptamSeVzor = null, ptamSeRezim = null;
+  /* Který režim se právě upravuje; null je seznam. */
+  var rezEdit = null;
+  function editRezim(){ return rezEdit ? rezimPodleId(rezEdit) : null; }
+
+  /* Název režimu se skládá na jednom místě: preset ho bere z katalogu podle
+     id (a přeloží se), vlastní si veze svůj vlastní text. */
+  function nazevRezimu(rez){
+    if(!rez) return t("rezim.neznamy");
+    if(!rez.vlastni) return t("rezim.n." + rez.id);
+    return rez.nazev || t("rezim.beznazvu");
+  }
+  /* Podřádek seznamu: čím se ten režim liší, aniž by se musel otevřít. */
+  function popisRezimuKratky(rez){
+    var kusy = [tn("slovo.kostek", rez.kostek)], p = 0, i;
+    for(i = 0; i < POST_PORADI.length; i++){
+      if(rez.post[POST_PORADI[i]] > 0 && STRAIGHTS[POST_PORADI[i]].d <= rez.kostek) p++;
+    }
+    kusy.push(tn("rezim.postupek", p));
+    var k = pocetKombinaci(rez);
+    if(k) kusy.push(tn("rezim.kombinaci", k));
+    return kusy.join(" · ");
+  }
+
+  function stavTlacitko(btn, zap, klicAkce){
+    btn.textContent = t(zap ? "spol.zapnuto" : "nast.vypnuto");
+    btn.classList.toggle("on", zap);
+    var label = t(klicAkce);
+    btn.title = label;
+    btn.setAttribute("aria-label", label);
+  }
+  /* Společný tvar popisu: nadpis řádku a pod ním podřádek. `serif` sází nadpis
+     patkově — patří tam zápis kombinace (1,1,1+5,5), ne prozaický název. */
+  function kombPopis(nadpis, serif, podradek){
+    var t1 = document.createElement("div");
+    t1.className = "t";
+    var b = document.createElement("b");
+    if(serif) b.className = "zapis";
+    b.textContent = nadpis;
+    var s = document.createElement("span");
+    s.innerHTML = podradek;
+    t1.appendChild(b); t1.appendChild(s);
+    return t1;
+  }
+  /* Pole s body. Sazba riziko nemění, takže se po úpravě přepíše jen
+     klávesnice a uloží se — celý oddíl se překreslovat nesmí, jinak by pole
+     ztratilo kurzor uprostřed psaní. `nula` pouští nulu, která u sazby
+     v tabulce znamená „neboduje“. */
+  function kombPoleSazby(hodnota, aktivni, zapis, aria, nula){
+    var pole = document.createElement("input");
+    pole.type = "number"; pole.className = "kombsazba"; pole.min = nula ? "0" : "1"; pole.step = "50";
+    pole.inputMode = "numeric";
+    pole.value = hodnota;
+    pole.disabled = !aktivni;
+    pole.setAttribute("aria-label", aria || t("komb.sazba"));
+    pole.addEventListener("input", function(){
+      var v = Math.floor(naCislo(parseInt(pole.value, 10), -1));
+      if(v < (nula ? 0 : 1) || v > BODY_MAX) return;
+      zapis(v);
+      ulozRezimy(); render();
+      /* Oddíl se překreslovat nesmí (pole by ztratilo kurzor), ale poslední
+         řádek o tom, jestli je co obnovovat, se změnou sazby mění — a ten
+         jediný se přepsat dá, žádné pole v něm není. */
+      var rez = editRezim();
+      if(rez) renderRezKonec(rez);
+    });
+    return pole;
+  }
+  /* Řádek tabulky pravidel: popis vlevo, pole s body vpravo, žádný přepínač.
+     Nula znamená, že to v tomhle režimu neboduje. */
+  function rezRadekBodu(nadpis, podradek, hodnota, zapis){
+    var row = document.createElement("div");
+    row.className = "setrow kombrow";
+    row.appendChild(kombPopis(nadpis, false, esc(podradek)));
+    row.appendChild(kombPoleSazby(hodnota, true, zapis, nadpis, true));
+    return row;
+  }
+  function kombPresetRadek(rez, k){
+    var def = PRESETY[k], zap = kombZap(rez, k);
+    var row = document.createElement("div");
+    row.className = "setrow kombrow";
+    row.dataset.preset = k;
+    var popis = kombPopis(t("stitek." + def.k), false,
+      '<span class="zapis">' + esc(def.zapis) + "</span> · " + esc(tn("slovo.kostek", def.d)));
+    /* Riziko mění jedině tři dvojice, a jen nad nedotčeným základem KCD2 —
+       u ostatních by ten řádek byl šum, u přepsané tabulky nepravda. */
+    if(k === "3p" && zakladJakoKcd2(rez)){
+      var riz = document.createElement("span");
+      riz.className = "riziko";
+      riz.textContent = t("komb.riziko3p", { a: desetina(RIZIKO[5]), b: desetina(RIZIKO_3P[5]) });
+      popis.appendChild(riz);
+    }
+    var pole = kombPoleSazby(sazba(rez, k), zap, function(v){
+      if(!kombZap(rez, k)) return;
+      rez.p[k] = v; kombSazbyPamet[k] = v;
+    });
+    var btns = document.createElement("div");
+    btns.className = "setbtns";
+    var btn = document.createElement("button");
+    btn.type = "button"; btn.className = "ghost";
+    stavTlacitko(btn, zap, zap ? "komb.vypnout" : "komb.zapnout");
+    btn.addEventListener("click", function(){
+      if(kombZap(rez, k)){
+        kombSazbyPamet[k] = rez.p[k];
+        delete rez.p[k];
+      } else {
+        rez.p[k] = kombSazbyPamet[k] || PRESETY[k].def;
+      }
+      zmenaRezimu();
+    });
+    btns.appendChild(btn);
+    row.appendChild(popis); row.appendChild(pole); row.appendChild(btns);
+    return row;
+  }
+  /* Postupka se ovládá stejně jako kombinace navíc: sazba a přepínač.
+     Chybějící klíč v `post` je vypnuto, takže se stav nemá kde rozejít. */
+  function rezPostRadek(rez, k){
+    var s = STRAIGHTS[k], zap = rez.post[k] > 0;
+    var row = document.createElement("div");
+    row.className = "setrow kombrow";
+    row.dataset.post = k;
+    var popis = kombPopis(t("stitek." + s.k), false, esc(tn("slovo.kostek", s.d)));
+    var pole = kombPoleSazby(zap ? rez.post[k] : (PRESET_REZIMY.kcd2.post[k] || 500), zap, function(v){
+      if(rez.post[k] > 0) rez.post[k] = v;
+    });
+    var btns = document.createElement("div");
+    btns.className = "setbtns";
+    var btn = document.createElement("button");
+    btn.type = "button"; btn.className = "ghost";
+    stavTlacitko(btn, zap, zap ? "komb.vypnout" : "komb.zapnout");
+    btn.addEventListener("click", function(){
+      if(rez.post[k] > 0) delete rez.post[k];
+      else rez.post[k] = Math.floor(naCislo(parseInt(pole.value, 10), 0)) || PRESET_REZIMY.kcd2.post[k] || 500;
+      zmenaRezimu();
+    });
+    btns.appendChild(btn);
+    row.appendChild(popis); row.appendChild(pole); row.appendChild(btns);
+    return row;
+  }
+  /* Vlastní vzor se ovládá stejně jako preset — sazba i přepínač — a navíc jde
+     smazat. Mazání se ptá ve dvou krocích jako v koších: řádek se překlopí na
+     otázku, protože vzor se naťukává po kostkách a znovu se dělá pracně. */
+  function kombVlastniRadek(rez, vz){
+    var row = document.createElement("div");
+    row.className = "setrow kombrow";
+    row.dataset.vzor = vz.id;
+    var btns = document.createElement("div");
+    btns.className = "setbtns";
+
+    if(ptamSeVzor === vz.id){
+      var otazka = document.createElement("div");
+      otazka.className = "t";
+      otazka.innerHTML = "<b>" + esc(t("komb.opravdusmazat")) + "</b><span>" +
+                         esc(nazevVzoru(vz)) + "</span>";
+      var ano = document.createElement("button");
+      ano.type = "button"; ano.className = "ghost warn"; ano.textContent = t("spol.smazat");
+      ano.addEventListener("click", function(){
+        rez.v = rez.v.filter(function(x){ return x.id !== vz.id; });
+        ptamSeVzor = null;
+        zmenaRezimu();
+      });
+      var ne = document.createElement("button");
+      ne.type = "button"; ne.className = "ghost"; ne.textContent = t("spol.zrusit");
+      ne.addEventListener("click", function(){ ptamSeVzor = null; renderRezimy(); });
+      btns.appendChild(ano); btns.appendChild(ne);
+      row.appendChild(otazka); row.appendChild(btns);
+      return row;
+    }
+
+    /* Vzor na víc kostek, než režim má, se nikdy neodloží — řádek to říká
+       rovnou, ať se nehledá, proč čip chybí. */
+    var vejde = vz.v.length <= rez.kostek;
+    var podradek = esc(tn("slovo.kostek", vz.v.length)) +
+                   (vz.any ? " · " + esc(t("komb.libovolnemale")) : "") +
+                   (vejde ? "" : " · " + esc(t("komb.nevejde")));
+    var popis = kombPopis(nazevVzoru(vz), !vz.any, podradek);
+    var pole = kombPoleSazby(vz.b, vz.z && vejde, function(v){ vz.b = v; });
+    var prep = document.createElement("button");
+    prep.type = "button"; prep.className = "ghost";
+    stavTlacitko(prep, vz.z, vz.z ? "komb.vypnout" : "komb.zapnout");
+    prep.addEventListener("click", function(){ vz.z = !vz.z; zmenaRezimu(); });
+    var sm = document.createElement("button");
+    sm.type = "button"; sm.className = "ghost"; sm.textContent = t("spol.smazat");
+    sm.addEventListener("click", function(){ ptamSeVzor = vz.id; renderRezimy(); });
+    btns.appendChild(prep); btns.appendChild(sm);
+    row.appendChild(popis); row.appendChild(pole); row.appendChild(btns);
+    return row;
+  }
+
+  /* ---------- seznam režimů ---------- */
+  function rezRadek(rez){
+    var row = document.createElement("div");
+    row.className = "setrow kombrow";
+    row.dataset.rezim = rez.id;
+    var btns = document.createElement("div");
+    btns.className = "setbtns";
+
+    if(ptamSeRezim === rez.id){
+      var otazka = document.createElement("div");
+      otazka.className = "t";
+      otazka.innerHTML = "<b>" + esc(t("rezim.opravdusmazat")) + "</b><span>" +
+                         esc(nazevRezimu(rez)) + "</span>";
+      var ano = document.createElement("button");
+      ano.type = "button"; ano.className = "ghost warn"; ano.textContent = t("spol.smazat");
+      ano.addEventListener("click", function(){
+        REZIMY.sez = REZIMY.sez.filter(function(x){ return x.id !== rez.id; });
+        ptamSeRezim = null;
+        if(rezEdit === rez.id) rezEdit = null;
+        zmenaRezimu();
+      });
+      var ne = document.createElement("button");
+      ne.type = "button"; ne.className = "ghost"; ne.textContent = t("spol.zrusit");
+      ne.addEventListener("click", function(){ ptamSeRezim = null; renderRezimy(); });
+      btns.appendChild(ano); btns.appendChild(ne);
+      row.appendChild(otazka); row.appendChild(btns);
+      return row;
+    }
+
+    var popis = kombPopis(nazevRezimu(rez), false, esc(popisRezimuKratky(rez)));
+    var prav = document.createElement("button");
+    prav.type = "button"; prav.className = "ghost"; prav.textContent = t("rezim.pravidla");
+    prav.addEventListener("click", function(){ otevriPravidla(rez.id); });
+    var upr = document.createElement("button");
+    upr.type = "button"; upr.className = "ghost"; upr.textContent = t("rezim.upravit");
+    upr.addEventListener("click", function(){ naRezimDetail(rez.id); });
+    var zvol = document.createElement("button");
+    zvol.type = "button"; zvol.className = "ghost";
+    var akt = REZIMY.akt === rez.id;
+    zvol.textContent = t(akt ? "rezim.zvoleno" : "rezim.zvolitkratce");
+    zvol.classList.toggle("on", akt);
+    zvol.title = t("rezim.zvolit");
+    zvol.setAttribute("aria-label", t("rezim.zvolit"));
+    /* Přepnout pravidla uprostřed hry nejde: kolo už zapsané by se počítalo
+       podle jiné tabulky než to následující a v historii by režim lhal
+       o první půlce hry. */
+    zvol.disabled = akt || !gameEmpty();
+    zvol.addEventListener("click", function(){
+      if(!gameEmpty()) return;
+      REZIMY.akt = rez.id;
+      S.rolls = [{thrown: rez.kostek, hot:false, items:[]}];
+      zmenaRezimu();
+    });
+    btns.appendChild(prav); btns.appendChild(upr); btns.appendChild(zvol);
+    row.appendChild(popis); row.appendChild(btns);
+    return row;
+  }
+  function renderRezSeznam(){
+    var kam = $("rezrows");
+    kam.innerHTML = "";
+    REZIMY.sez.forEach(function(rez){ kam.appendChild(rezRadek(rez)); });
+    var zam = $("rezzamek");
+    zam.textContent = gameEmpty() ? "" : t("rezim.zamceno");
+    zam.hidden = gameEmpty();
+    var strop = REZIMY.sez.length >= PRESET_REZ_PORADI.length + REZIMY_MAX;
+    var zpr = $("rezstrop");
+    zpr.textContent = strop ? t("rezim.strop", { n: REZIMY_MAX }) : "";
+    zpr.hidden = !strop;
+    $("reznovy").disabled = strop;
+  }
+  /* ---------- detail jednoho režimu ---------- */
+  function renderRezDetail(rez){
+    var i, v;
+    $("reztitul").textContent = nazevRezimu(rez);
+    $("reznazevrow").hidden = !rez.vlastni;
+    if(rez.vlastni && document.activeElement !== $("reznazevpole")){
+      $("reznazevpole").value = rez.nazev || "";
+    }
+    $("rezkostek").value = String(rez.kostek);
+
+    var skup = $("rezskupiny");
+    skup.innerHTML = "";
+    SKUPINY.forEach(function(sk){ skup.appendChild(skupinaOddil(rez, sk)); });
+
+    $("reznad").value = rez.nad;
+    $("reznadnapoveda").hidden = true;
+    $("reznadinfo").classList.remove("on");
+    var nadp = $("reznadp");
+    nadp.innerHTML = "";
+    nadp.hidden = rez.nad !== "pevne";
+    if(rez.nad === "pevne"){
+      for(i = 0; i < 3; i++){ nadp.appendChild(nadPole(rez, i)); }
+    }
+
+    var post = $("rezpost");
+    post.innerHTML = "";
+    POST_PORADI.forEach(function(k){
+      if(STRAIGHTS[k].d > rez.kostek) return;
+      post.appendChild(rezPostRadek(rez, k));
+    });
+
+    var seznam = $("komblist"), vlastni = $("kombvlastni");
+    seznam.innerHTML = "";
+    PRESET_PORADI.forEach(function(k){
+      if(!kombVRezimu(rez, k)) return;
+      seznam.appendChild(kombPresetRadek(rez, k));
+    });
+
+    vlastni.innerHTML = "";
+    if(!rez.v.length){
+      ptamSeVzor = null;
+      vlastni.innerHTML = '<div class="empty">' + esc(t("komb.zadne")) + "</div>";
+    } else {
+      rez.v.forEach(function(vz){ vlastni.appendChild(kombVlastniRadek(rez, vz)); });
+    }
+    renderKombiNovy();
+    renderRezKonec(rez);
+  }
+  /* Skupina bodovací tabulky: nadpis, přepínač celé skupiny a šest polí.
+     Vypnutá skupina svoje pole schová — šest nul na obrazovce je horší než
+     nic, protože vypadají jako nastavení, které se dá měnit. */
+  function skupinaOddil(rez, sk){
+    var wrap = document.createElement("div"), v;
+    var zap = skupinaZap(rez, sk.pole);
+    var hlavicka = document.createElement("div");
+    hlavicka.className = "cap gap skupcap";
+    hlavicka.dataset.skupina = sk.pole;
+    var jmeno = document.createElement("span");
+    jmeno.textContent = t("rezim.skupina." + sk.pole);
+    var prep = document.createElement("button");
+    prep.type = "button"; prep.className = "ghost";
+    stavTlacitko(prep, zap, zap ? "rezim.skupina.vypnout" : "rezim.skupina.zapnout");
+    prep.addEventListener("click", function(){ prepniSkupinu(rez, sk); });
+    hlavicka.appendChild(jmeno); hlavicka.appendChild(prep);
+    wrap.appendChild(hlavicka);
+    if(!zap) return wrap;
+
+    var grid = document.createElement("div");
+    grid.className = "trojgrid";
+    grid.dataset.skupina = sk.pole;
+    for(v = 1; v <= 6; v++){ grid.appendChild(skupinaPole(rez, sk, v)); }
+    wrap.appendChild(grid);
+    return wrap;
+  }
+  /* Popisek pole je jazykově neutrální (3× 4), takže se nepřekládá; do
+     aria-label se skládá věta, protože „3× 4“ přečtené nahlas nic neřekne. */
+  function skupinaPole(rez, sk, v){
+    var wrap = document.createElement("label");
+    wrap.className = "trojpole";
+    var lbl = document.createElement("span");
+    lbl.textContent = sk.pocet + "× " + v;
+    var pole = kombPoleSazby(rez[sk.pole][v], true, function(x){ rez[sk.pole][v] = x; },
+                             t("rezim." + sk.pole + "aria", { v: v }), true);
+    wrap.appendChild(lbl); wrap.appendChild(pole);
+    return wrap;
+  }
+  /* Vypnutí vynuluje celou šestici, zapnutí vrátí, co v ní bylo. Paměť je
+     runtime, do úložiště nejde: uložený stav má mít jednu pravdu, a tou jsou
+     ta čísla. */
+  var skupinyPamet = {};
+  function prepniSkupinu(rez, sk){
+    var klic = rez.id + ":" + sk.pole, v;
+    if(skupinaZap(rez, sk.pole)){
+      skupinyPamet[klic] = rez[sk.pole].slice();
+      rez[sk.pole] = [0,0,0,0,0,0,0];
+    } else {
+      rez[sk.pole] = (skupinyPamet[klic] || sk.vychozi).slice();
+      /* Výchozí šestice dvojic je samá nula — zapnutí by tedy neudělalo nic.
+         Dosadí se proto hodnota kostky krát deset, což je obvyklá domácí
+         sazba a hlavně to dá čísla, se kterými jde dál pracovat. */
+      if(!skupinaZap(rez, sk.pole)){
+        for(v = 1; v <= 6; v++) rez[sk.pole][v] = (v === 1 ? 10 : v) * 10;
+      }
+    }
+    zmenaRezimu();
+  }
+  function nadPole(rez, i){
+    var wrap = document.createElement("label");
+    wrap.className = "trojpole";
+    var lbl = document.createElement("span");
+    lbl.textContent = (i + 4) + "×";
+    var pole = kombPoleSazby(rez.nadP[i], true, function(x){ rez.nadP[i] = x; },
+                             t("rezim.nadaria", { n: i + 4 }), true);
+    wrap.appendChild(lbl); wrap.appendChild(pole);
+    return wrap;
+  }
+  /* Poslední řádek detailu: preset se vrací k výchozím hodnotám, vlastní se
+     maže. Obojí dvoukrokově jako koše. Zvolený režim smazat nejde — jinak by
+     rozehraná hra i volba ukazovaly na neexistující id. */
+  function renderRezKonec(rez){
+    var row = $("rezkonecrow");
+    row.innerHTML = "";
+    row.className = "setrow kombrow";
+    var btns = document.createElement("div");
+    btns.className = "setbtns";
+    /* Duplikát je vždycky vlastní režim, i když se kopíruje preset — jinak
+       by existovaly dva režimy s týmž id. */
+    var dupl = document.createElement("button");
+    dupl.type = "button"; dupl.className = "ghost"; dupl.textContent = t("rezim.dupl.btn");
+    dupl.disabled = REZIMY.sez.length >= PRESET_REZ_PORADI.length + REZIMY_MAX;
+    dupl.addEventListener("click", function(){ duplikujRezim(rez); });
+    var duplRow = $("rezduplrow");
+    duplRow.innerHTML = "";
+    duplRow.className = "setrow kombrow";
+    duplRow.appendChild(kombPopis(t("rezim.dupl.n"), false, esc(t("rezim.dupl.p"))));
+    var duplBtns = document.createElement("div");
+    duplBtns.className = "setbtns";
+    duplBtns.appendChild(dupl);
+    duplRow.appendChild(duplBtns);
+    if(!rez.vlastni){
+      var puvodni = odchylkyRezimu(rez) === null;
+      row.appendChild(kombPopis(t("rezim.vychozi.n"), false, esc(t("rezim.vychozi.p"))));
+      var ob = document.createElement("button");
+      ob.type = "button"; ob.className = "ghost"; ob.textContent = t("rezim.vychozi.btn");
+      ob.disabled = puvodni;
+      ob.addEventListener("click", function(){
+        var cerstvy = zPresetu(rez.id), k;
+        for(k in cerstvy){ if(Object.prototype.hasOwnProperty.call(cerstvy, k)) rez[k] = cerstvy[k]; }
+        ptamSeVzor = null;
+        zmenaRezimu();
+      });
+      btns.appendChild(ob);
+      row.appendChild(btns);
+      return;
+    }
+    if(REZIMY.akt === rez.id){
+      row.appendChild(kombPopis(t("rezim.smazat.n"), false, esc(t("rezim.nesmazat"))));
+      row.appendChild(btns);
+      return;
+    }
+    row.appendChild(kombPopis(t("rezim.smazat.n"), false, esc(t("rezim.smazat.p"))));
+    var sm = document.createElement("button");
+    sm.type = "button"; sm.className = "ghost"; sm.textContent = t("spol.smazat");
+    sm.addEventListener("click", function(){
+      ptamSeRezim = rez.id;
+      naRezimSeznam();
+    });
+    btns.appendChild(sm);
+    row.appendChild(btns);
+  }
+  /* Hluboká kopie: vlastní vzory dostanou nová id, aby si originál a kopie
+     nepletly rozdělanou otázku na smazání. */
+  function duplikujRezim(rez){
+    if(REZIMY.sez.length >= PRESET_REZ_PORADI.length + REZIMY_MAX) return;
+    var kopie = cistyRezim(venRezim(rez), novyIdRezimu(), VYCHOZI_REZIM);
+    kopie.nazev = t("rezim.kopie", { n: nazevRezimu(rez) }).slice(0, NAZEV_MAX);
+    kopie.v.forEach(function(vz){ vz.id = newId(); });
+    REZIMY.sez.push(kopie);
+    ulozRezimy();
+    naRezimDetail(kopie.id);
+  }
+  function naRezimSeznam(){
+    rezEdit = null; ptamSeVzor = null;
+    renderRezimy();
+  }
+  function naRezimDetail(id){
+    rezEdit = id; ptamSeVzor = null; ptamSeRezim = null;
+    kombAny = false; kombNovy = [];
+    var pole = $("kombbody");
+    if(pole) pole.value = "";
+    renderRezimy();
+  }
+  /* Jediné dveře k překreslení celé karty: rozhodne, jestli je vidět seznam
+     nebo detail, a doplní název režimu na přepínači karet. */
+  function renderRezimy(){
+    if(!$("rezrows")) return;
+    var rez = editRezim();
+    if(rezEdit && !rez){ rezEdit = null; }
+    var vDetailu = !!rez;
+    $("rezlist").hidden = vDetailu;
+    $("rezdetail").hidden = !vDetailu;
+    var el = $("reznazev");
+    if(el) el.textContent = "(" + nazevRezimu(aktRezim()) + ")";
+    /* Seznam se kreslí vždycky, i když je zrovna schovaný pod detailem: je
+       to pár řádků a odpadá tím celá třída chyb, kdy se návratem odkryl
+       seznam z minula. Detail jen tehdy, když je co ukázat. */
+    renderRezSeznam();
+    if(vDetailu) renderRezDetail(rez);
+  }
+  /* Rozdělaný vzor: šest čipů přidává kostky, Vymazat je sebere všechny.
+     Míň než dvě kostky vzor nedává — jedna kostka je buď dnešní jednička
+     a pětka, nebo (s libovolnými hodnotami) tvar, který sedne na cokoli. */
+  function renderKombiNovy(){
+    var rez = editRezim();
+    if(!rez) return;
+    var pocty = [0,0,0,0,0,0,0], i;
+    for(i = 0; i < kombNovy.length; i++) pocty[kombNovy[i]]++;
+    var docasny = { any: kombAny, pocty: pocty, tvar: tvarZPoctu(pocty), v: kombNovy };
+    var nadpis = $("kombvzor");
+    nadpis.textContent = kombNovy.length ? nazevVzoru(docasny) : "";
+    /* patkově jen zápis hodnot, ne prozaický název */
+    nadpis.classList.toggle("proza", kombAny);
+    $("kombvzorhint").textContent = kombNovy.length
+      ? tn("slovo.kostek", kombNovy.length) + (kombAny ? " · " + t("komb.libovolnemale") : "")
+      : t("komb.naukej");
+    /* Strop je počet kostek režimu: víc kostek, než se v něm hází, by dalo
+       vzor, který nikdy nesedne. */
+    Array.prototype.forEach.call($("kombpips").children, function(b){
+      b.disabled = kombNovy.length >= rez.kostek;
+    });
+    stavTlacitko($("kombany"), kombAny, kombAny ? "komb.pevne" : "komb.jakekoli");
+    $("kombzrus").disabled = kombNovy.length === 0;
+    var body = parseInt($("kombbody").value, 10), strop = rez.v.length >= VLASTNI_MAX;
+    $("kombpridat").disabled = strop || !(kombNovy.length >= 2 && body > 0 && body <= BODY_MAX);
+    /* Strop se hlásí sám a předem, ne až po marném klepnutí na zamčené tlačítko. */
+    var zpr = $("kombzprava");
+    zpr.textContent = strop ? t("komb.strop", { n: VLASTNI_MAX }) : "";
+    zpr.hidden = !strop;
+  }
+
   var resetTimer = null, resetMsg = false;
   function disarmReset(){
     clearTimeout(resetTimer); resetTimer = null;
@@ -3176,21 +4786,104 @@
     });
   }
 
+  /* Boduje v tom režimu aspoň jedna hodnota při tomhle počtu kostek? Podle
+     toho se čip počtu ukazuje. Pokrývá i případ, kdy jsou trojice vypnuté
+     a čtyři a víc se platí pevnými body: 3× zmizí, 4× až 6× zůstanou. */
+  function pocetBoduje(rez, count){
+    for(var v = 1; v <= 6; v++){ if(kindPoints(v, count, rez) > 0) return true; }
+    return false;
+  }
   function renderKind(){
-    var l = left(), lock = locked();
+    var l = left(), lock = locked(), rez = aktRezim(), prvni = null;
     Array.prototype.forEach.call(elPips.children, function(b){
       b.classList.toggle("sel", Number(b.dataset.value) === selValue);
       b.disabled = lock;
     });
+    /* Počet, kterým se v režimu nedá nic odložit, se skrývá, ne jen zašedne —
+       trvale zamčené tlačítko by jen matlo. 1× nastupuje jen tehdy, když se
+       samostatné hodnoty nevešly do vlastní řady čipů. */
     Array.prototype.forEach.call(elCounts.children, function(b){
       var c = Number(b.dataset.count);
+      var videt = c <= rez.kostek && pocetBoduje(rez, c) &&
+                  (c !== 1 || pocetSamostatnych(rez) > SAMOSTATNE_V_RADE);
+      b.hidden = !videt;
+      if(videt && prvni === null) prvni = c;
       b.classList.toggle("sel", c === selCount);
       b.disabled = lock || c > l;
     });
-    var ok = selValue !== null && selCount <= l && !lock;
+    /* Vybraný počet zmizel z nabídky (jiný režim, vypnutá skupina) —
+       přesune se na první, který zůstal. */
+    if(prvni !== null && elCounts.querySelector('[data-count="' + selCount + '"]').hidden){
+      selCount = prvni;
+      Array.prototype.forEach.call(elCounts.children, function(b){
+        b.classList.toggle("sel", Number(b.dataset.count) === selCount);
+      });
+    }
+    var ok = selValue !== null && selCount <= l && !lock && kindPoints(selValue, selCount, rez) > 0;
     elAddKind.disabled = !ok;
-    elAddKind.textContent = t("pocitadlo.plus", { b: ok ? fmt(kindPoints(selValue, selCount)) : "0" });
+    elAddKind.textContent = t("pocitadlo.plus", { b: ok ? fmt(kindPoints(selValue, selCount, rez)) : "0" });
   }
+
+  /* ---------- čipy postupek a kombinací v klávesnici ----------
+     Postupky i přednastavené kombinace stojí v HTML natvrdo a jen se skrývají,
+     takže snapshot prvků i sběr češtiny při startu fungují beze změny. Co je
+     z nich vidět, rozhoduje herní režim. Vlastní vzory bydlí v panelu za čipem
+     „vlastní“: jejich popisek je dlouhý a je jich až osm, takže by řada
+     přestala být shora omezená. */
+  function renderKombi(){
+    var l = left(), lock = locked(), rez = aktRezim(), videt = 0, post = 0, komb = 0;
+    elDataStr.forEach(function(b){
+      var k = b.dataset.str, zap = rez.post[k] > 0 && STRAIGHTS[k].d <= rez.kostek;
+      if(zap){ b.removeAttribute("hidden"); post++; } else b.setAttribute("hidden", "");
+      b.disabled = lock || STRAIGHTS[k].d > l;
+      b.querySelector(".v").textContent = fmt(rez.post[k] || 0);
+    });
+    elDataKombi.forEach(function(b){
+      var k = b.dataset.kombi, zap = kombZap(rez, k) && kombVRezimu(rez, k);
+      if(zap){ b.removeAttribute("hidden"); komb++; } else b.setAttribute("hidden", "");
+      b.disabled = lock || PRESETY[k].d > l;
+      b.querySelector(".v").textContent = fmt(sazba(rez, k));
+    });
+    /* Řada samostatných hodnot: do tří čipů se vejde beze změny velikosti,
+       při čtyřech a víc mizí celá i s nadpisem a zadává se přes 1× ve
+       Stejných hodnotách. Popisek je týž text jako štítek v historii, takže
+       se ta dvě místa nemají kde rozejít. */
+    var samo = pocetSamostatnych(rez), radaVidet = samo > 0 && samo <= SAMOSTATNE_V_RADE;
+    elDataSingle.forEach(function(b){
+      var v = Number(b.dataset.single), body = rez.sam[v] || 0;
+      if(radaVidet && body > 0) b.removeAttribute("hidden"); else b.setAttribute("hidden", "");
+      b.disabled = lock || l < 1;
+      b.firstChild.textContent = textKodu(SAM_KODY[v]);
+      b.querySelector(".v").textContent = fmt(body);
+    });
+    elSingleRow.hidden = !radaVidet;
+    elSingleCap.hidden = !radaVidet;
+    /* Nadpis řady mluví o tom, co v ní právě je: v režimu bez postupek by
+       „Postupky“ byla nepravda a řada se schovat nemůže — sedí v ní čip
+       „vlastní“, jediná cesta k ručnímu zadání. */
+    elStrCap.textContent = t(post ? (komb ? "pocitadlo.postupkykomb" : "pocitadlo.postupky")
+                                  : "pocitadlo.kombinace");
+    /* Zalomení se srovnává podle počtu viditelných čipů: samo od sebe by
+       se pět zalomilo jako 4 + 1 a osamělý čip by zabral celou šířku. */
+    Array.prototype.forEach.call(elStrRow.children, function(el){ if(!el.hidden) videt++; });
+    ["k5","k6","k7","k8"].forEach(function(c){ elStrRow.classList.remove(c); });
+    if(videt >= 5 && videt <= 8) elStrRow.classList.add("k" + videt);
+
+    var vzory = vzoryZap(rez);
+    elVlastniRow.innerHTML = "";
+    vzory.forEach(function(vz){
+      var b = document.createElement("button");
+      b.type = "button";
+      b.className = "chip";
+      b.dataset.vzor = vz.id;
+      b.innerHTML = esc(nazevVzoru(vz)) + '<span class="v">' + esc(fmt(vz.b)) + "</span>";
+      b.disabled = lock || vz.v.length > l;
+      b.addEventListener("click", function(){ keep(kodVzoru(vz), vz.b, vz.v.length); });
+      elVlastniRow.appendChild(b);
+    });
+    elVlastniRow.hidden = vzory.length === 0;
+  }
+  function kodVzoru(vz){ return "k" + vz.b + "x" + vz.v.length; }
 
   /* Vrubovka i přehledové dlaždice se kreslí z otisku hry, takže stejný kód
      obslouží rozehranou hru i hru vytaženou z historie. */
@@ -3232,13 +4925,13 @@
      když se z kola odebere položka kdekoliv */
   function rechain(){
     S.rolls = S.rolls.filter(function(r, i){ return r.items.length || i === S.rolls.length - 1; });
-    if(!S.rolls.length) S.rolls = [{thrown:6, hot:false, items:[]}];
-    S.rolls[0].thrown = 6;
+    if(!S.rolls.length) S.rolls = [{thrown:kostek(), hot:false, items:[]}];
+    S.rolls[0].thrown = kostek();
     S.rolls[0].hot = false;
     for(var i = 1; i < S.rolls.length; i++){
       var prev = S.rolls[i-1];
       var rest = prev.thrown - usedInRoll(prev);
-      S.rolls[i].thrown = rest > 0 ? rest : 6;
+      S.rolls[i].thrown = rest > 0 ? rest : kostek();
       S.rolls[i].hot = rest === 0;
     }
   }
@@ -3380,25 +5073,169 @@
     elEmpty.style.display = S.turns.length ? "none" : "block";
   }
 
+  /* Pravidla otevřená z karty Herních režimů se po zavření vracejí do
+     nastavení. Příznak drží okno pravidel, spotřebuje ho obsluha zavírání. */
+  var zNastaveni = false;
+  function vratDoNastaveni(){
+    if(!zNastaveni) return false;
+    zNastaveni = false;
+    naKartuNastaveni(1);
+    renderRezimy();
+    otevriModal("setmodal", null);
+    return true;
+  }
+
+  /* ---------- tabulka pravidel podle režimu ----------
+     Řádek se do tabulky dostane jen tehdy, když v tom režimu doopravdy
+     boduje. Kombinace navíc a vlastní vzory se sázejí týmž textem jako čip
+     v klávesnici a štítek v historii — malým písmenem, ať se to na třech
+     místech nerozejde. */
+  function pravRadek(nazev, hodnota){
+    return "<tr><td>" + esc(nazev) + "</td><td>" + esc(hodnota) + "</td></tr>";
+  }
+  function pravidlaHTML(rez){
+    var out = "", tab = "", v, i, k, s, stejny = true, nasobek = 0, vzory;
+    out += "<p>" + t("pravidla.p1", { kostky: esc(tn("slovo.kostkami", rez.kostek)) }) + "</p>";
+    out += "<p>" + t("pravidla.p2") + "</p>";
+    out += "<p>" + t("pravidla.p3", { kostky: esc(tn("slovo.kostkami", rez.kostek)) }) + "</p>";
+
+    for(v = 1; v <= 6; v++){
+      if(rez.sam[v] > 0) tab += pravRadek(t("pravidla.sam." + v), fmt(rez.sam[v]));
+    }
+    for(v = 1; v <= 6; v++){
+      if(rez.dvoj[v] > 0) tab += pravRadek(t("pravidla.dvoj." + v), fmt(rez.dvoj[v]));
+    }
+    if(rez.troj[1] > 0) tab += pravRadek(t("pravidla.troj.1"), fmt(rez.troj[1]));
+    /* Trojice 2–6 se slijí do jednoho řádku, jen když jdou úměrně hodnotě —
+       jinak by se rozsah 200–600 vztahoval na tabulku, která takhle nevypadá. */
+    nasobek = rez.troj[2] / 2;
+    for(v = 2; v <= 6; v++){ if(!(rez.troj[v] > 0) || rez.troj[v] !== v * nasobek) stejny = false; }
+    if(stejny){
+      tab += pravRadek(t("pravidla.t4n"), fmt(rez.troj[2]) + "\u2013" + fmt(rez.troj[6]));
+    } else {
+      for(v = 2; v <= 6; v++){
+        if(rez.troj[v] > 0) tab += pravRadek(t("pravidla.troj." + v), fmt(rez.troj[v]));
+      }
+    }
+    /* Čtyři a víc stejných patří do tabulky, ne do poznámky: jen tak se dá
+       vypsat právě tolik počtů, kolik se jich v tom režimu vejde. */
+    for(i = 4; i <= rez.kostek; i++){
+      tab += pravRadek(t("pravidla.stejnych." + i),
+        rez.nad === "pevne" ? fmt(rez.nadP[i - 4] || 0) : t("pravidla.nadhod." + rez.nad + "." + i));
+    }
+    for(i = 0; i < POST_PORADI.length; i++){
+      k = POST_PORADI[i];
+      if(!(rez.post[k] > 0) || STRAIGHTS[k].d > rez.kostek) continue;
+      tab += pravRadek(t("pravidla.post." + k), fmt(rez.post[k]));
+    }
+    for(i = 0; i < PRESET_PORADI.length; i++){
+      k = PRESET_PORADI[i];
+      if(!kombZap(rez, k) || !kombVRezimu(rez, k)) continue;
+      tab += pravRadek(t("stitek." + PRESETY[k].k), fmt(sazba(rez, k)));
+    }
+    vzory = vzoryZap(rez);
+    for(i = 0; i < vzory.length; i++){
+      tab += pravRadek(nazevVzoru(vzory[i]), fmt(vzory[i].b));
+    }
+    out += "<table>" + (tab || pravRadek(t("pravidla.nicneboduje"), "\u2014")) + "</table>";
+
+    if(!pocetKombinaci(rez)) out += '<p class="note">' + esc(t("pravidla.pozn2")) + "</p>";
+    if(!rez.vlastni) out += '<p class="note">' + t("rezim.pozn." + rez.id) + "</p>";
+    return out;
+  }
+
   /* ---------- dvě karty v okně s informacemi ---------- */
-  var otevriNavod = null;
+  var otevriNavod = null, otevriPravidla = null, prekresliPravidla = null;
   (function(){
     var tlac = $("infoseg").children;
     var karty = [$("cardrules"), $("cardguide")];
+    /* Které pravidla se právě ukazují: null je aktivní režim (tlačítko „i“),
+       jinak ten, u kterého se kleplo v nastavení. */
+    var ukazujeme = null;
     function vyber(i){
       karty.forEach(function(k, j){ k.hidden = j !== i; });
       Array.prototype.forEach.call(tlac, function(b, j){ b.classList.toggle("on", j === i); });
       var telo = $("rulesmodal").querySelector(".modalbody");
       if(telo) telo.scrollTop = 0;
     }
+    function kresli(){
+      var rez = (ukazujeme && rezimPodleId(ukazujeme)) || aktRezim();
+      $("pravidlarezim").textContent = nazevRezimu(rez);
+      $("pravidlatelo").innerHTML = pravidlaHTML(rez);
+    }
     Array.prototype.forEach.call(tlac, function(b, i){
       b.addEventListener("click", function(){ vyber(i); });
     });
-    $("infobtn").addEventListener("click", function(){ vyber(0); });
+    $("infobtn").addEventListener("click", function(){
+      ukazujeme = null; zNastaveni = false; kresli(); vyber(0);
+    });
     otevriNavod = function(){
+      ukazujeme = null; zNastaveni = false; kresli();
       vyber(1);
       otevriModal("rulesmodal", null);
     };
+    otevriPravidla = function(id){
+      ukazujeme = id; kresli();
+      vyber(0);
+      /* Pravidla otevřená z nastavení jsou odbočka, ne odchod: zavírací cesta
+         okna (křížek, tmavé pozadí i Escape) vrátí nastavení tam, kde bylo. */
+      zNastaveni = true;
+      otevriModal("rulesmodal", null);
+    };
+    prekresliPravidla = kresli;
+    kresli();
+  })();
+
+  /* ---------- ovládání karty Herní režimy ----------
+     Přepínače a výběry překreslují oddíl celý, protože mění, co je vidět;
+     textová a číselná pole jen ukládají, jinak by uprostřed psaní ztratila
+     kurzor. */
+  (function(){
+    if(!$("rezback")) return;
+    $("rezback").addEventListener("click", naRezimSeznam);
+    $("reznovy").addEventListener("click", function(){
+      if(REZIMY.sez.length >= PRESET_REZ_PORADI.length + REZIMY_MAX) return;
+      var rez = cistyRezim(null, novyIdRezimu(), VYCHOZI_REZIM);
+      rez.nazev = t("rezim.beznazvu");
+      REZIMY.sez.push(rez);
+      ulozRezimy();
+      naRezimDetail(rez.id);
+    });
+    $("reznazevpole").addEventListener("input", function(){
+      var rez = editRezim();
+      if(!rez) return;
+      rez.nazev = $("reznazevpole").value.slice(0, NAZEV_MAX);
+      ulozRezimy();
+      $("reztitul").textContent = nazevRezimu(rez);
+      var el = $("reznazev");
+      if(el) el.textContent = nazevRezimu(aktRezim());
+    });
+    $("rezkostek").addEventListener("change", function(){
+      var rez = editRezim();
+      if(!rez) return;
+      rez.kostek = parseInt($("rezkostek").value, 10) === 5 ? 5 : 6;
+      /* Rozehraná hra tu být nemůže (přepnout režim jde jen nad prázdnou),
+         ale prázdný hod se musí srovnat hned — jinak by se dál házelo
+         šesti kostkami v pětikostkovém režimu. */
+      if(REZIMY.akt === rez.id && gameEmpty()) S.rolls = [{thrown: rez.kostek, hot:false, items:[]}];
+      if(kombNovy.length > rez.kostek) kombNovy = kombNovy.slice(0, rez.kostek);
+      zmenaRezimu();
+    });
+    /* Nápověda se přepíná na místě, ne dalším oknem: text je krátký a .msg
+       pod řádkem je v tomhle okně zavedený vzor. */
+    $("reznadinfo").addEventListener("click", function(){
+      var el = $("reznadnapoveda");
+      if(el.hidden) el.innerHTML = t("rezim.nad.napoveda");
+      el.hidden = !el.hidden;
+      $("reznadinfo").classList.toggle("on", !el.hidden);
+    });
+    $("reznad").addEventListener("change", function(){
+      var rez = editRezim();
+      if(!rez) return;
+      var v = $("reznad").value;
+      rez.nad = NAD_DRUHY.indexOf(v) >= 0 ? v : "x2";
+      zmenaRezimu();
+    });
   })();
 
   /* ---------- návod při prvním spuštění a po aktualizaci ----------
@@ -3471,6 +5308,67 @@
   });
   function zavriSekce(){ setSekce.forEach(function(x){ x.open = false; }); }
 
+  /* ---------- dvě karty v okně nastavení ----------
+     Stejný vzor jako dvě karty v okně s informacemi (#infoseg): přepínač
+     přehazuje `hidden` a `.on`, obsah zůstává v DOMu, takže se nic
+     nepřestavuje. Okno vždycky začíná na první kartě. */
+  var naKartuNastaveni = null;
+  (function(){
+    var tlac = $("setseg").children;
+    var karty = [$("setcardobecne"), $("setcardrezimy")];
+    naKartuNastaveni = function(i){
+      karty.forEach(function(k, j){ k.hidden = j !== i; });
+      Array.prototype.forEach.call(tlac, function(b, j){ b.classList.toggle("on", j === i); });
+      var telo = $("setmodal").querySelector(".modalbody");
+      if(telo) telo.scrollTop = 0;
+    };
+    Array.prototype.forEach.call(tlac, function(b, i){
+      b.addEventListener("click", function(){ naKartuNastaveni(i); });
+    });
+  })();
+
+  /* ---------- rozdělaný vlastní vzor ----------
+     Čipy 1–6 přidávají kostky, Vymazat je sebere všechny. Do stavu vzoru se
+     sahá jen odsud; hotový vzor projde stejnou očistou jako vzor z úložiště,
+     takže se dovnitř nedostane nic, co by neprošlo i po reloadu. */
+  (function(){
+    var pips = $("kombpips");
+    if(!pips) return;
+    [1,2,3,4,5,6].forEach(function(v){
+      var b = document.createElement("button");
+      b.type = "button"; b.className = "chip"; b.textContent = v; b.dataset.value = v;
+      b.addEventListener("click", function(){
+        var rez = editRezim();
+        if(!rez || kombNovy.length >= rez.kostek) return;
+        kombNovy.push(v);
+        renderKombiNovy();
+      });
+      pips.appendChild(b);
+    });
+    $("kombany").addEventListener("click", function(){
+      kombAny = !kombAny;
+      renderKombiNovy();
+    });
+    $("kombzrus").addEventListener("click", function(){
+      kombNovy = [];
+      renderKombiNovy();
+    });
+    $("kombbody").addEventListener("input", renderKombiNovy);
+    $("kombbody").addEventListener("keydown", function(e){
+      if(e.key === "Enter" && !$("kombpridat").disabled) $("kombpridat").click();
+    });
+    $("kombpridat").addEventListener("click", function(){
+      var rez = editRezim();
+      if(!rez || rez.v.length >= VLASTNI_MAX) return;
+      var vz = cistyVzor({ b: parseInt($("kombbody").value, 10), v: kombNovy, any: kombAny });
+      if(!vz) return;
+      rez.v.push(vz);
+      kombNovy = []; kombAny = false;
+      $("kombbody").value = "";
+      zmenaRezimu();
+    });
+  })();
+
   /* ---------- okna: pravidla a nastavení ---------- */
   function modalOpen(){ return !!document.querySelector(".modal:not([hidden])"); }
   var zavriModal = null, otevriModal = null;
@@ -3478,6 +5376,9 @@
     var otevrene = null, vyvolal = null;
     function zavri(){
       if(!otevrene) return;
+      /* Návrat do nastavení místo prostého zavření. Musí se rozhodnout dřív,
+         než se okno schová — otevriModal() si zavře, co je otevřené, sám. */
+      if(otevrene.id === "rulesmodal" && vratDoNastaveni()) return;
       otevrene.hidden = true;
       var b = vyvolal;
       otevrene = null; vyvolal = null;
@@ -3860,6 +5761,16 @@
     return (g.mode !== "rounds" && g.goal > 0 && (g.banked || 0) >= g.goal) ? gKol(g) : null;
   }
   function gBody(g){ return g.banked || 0; }
+  /* Záznam bez `rezim` je hra z doby, kdy aplikace uměla jedna pravidla —
+     a ta byla KCD2. Dopočítává se při čtení, stejně jako gKol(). */
+  function gRezim(g){ return (typeof g.rezim === "string" && g.rezim) ? g.rezim : VYCHOZI_REZIM; }
+  /* Název režimu pro hru z historie. Preset se přeloží podle id, vlastní veze
+     svůj text s sebou — a když ho nemá (cizí záloha), řekne se to rovnou. */
+  function nazevRezimuZaznamu(g){
+    var id = gRezim(g);
+    if(jePreset(id)) return t("rezim.n." + id);
+    return (typeof g.rezimN === "string" && g.rezimN) ? g.rezimN.slice(0, NAZEV_MAX) : t("rezim.neznamy");
+  }
 
   function cislo(v){ return String(v); }
   function fmtR(v){ return fmt(Math.round(v)); }
@@ -3891,8 +5802,29 @@
     { n:"stat.n.maxfarkleprvni",        m:gFarklePrvniRekord, a:"max",   f:cislo, kol:true },
     { n:"stat.n.ztraceno",              m:gZtraceno,    a:"max",   f:fmt,      kol:true },
     { n:"stat.n.serie",                 m:gSerie,       a:"max",   f:cislo,    kol:true },
-    { n:"stat.n.farkluhra",             m:gFarkle,      a:"pomer", f:desetina, num:gFarkle, den:function(){ return 1; }, dir:"asc" }
+    { n:"stat.n.farkluhra",             m:gFarkle,      a:"pomer", f:desetina, num:gFarkle, den:function(){ return 1; }, dir:"asc" },
+    /* Třetí druh shrnutí vedle her a dnů: seskupuje podle režimu. Hodnota
+       není číslo, ale název — formát se proto použije až v žebříčku,
+       na počty her. */
+    { n:"stat.n.rezim",                 a:"rezimMax",   f:cislo }
   ];
+
+  /* ---------- seskupení podle herního režimu ----------
+     Vrací pole režimů seřazené sestupně podle počtu her, při shodě od toho
+     s novější hrou. Název se bere ze záznamu, ne z nastavení: smazaný vlastní
+     režim musí zůstat čitelný. */
+  function rezimyPodleHer(hry){
+    var mapa = {}, poradi = [];
+    hry.forEach(function(g){
+      var k = gRezim(g), kdy = g.savedAt || 0;
+      if(!mapa[k]){ mapa[k] = { id:k, nazev:nazevRezimuZaznamu(g), pocet:0, kdy:kdy }; poradi.push(k); }
+      mapa[k].pocet++;
+      if(kdy > mapa[k].kdy) mapa[k].kdy = kdy;
+    });
+    var v = poradi.map(function(k){ return mapa[k]; });
+    v.sort(function(a, b){ return b.pocet - a.pocet || b.kdy - a.kdy; });
+    return v;
+  }
 
   /* ---------- seskupení po dnech ----------
      Den se bere z místního času, ne z UTC: hra dohraná v půl jedné v noci
@@ -3934,6 +5866,12 @@
       var dny = dnyPodleHer(v);
       return dny.length ? { txt: def.f(dny[0].pocet), kdy: dny[0].kdy, den: true } : null;
     }
+    /* Hodnotou je název nejhranějšího režimu; počet her se vejde do podřádku,
+       aby se nemusel otevírat žebříček kvůli jednomu číslu. */
+    if(def.a === "rezimMax"){
+      var rezimy = rezimyPodleHer(v);
+      return rezimy.length ? { txt: esc(rezimy[0].nazev), pod: tn("slovo.hra", rezimy[0].pocet) } : null;
+    }
     if(def.a === "pomer"){
       var a = 0, b = 0;
       v.forEach(function(g){
@@ -3954,6 +5892,7 @@
   }
   function zebricek(def, hry){
     if(def.a === "denMax") return dnyPodleHer(vyberHry(def, hry));
+    if(def.a === "rezimMax") return rezimyPodleHer(vyberHry(def, hry));
     var dir = def.dir || (def.a === "min" ? "asc" : "desc");
     var v = vyberHry(def, hry).map(function(g){ return { g:g, x:def.m(g) }; })
       .filter(function(r){ return r.x !== null && r.x !== undefined; });
@@ -4055,6 +5994,11 @@
         mode: g.mode === "rounds" ? "rounds" : "points",
         goal: g.goal > 0 ? g.goal : 4000,
         roundGoal: g.roundGoal > 0 ? g.roundGoal : null,
+        /* Režim může přijít z cizího telefonu, kde takový vlastní režim
+           existuje a tady ne — proto se veze i jeho název. Obojí ořezané,
+           obojí jde do stránky přes esc(). */
+        rezim: (typeof g.rezim === "string" && g.rezim) ? g.rezim.slice(0, NAZEV_MAX) : VYCHOZI_REZIM,
+        rezimN: (typeof g.rezimN === "string" && g.rezimN) ? g.rezimN.slice(0, NAZEV_MAX) : null,
         banked: typeof g.banked === "number" ? g.banked : 0,
         /* legitimní popis kola je do stovky znaků, delší je omyl */
         turns: g.turns.map(function(tah){ return kopieKola(tah, 300); })
@@ -4649,9 +6593,11 @@
       b.disabled = !lze;
       b.innerHTML =
         '<span class="sn">' + esc(t(def.n)) +
+          (h && h.pod ? '<span class="sd">' + esc(h.pod) + '</span>' : '') +
           (h && h.kdy ? '<span class="sd">' + (h.den
               ? dtDen(h.kdy)
-              : dt(h.kdy) + (h.g ? ' \u00B7 ' + esc(popisRezimu(h.g)) : '')) + '</span>' : '') +
+              : dt(h.kdy) + (h.g ? ' \u00B7 ' + esc(nazevRezimuZaznamu(h.g)) +
+                             ' \u00B7 ' + esc(popisTypuHry(h.g)) : '')) + '</span>' : '') +
         '</span>' +
         '<b class="sv">' + (h ? h.txt : "\u2014") + '</b>' +
         (lze ? '<span class="chev">\u00BB</span>' : '');
@@ -4675,7 +6621,8 @@
     }
     elDetBody.innerHTML = '<table><tbody></tbody></table>';
     vypisDavku(elDetBody.querySelector("tbody"), elDetBody, v, 0,
-               def.a === "denMax" ? radekDne(def) : radekHry(def, i));
+               def.a === "denMax" ? radekDne(def)
+                                  : (def.a === "rezimMax" ? radekRezimu(def) : radekHry(def, i)));
   }
   /* Stavitel se vybírá napřed, ne uvnitř šablony — žebříček dnů nese jiná
      data než žebříček her a míchat obojí v jednom innerHTML by bylo horší
@@ -4688,7 +6635,8 @@
       tr.setAttribute("role", "button");
       tr.innerHTML =
         '<td class="n">' + (k + 1) + '</td>' +
-        '<td class="d">' + dt(r.g.savedAt) + ' \u00B7 ' + esc(popisRezimu(r.g)) +
+        '<td class="d">' + dt(r.g.savedAt) + ' \u00B7 ' + esc(nazevRezimuZaznamu(r.g)) +
+          ' \u00B7 ' + esc(popisTypuHry(r.g)) +
           (def.kol ? ' \u00B7 ' + esc(tn("slovo.kolo", gKol(r.g))) : '') + '</td>' +
         '<td class="g">' + def.f(r.x) + '</td>' +
         '<td class="c">\u00BB</td>';
@@ -4739,6 +6687,20 @@
     };
   }
 
+  /* Řádek žebříčku režimů se nikam neproklikává: filtr podle režimu není,
+     takže by neměl kam vést. Proto ani třída klik, ani šipka. */
+  function radekRezimu(def){
+    return function(r, k){
+      var tr = document.createElement("tr");
+      tr.innerHTML =
+        '<td class="n">' + (k + 1) + '</td>' +
+        '<td class="d">' + esc(r.nazev) + '</td>' +
+        '<td class="g">' + def.f(r.pocet) + '</td>' +
+        '<td class="c"></td>';
+      return tr;
+    };
+  }
+
   function renderHistList(hry){
     elHistList.innerHTML = "";
     if(!hry.length){
@@ -4765,7 +6727,7 @@
       b.type = "button";
       b.className = "grow";
       b.innerHTML = '<span class="gn"><b>' + dt(rec.savedAt) + '</b>' +
-        esc(popisRezimu(rec)) +
+        esc(nazevRezimuZaznamu(rec)) + ' \u00B7 ' + esc(popisTypuHry(rec)) +
         ' \u00B7 ' + esc(tn("slovo.kolo", gKol(rec))) +
         ' \u00B7 ' + esc(t("hist.farklex", { n: gFarkle(rec) })) + '</span>' +
         '<b class="gv">' + esc(fmt(rec.banked || 0)) + '</b>';
@@ -4804,7 +6766,8 @@
         return;
       }
       plny = { id: sou.id, savedAt: sou.savedAt, mode: sou.mode, goal: sou.goal,
-               roundGoal: sou.roundGoal || null, banked: sou.banked || 0, turns: turns };
+               roundGoal: sou.roundGoal || null, rezim: gRezim(sou), rezimN: sou.rezimN || null,
+               banked: sou.banked || 0, turns: turns };
       $("detrows").innerHTML = turns.length
         ? ('<table><tbody>' + rowsHTML(turns) + '</tbody></table>')
         : '<div class="empty">' + esc(t("hist.zadnekolo")) + '</div>';
@@ -4866,10 +6829,10 @@
   function popisTypu(){
     if(FILTR.typ === null) return t("filtr.typhry");
     if(FILTR.typ === "points")
-      return FILTR.hodnota === null ? t("filtr.nabody") : t("rezim.dobodu", { b: fmt(FILTR.hodnota) });
-    if(FILTR.hodnota === null) return t("rezim.nakola");
+      return FILTR.hodnota === null ? t("filtr.nabody") : t("typhry.dobodu", { b: fmt(FILTR.hodnota) });
+    if(FILTR.hodnota === null) return t("typhry.nakola");
     return FILTR.hodnota === 0
-      ? (t("rezim.nakola") + " \u00B7 " + t("filtr.bezlimitu"))
+      ? (t("typhry.nakola") + " \u00B7 " + t("filtr.bezlimitu"))
       : t("filtr.nakolan", { n: FILTR.hodnota });
   }
   /* Popisky řazení jsou jen tady — z nich se plní nabídka i tlačítko, aby
@@ -5082,11 +7045,20 @@
 
     /* v zámku tlačítko zůstává živé, protože vede na zápis kol */
     elRollOn.disabled = !lock && r.items.length === 0;
-    elRollOn.textContent = lock ? t("pocitadlo.hraskoncila")
+    var popisRollu = lock ? t("pocitadlo.hraskoncila")
       : (r.items.length === 0
           ? t("pocitadlo.nejdriv")
           : (l > 0 ? t("pocitadlo.hazetdalx", { kostky: tn("slovo.kostkami", l) })
                    : t("pocitadlo.horke")));
+    /* Riziko patří k rozhodnutí, které se tímhle tlačítkem dělá, a hází se
+       zbylými kostkami — nebo při horkých kostkách znovu všemi šesti.
+       Poškozený stav může dát nesmyslný počet, proto ten strop. */
+    var kostekDal = (l > 0 && l <= kostek()) ? l : kostek();
+    /* Riziko patří i k prvnímu hodu, kde ještě nic neleží — je to údaj
+       o kostkách na stole, ne o rozhodnutí házet dál. */
+    elRollOn.innerHTML = esc(popisRollu) + (!lock
+      ? '<span class="v">' + esc(t("pocitadlo.farkleproc", { p: desetina(tabulkaRizika()[kostekDal - 1]) })) + "</span>"
+      : "");
 
     /* Zapsat nad rozehraným hodem, ze kterého se nic neodložilo, nejde: takové
        kolo by v popisu neslo o jeden hod míň, než kolika se doopravdy házelo,
@@ -5105,8 +7077,6 @@
         : t("pocitadlo.koneckola", { n: S.roundGoal });
     }
 
-    elDataSingle.forEach(function(b){ b.disabled = lock || l < 1; });
-    elDataStr.forEach(function(b){ b.disabled = lock || STRAIGHTS[b.dataset.str].d > l; });
     /* při nule kostek se čeká na „Házet dál“ (horké kostky) — ruční zadání
        se zamyká stejně jako zbytek klávesnice */
     var manLock = lock || l < 1;
@@ -5116,23 +7086,37 @@
     if(manualDice > Math.max(1, l)) manualDice = Math.max(1, l);
     elMkost.textContent = tn("pocitadlo.kostzkr", l > 0 ? manualDice : 0);
 
-    renderKind(); renderFix(); renderRows(); renderStats(); renderTally(); renderArch();
+    renderKombi(); renderKind(); renderFix(); renderRows(); renderStats(); renderTally(); renderArch();
     save();
   }
 
   /* ---------- události ---------- */
   elDataSingle.forEach(function(b){
     b.addEventListener("click", function(){
-      var v = Number(b.dataset.single);
-      keep(v === 1 ? "j" : "p", v === 1 ? 100 : 50, 1);
+      var rez = aktRezim(), v = Number(b.dataset.single), body = rez.sam[v] || 0;
+      if(!(body > 0)) return;
+      keep(kodStejnych(1, v), body, 1);
     });
   });
   elDataStr.forEach(function(b){
-    b.addEventListener("click", function(){ var s = STRAIGHTS[b.dataset.str]; keep(s.k, s.p, s.d); });
+    b.addEventListener("click", function(){
+      var rez = aktRezim(), k = b.dataset.str, s = STRAIGHTS[k];
+      if(!(rez.post[k] > 0)) return;
+      keep(s.k, rez.post[k], s.d);
+    });
+  });
+  /* Sazba se čte až při klepnutí, aby změna v nastavení platila hned. */
+  elDataKombi.forEach(function(b){
+    b.addEventListener("click", function(){
+      var k = b.dataset.kombi;
+      var rez = aktRezim();
+      if(!kombZap(rez, k) || !kombVRezimu(rez, k)) return;
+      keep(PRESETY[k].k, sazba(rez, k), PRESETY[k].d);
+    });
   });
   elAddKind.addEventListener("click", function(){
     if(selValue === null) return;
-    keep("n" + selCount + selValue, kindPoints(selValue, selCount), selCount);
+    keep(kodStejnych(selCount, selValue), kindPoints(selValue, selCount), selCount);
     selValue = null; renderKind();
   });
   elMToggle.addEventListener("click", function(){
@@ -5181,8 +7165,11 @@
     });
   });
   $("setbtn").addEventListener("click", function(){
-    ptamSeKos = null; ptamSeKosHist = null;   /* rozdělaná otázka se nepřenáší */
-    renderKos(); renderZaloha();
+    /* rozdělaná otázka ani vybraná karta se z minula nepřenášejí */
+    ptamSeKos = null; ptamSeKosHist = null; ptamSeVzor = null;
+    ptamSeRezim = null; rezEdit = null;
+    naKartuNastaveni(0);
+    renderKos(); renderZaloha(); renderRezimy();
   });
 
   /* režim a cíl hry */
@@ -5277,6 +7264,7 @@
   naJazyk(function(){ syncGoalUI(); render(); });
   naJazyk(function(){ renderP2(); });
   naJazyk(function(){ renderKos(); });
+  naJazyk(function(){ renderRezimy(); if(prekresliPravidla) prekresliPravidla(); });
   /* resetMisto() sbalí případně otevřený rozpis a přepočítá „Zabrané místo“ —
      bez toho zůstane text zaseknutý na placeholderu „Zjišťuji…“, protože
      prelozStatiku() ho jen přepíše na (opět nepřeložený) placeholder, ale
@@ -5310,7 +7298,7 @@
   }, true);
 
   load(function(){
-    syncGoalUI(); render(); zkontrolujNavod();
+    syncGoalUI(); render(); renderRezimy(); zkontrolujNavod();
     /* renderP2() čte historii, takže musí počkat na úložiště. V režimu ls
        se hotovo() zavolá ještě synchronně, takže se pořadí proti dřívějšku
        nemění. renderArch() se dřív o dokončení nezajímal — tlačítko
