@@ -679,10 +679,12 @@
   }
   /* Tlačítka v seznamu režimů drží pevnou šířku, ať je na nich cokoliv —
      jinak sloupec poskakuje podle délky slova a s ním i řádky pod sebou;
-     Zvolit se navíc za běhu mění na Zvoleno. 86 px pobere i nejdelší popisek
-     a tři vedle sebe se vejdou i na 320 px. Selektor musí nést id: samotné
-     `.rezbtn` prohrává s `.setrow .ghost{flex:0 0 auto}` výš. */
-  #setcardrezimy .rezbtn{flex:0 0 86px;padding:0 4px;text-align:center}
+     Zvolit se navíc za běhu mění na Zvoleno. 56 px je těsně nad nejdelším
+     popiskem (české Pravidla), proto padding jen 2 px a nowrap jako pojistka:
+     kdyby se text nevešel, má přetéct, ne zalomit se a zvýšit celý řádek.
+     Selektor musí nést id: samotné `.rezbtn` prohrává
+     s `.setrow .ghost{flex:0 0 auto}` výš. */
+  #setcardrezimy .rezbtn{flex:0 0 56px;padding:0 2px;text-align:center;white-space:nowrap}
   /* název režimu nad tabulkou pravidel */
   .rezpruh{
     font-family:"IM Fell English",Georgia,serif;font-size:17px;color:var(--brass);
