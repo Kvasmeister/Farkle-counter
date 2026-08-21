@@ -1,15 +1,21 @@
 /* Nasazení na GitHub Pages jedním příkazem.
 
    npm run deploy -- -m "co se změnilo"
+   npm run deploy -- --zkouska          projde všechno, ale nic neodešle
 
    Postupně: složí index.html, ověří importy, pustí všech 20 sad, zkontroluje
-   číslo verze proti nasazenému stavu, teprve pak commitne a pushne.
+   číslo verze proti nasazenému stavu, teprve pak commitne a pushne. Když
+   kterýkoli krok selže, neodešle se nic.
 
-   Proč kontrola verze: `SOUBORY` se cachují pod jménem VERZE a service
-   worker se aktivuje až podle ní. Nasadit nový index.html se starým číslem
-   znamená, že zařízení, která už appku mají, si nechají tu svou — a nikdo
-   nepozná proč. VERZE zvyšuje MAJITEL PROJEKTU, ne skript; tenhle jen
-   odmítne pustit deploy, když se zapomnělo.
+   VERZE SE ZVYŠUJE TADY, v sw.js — ne ve web UI GitHubu. Od napojení repa je
+   GitHub cíl, ne místo, kde se edituje: úprava udělaná tam vytvoří commit,
+   který lokálně není, push se odmítne jako non-fast-forward, a lokální sw.js
+   by navíc poslal číslo verze zpátky.
+
+   Proč se verze hlídá: `SOUBORY` se cachují pod jménem VERZE a service worker
+   se aktivuje až podle ní. Nasadit nový index.html se starým číslem znamená,
+   že zařízení, která aplikaci už mají, si nechají tu svou — a nikdo nepozná
+   proč. Skript verzi NEZVYŠUJE, jen odmítne pustit deploy, když se zapomnělo.
 */
 import { execFileSync, execSync } from "node:child_process";
 import fs from "node:fs";
@@ -23,6 +29,7 @@ const args = process.argv.slice(2);
 const iZpravy = args.findIndex((a) => a === "-m" || a === "--zprava");
 const zprava = iZpravy >= 0 ? args[iZpravy + 1] : null;
 const stejnaVerze = args.includes("--stejna-verze");
+const zkouska = args.includes("--zkouska");
 
 function krok(popis, fn) {
   process.stdout.write("  " + popis.padEnd(22, ".") + " ");
@@ -32,25 +39,23 @@ function krok(popis, fn) {
   } catch (e) {
     console.log("SELHALO");
     const out = (e.stdout || "") + (e.stderr || "");
-    if (out) console.error("\n" + out.toString().slice(-3000));
-    else console.error("\n" + e.message);
+    console.error("");
+    console.error(out ? out.toString().slice(-3000) : e.message);
     process.exit(1);
   }
 }
 
 const node = (skript, ...a) =>
   execFileSync(process.execPath, [skript, ...a], { encoding: "utf8" });
+const git = (prikaz) => execSync(prikaz, { encoding: "utf8" }).trim();
 
 console.log("");
-krok("build", () => {
-  const v = node("build.mjs");
-  return v.trim().replace("index.html složen: ", "");
-});
+krok("build", () => node("build.mjs").trim().replace("index.html složen: ", ""));
 krok("kontrola importů", () => { node("Testy/kontrola-modulu.mjs"); });
 krok("testy", () => {
   const v = node("Testy/vse.mjs");
-  const m = /(\d+) sad · (\d+) kontrol/.exec(v);
   if (!/vše prošlo/.test(v)) throw new Error(v.slice(-2000));
+  const m = /(\d+) sad · (\d+) kontrol/.exec(v);
   return m ? m[1] + " sad, " + m[2] + " kontrol" : "prošly";
 });
 
@@ -59,52 +64,73 @@ function verzeZ(text) {
   const m = /const VERZE = "([^"]+)"/.exec(text);
   return m ? m[1] : null;
 }
-let nasazenaVerze = null, nasazenyIndex = null;
+
+let nasazenaVerze = null;
+let nasazenyIndex = null;
 krok("stav na GitHubu", () => {
   execSync("git fetch -q origin", { stdio: "pipe" });
   try {
-    nasazenaVerze = verzeZ(execSync("git show origin/main:sw.js", { encoding: "utf8" }));
-    nasazenyIndex = execSync("git rev-parse origin/main:index.html", { encoding: "utf8" }).trim();
-  } catch (e) { /* první nasazení */ }
+    nasazenaVerze = verzeZ(git("git show origin/main:sw.js"));
+    nasazenyIndex = git("git rev-parse origin/main:index.html");
+  } catch (e) { /* první nasazení, na dálku ještě nic není */ }
   return nasazenaVerze || "(zatím nic)";
 });
 
 const mistniVerze = verzeZ(fs.readFileSync("sw.js", "utf8"));
-const mistniIndex = execSync("git hash-object index.html", { encoding: "utf8" }).trim();
+const mistniIndex = git("git hash-object index.html");
 const indexSeZmenil = nasazenyIndex && mistniIndex !== nasazenyIndex;
 
 krok("verze", () => {
   if (indexSeZmenil && mistniVerze === nasazenaVerze && !stejnaVerze) {
-    throw new Error(
-      "index.html se změnil, ale VERZE zůstala " + mistniVerze + ".\n\n" +
-      "Zařízení, která aplikaci už mají, si nechají tu svou a nikdo nepozná proč.\n" +
-      "Zvyš VERZE v sw.js (majitel projektu, ne skript), nebo — pokud je to\n" +
-      "opravdu záměr — pusť znovu s  --stejna-verze.");
-    }
+    throw new Error([
+      "index.html se změnil, ale VERZE zůstala " + mistniVerze + ".",
+      "",
+      "Zařízení, která aplikaci už mají, si nechají tu svou a nikdo nepozná proč.",
+      "Zvyš VERZE v sw.js (majitel projektu, ne skript), nebo — pokud je to",
+      "opravdu záměr — pusť znovu s  --stejna-verze."
+    ].join("\n"));
+  }
   if (!indexSeZmenil) return mistniVerze + " (index.html beze změny)";
   return nasazenaVerze + " -> " + mistniVerze;
 });
 
 /* ---- commit a push ---- */
-const zmeny = execSync("git status --porcelain", { encoding: "utf8" }).trim();
-if (zmeny) {
+const zmeny = git("git status --porcelain");
+const pocetZmen = zmeny ? zmeny.split("\n").length : 0;
+
+if (zkouska) {
+  console.log("  commit ................ nanečisto" +
+    (pocetZmen ? " (" + pocetZmen + " změněných souborů)" : " (není co commitovat)"));
+  console.log("  push .................. nanečisto (" +
+    git("git rev-list --count origin/main..HEAD") + " commitů by odešlo)");
+  console.log("");
+  console.log("  Nic se neodeslalo. Naostro:  npm run deploy -- -m \"zpráva\"");
+  console.log("");
+  process.exit(0);
+}
+
+if (pocetZmen) {
   if (!zprava) {
-    console.error('\nNecommitnuté změny:\n' + zmeny.split("\n").map((r) => "  " + r).join("\n"));
-    console.error('\nPřidej zprávu:  npm run deploy -- -m "co se změnilo"');
+    console.error("");
+    console.error("Necommitnuté změny:");
+    console.error(zmeny.split("\n").map((r) => "  " + r).join("\n"));
+    console.error("");
+    console.error("Přidej zprávu:  npm run deploy -- -m \"co se změnilo\"");
     process.exit(1);
   }
   krok("commit", () => {
     execSync("git add -A", { stdio: "pipe" });
     execFileSync("git", ["commit", "-m", zprava], { stdio: "pipe" });
-    return execSync("git log --oneline -1", { encoding: "utf8" }).trim();
+    return git("git log --oneline -1");
   });
 } else {
   console.log("  commit ................ (není co commitovat)");
 }
 
-const kPushnuti = execSync("git rev-list --count origin/main..HEAD", { encoding: "utf8" }).trim();
+const kPushnuti = git("git rev-list --count origin/main..HEAD");
 if (kPushnuti === "0") {
-  console.log("  push .................. (nic nového, GitHub je aktuální)\n");
+  console.log("  push .................. (nic nového, GitHub je aktuální)");
+  console.log("");
   process.exit(0);
 }
 krok("push (" + kPushnuti + " commitů)", () => {
@@ -112,5 +138,7 @@ krok("push (" + kPushnuti + " commitů)", () => {
   return "main -> origin";
 });
 
-console.log("\n  https://kvasmeister.github.io/Farkle-counter/");
-console.log("  Pages přestaví web zhruba do minuty.\n");
+console.log("");
+console.log("  https://kvasmeister.github.io/Farkle-counter/");
+console.log("  Pages přestaví web zhruba do minuty.");
+console.log("");

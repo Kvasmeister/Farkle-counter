@@ -307,6 +307,19 @@ Repo je napojené přes git, nenahrává se ručně. GitHub Pages servírují v�
 2. npm run deploy -- -m "co se změnilo"
 ```
 
+**Verze se zvyšuje tady v `sw.js`, ne ve web UI GitHubu.** Od napojení repa
+je GitHub cíl, ne místo, kde se edituje: úprava udělaná tam vytvoří commit,
+který lokálně není, push se odmítne jako non-fast-forward a lokální `sw.js`
+by navíc poslal číslo verze zpátky.
+
+Nanečisto, když si chceš jen ověřit, že je všechno v pořádku:
+
+```
+npm run deploy -- --zkouska
+```
+
+Projde build, importy, testy i kontrolu verze a **nic neodešle**.
+
 `npm run deploy` složí `index.html`, ověří importy, pustí všech 20 sad,
 porovná VERZE s nasazeným stavem a teprve pak commitne a pushne. Když
 kterýkoli krok selže, nic se neodešle.
