@@ -211,10 +211,12 @@ function rezPostRadek(rez, k){
    v podstránce, kde je vidět, čeho se týkají. Mazání se ptá ve dvou krocích
    jako v koších: kombinace se naťukává po kostkách a znovu se dělá pracně. */
 function nazevKombinace(k){ return k.n || t("komb.beznazvu"); }
-/* Podřádek: body, zápis vzorů a počty kostek. Kombinace, ze které se do
-   režimu nevejde ani jeden vzor, to říká rovnou — ať se nehledá, proč čip
-   v klávesnici chybí. */
+/* Podřádek: body, zápis vzorů a počty kostek. Kombinace bez jediného vzoru
+   to říká rovnou, jinou hláškou než „nevejde“ — ať je jasné, proč čip
+   v klávesnici chybí: buď ještě nemá vzor, nebo má vzory, které se do
+   režimu nevejdou. */
 function podradekKombinace(rez, k){
+  if(!k.vz.length) return fmt(k.b) + " · " + t("komb.bezvzoru");
   var poc = poctyKostekKombinace(k, rez.kostek);
   return fmt(k.b) + " · " + zapisKombinace(k) + " · " +
          (poc.length ? poc.map(function(n){ return tn("slovo.kostek", n); }).join(" / ")
@@ -770,8 +772,9 @@ function renderKombDetail(rez, k){
   renderRezPruh(rez);
 }
 /* Řádek jednoho vzoru: zápis, počet kostek a Smazat ve dvou krocích.
-   Poslední vzor smazat nejde — kombinace bez vzoru by neměla co bodovat
-   a v seznamu by visela naprázdno; od toho je Smazat celou kombinaci. */
+   Smazat jde i poslední vzor — kombinace bez vzoru se prostě přestane
+   nabízet na klávesnici, dokud nedostane nový (viz cistaKombinace()
+   v pravidla/kombinace.js). */
 function kombVzorRadek(rez, k, i){
   var x = k.vz[i], row = document.createElement("div");
   row.className = "setrow kombrow";
@@ -805,7 +808,6 @@ function kombVzorRadek(rez, k, i){
   row.appendChild(kombPopis(zapisVzoru(x), true, podradek));
   var smaz = document.createElement("button");
   smaz.type = "button"; smaz.className = "ghost"; smaz.textContent = t("spol.smazat");
-  smaz.disabled = k.vz.length < 2;
   smaz.addEventListener("click", function(){ ptamSeTvar = i; renderRezimy(); });
   btns.appendChild(smaz);
   row.appendChild(btns);
@@ -942,15 +944,14 @@ export function initKartaRezimy(){
       posunPrah(rez, parseInt($("rezprah").value, 10));
       zmenaRezimu();
     });
-    /* Nová kombinace se zakládá rovnou s jedním vzorem: kombinace bez vzoru
-       by neměla co bodovat a v seznamu by visela naprázdno. Dvojice
-       libovolných stejných je nejmenší smysluplný vzor a v editoru se přepíše
-       za pár klepnutí. */
+    /* Nová kombinace se zakládá bez vzoru — vzory si hráč naťuká sám.
+       Kombinace bez vzoru se normálně uloží, jen se nikde nenabídne: na
+       klávesnici se objeví, až dostane první vzor (viz kombinaceZap()
+       v pravidla/kombinace.js). */
     $("kombnovy").addEventListener("click", function(){
       var rez = editRezim();
       if(!rez || rez.v.length >= VLASTNI_MAX) return;
-      var k = { id: newId(), n: dalsiJmenoKombinace(rez), b: 250, z: true,
-                vz: [ cistyTvar({ v: [], t: [2] }) ] };
+      var k = { id: newId(), n: dalsiJmenoKombinace(rez), b: 250, z: true, vz: [] };
       rez.v.push(k);
       ulozRezimy();
       naKombiDetail(k.id);

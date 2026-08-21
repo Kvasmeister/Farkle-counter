@@ -84,10 +84,11 @@
   .manual[hidden]{display:none}
   #manualwrap{margin-top:8px}
   #manualwrap[hidden]{display:none}
-  /* Vlastní vzory bydlí v panelu, ne v řádku s čipy: jejich popisek je
-     dlouhý (1,1,1+5,5) a je jich až osm, takže by rozpočet šířky řady
-     přestal platit. V panelu dlouhý popisek nevadí. */
-  #vlastnirow{margin-bottom:6px}
+  /* Vlastní kombinace stojí ve vlastní řadě hned pod #strrow, ne v ní:
+     jejich popisek je dlouhý (1,1,1+5,5) a je jich až osm, takže by
+     rozpočet šířky #strrow (třídy k5–k9) přestal platit. Margin-top
+     nahrazuje odstup, který dřív dával #manualwrap coby rodič. */
+  #vlastnirow{margin-top:8px;margin-bottom:6px}
   .manual input{
     flex:1;min-width:0;background:var(--field);border:1px solid var(--edge);border-radius:var(--r);
     color:var(--bone);font-family:inherit;font-size:16px;padding:0 10px;min-height:44px;

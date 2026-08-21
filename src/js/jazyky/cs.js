@@ -125,6 +125,7 @@ export var RUCNI = {
   "rezim.smazat.n":   "Smazat režim",
   "rezim.smazat.p":   "Hry, které už jsou v historii, si svůj název ponechají.",
   "komb.nevejde":     "víc kostek, než režim má",
+  "komb.bezvzoru":    "zatím bez vzoru — na počítadle se neukáže",
   "pocitadlo.postupkykomb": "Postupky a kombinace",
   "pocitadlo.kombinace":    "Kombinace",
 

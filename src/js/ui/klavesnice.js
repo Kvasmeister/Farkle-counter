@@ -7,6 +7,11 @@
    cesta k ručnímu zadání. Nadpis nad řadou proto mluví o tom, co v ní
    právě je: Postupky, Postupky a kombinace, nebo Kombinace.
 
+   Vlastní kombinace stojí ve své vlastní řadě #vlastnirow hned pod
+   #strrow a jsou vidět pořád, stejně jako přednastavené kombinace v
+   #strrow — na čipu „vlastní“ nezávisí, ten otevírá jen panel ručního
+   zadání bodů.
+
    Samostatné hodnoty mají dvě cesty a rozhoduje jejich počet: do tří se
    vejdou do vlastní řady, při čtyřech a víc se řada schová a nastupuje
    čip 1× v mřížce Stejné hodnoty. */
@@ -85,9 +90,10 @@ function renderKind(){
 /* ---------- čipy postupek a kombinací v klávesnici ----------
    Postupky i přednastavené kombinace stojí v HTML natvrdo a jen se skrývají,
    takže snapshot prvků i sběr češtiny při startu fungují beze změny. Co je
-   z nich vidět, rozhoduje herní režim. Vlastní vzory bydlí v panelu za čipem
-   „vlastní“: jejich popisek je dlouhý a je jich až osm, takže by řada
-   přestala být shora omezená. */
+   z nich vidět, rozhoduje herní režim. Vlastní kombinace se kreslí dynamicky
+   do vlastní řady #vlastnirow (renderVlastniCipy() níž) — jejich popisek je
+   dlouhý a je jich až osm, takže do rozpočtu šířky #strrow nepatří, ale
+   vidět jsou stejně rovnou, bez čipu „vlastní“. */
 function renderKombi(){
   var l = left(), lock = locked(), rez = aktRezim(), videt = 0, post = 0, komb = 0;
   elDataStr.forEach(function(b){

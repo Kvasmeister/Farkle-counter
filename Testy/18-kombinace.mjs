@@ -19,6 +19,7 @@ function app(opt){
         w.localStorage.setItem("farkle-navod-v1", "bez-verze");
       } catch(e){}
       if(opt.komb) w.localStorage.setItem("farkle-kombinace-v1", JSON.stringify(opt.komb));
+      if(opt.rezimy !== undefined) w.localStorage.setItem("farkle-rezimy-v1", JSON.stringify(opt.rezimy));
       if(opt.hry)  w.localStorage.setItem("farkle-hist-v1", JSON.stringify(opt.hry));
       if(opt.stav) w.localStorage.setItem("farkle-solo-v3", JSON.stringify(opt.stav));
       w.__blob = null;
@@ -69,8 +70,8 @@ function app(opt){
        se editují až v podstránce */
     radek: kod => $("komblist").querySelector('[data-preset="' + kod + '"]'),
     radekVzoru: id => $("kombvlastni").querySelector('[data-vzor="' + id + '"]'),
-    /* Nová kombinace: tlačítko Přidat otevře editor. Kombinace vzniká rovnou
-       s jedním vzorem, protože bez vzoru by neměla co bodovat. */
+    /* Nová kombinace: tlačítko Přidat otevře editor. Kombinace vzniká bez
+       vzoru — ten si hráč naťuká sám. */
     novaKombinace(){ klik($("kombnovy")); },
     doEditoru(id){ klik(this.radekVzoru(id).querySelectorAll(".setbtns button")[1]); },
     zEditoru(){ klik($("kombback")); },
@@ -313,10 +314,12 @@ console.log("I) nová vlastní kombinace");
   ok(a.$("kombtitul").textContent === "Kombinace 1",
      "výchozí jméno je Kombinace 1: " + a.$("kombtitul").textContent);
   ok(a.$("kombnazevpole").value === "Kombinace 1", "a stojí i v poli");
-  ok(a.vzoryVEditoru().length === 1 && a.zapisyVzoru()[0] === "A,A",
-     "kombinace vzniká rovnou s jedním vzorem: " + a.zapisyVzoru().join(" / "));
-  ok(a.vzoryVEditoru()[0].querySelector(".setbtns button").disabled,
-     "poslední vzor smazat nejde — kombinace bez vzoru by neměla co bodovat");
+  ok(a.vzoryVEditoru().length === 0,
+     "kombinace vzniká bez vzoru: " + a.zapisyVzoru().join(" / "));
+  ok(a.$("vlastnirow").hidden, "bez vzoru se čip v klávesnici neukazuje");
+  const radekNove = a.radekVzoru(a.ulozeneKomb().v[0].id);
+  ok(/zatím bez vzoru/.test(radekNove.textContent),
+     "seznam v nastavení říká, že zatím nemá vzor: " + radekNove.textContent);
   ok(a.bodyPole().value === "250", "a s výchozími body: " + a.bodyPole().value);
 
   /* stavba dalšího vzoru */
@@ -329,13 +332,16 @@ console.log("I) nová vlastní kombinace");
   ok(a.$("kombvzorhint").textContent === "5 kostek", "a počet kostek: " + a.$("kombvzorhint").textContent);
   ok(!a.$("kombpridat").disabled, "vzor o dvou a víc kostkách jde přidat");
   a.klik(a.$("kombpridat"));
-  ok(a.zapisyVzoru().join(" / ") === "A,A / 1,1,1+5,5",
-     "vzory se řadí v pořadí vzniku: " + a.zapisyVzoru().join(" / "));
+  ok(a.zapisyVzoru().join(" / ") === "1,1,1+5,5",
+     "první vzor se uložil: " + a.zapisyVzoru().join(" / "));
   ok(a.$("kombvzor").textContent === "", "formulář se vyprázdnil");
   const ulozena = a.ulozeneKomb().v[0];
-  ok(ulozena.vz.length === 2 && ulozena.vz[1].v.join("") === "11155" &&
-     JSON.stringify(ulozena.vz[0].t) === "[2]",
-     "a uložily se obě: " + JSON.stringify(ulozena.vz));
+  ok(ulozena.vz.length === 1 && ulozena.vz[0].v.join("") === "11155",
+     "a uložil se: " + JSON.stringify(ulozena.vz));
+  ok(!a.$("vlastnirow").hidden && a.$("vlastnirow").children.length === 1,
+     "s prvním vzorem se čip objeví v klávesnici rovnou, bez klikání na „vlastní“");
+  ok(!a.vzoryVEditoru()[0].querySelector(".setbtns button").disabled,
+     "i jediný vzor jde smazat — kombinace bez vzoru se jen přestane nabízet");
 
   /* body a jméno */
   a.zadejBody(1500);
@@ -351,15 +357,21 @@ console.log("I) nová vlastní kombinace");
   a.klik(a.$("kombzrus"));
   ok(a.$("kombvzor").textContent === "", "Vymazat sebere všechny");
 
+  /* druhý vzor, ať je při mazání co řadit a co zůstane */
+  a.naukej(["A", "A"]);
+  a.klik(a.$("kombpridat"));
+  ok(a.zapisyVzoru().join(" / ") === "1,1,1+5,5 / A,A",
+     "druhý vzor se přidá za první: " + a.zapisyVzoru().join(" / "));
+
   /* mazání vzoru se ptá, protože se naťukává po kostkách */
-  a.klik(a.vzoryVEditoru()[0].querySelector(".setbtns button"));
+  a.klik(a.vzoryVEditoru()[1].querySelector(".setbtns button"));
   ok(a.ulozeneKomb().v[0].vz.length === 2, "první klepnutí na Smazat ještě nemaže");
-  ok(/Opravdu smazat vzor/.test(a.vzoryVEditoru()[0].textContent),
-     "řádek se překlopí na otázku: " + a.vzoryVEditoru()[0].textContent);
-  a.klik(a.vzoryVEditoru()[0].querySelectorAll(".setbtns button")[1]);   /* Zrušit */
+  ok(/Opravdu smazat vzor/.test(a.vzoryVEditoru()[1].textContent),
+     "řádek se překlopí na otázku: " + a.vzoryVEditoru()[1].textContent);
+  a.klik(a.vzoryVEditoru()[1].querySelectorAll(".setbtns button")[1]);   /* Zrušit */
   ok(a.ulozeneKomb().v[0].vz.length === 2, "Zrušit otázku odvolá");
-  a.klik(a.vzoryVEditoru()[0].querySelector(".setbtns button"));
-  a.klik(a.vzoryVEditoru()[0].querySelectorAll(".setbtns button")[0]);   /* potvrdit */
+  a.klik(a.vzoryVEditoru()[1].querySelector(".setbtns button"));
+  a.klik(a.vzoryVEditoru()[1].querySelectorAll(".setbtns button")[0]);   /* potvrdit */
   ok(a.zapisyVzoru().join(" / ") === "1,1,1+5,5", "druhé klepnutí vzor odstraní: " +
      a.zapisyVzoru().join(" / "));
 
@@ -375,9 +387,24 @@ console.log("I) nová vlastní kombinace");
   ok(/1 kombinace navíc/.test(a.podradekRezimu("kcd2")),
      "seznam režimů kombinaci počítá: " + a.podradekRezimu("kcd2"));
   ok(!a.$("vlastnirow").hidden && a.$("vlastnirow").children.length === 1,
-     "a v panelu klávesnice je čip");
+     "a v klávesnici je čip");
   ok(a.$("vlastnirow").children[0].textContent.indexOf("Naše pravidlo") === 0,
      "čip nese jméno kombinace: " + a.$("vlastnirow").children[0].textContent);
+}
+
+console.log("I1) kombinace bez vzoru přežije reload a v klávesnici se neukáže");
+{
+  /* Uložená přímo v `farkle-rezimy-v1`, jako by prohlížeč aplikaci znovu
+     načetl po tom, co uživatel smazal poslední vzor. cistaKombinace() ji
+     nesmí při normalizaci zahodit. */
+  const a = app({ rezimy: { p: { kcd2: { v: [{ id: "v1", b: 500, vz: [] }] } } } });
+  const nactena = a.pravidla.aktRezim().v;
+  ok(nactena.length === 1 && nactena[0].vz.length === 0,
+     "kombinace bez vzoru přežila normalizaci při načtení: " + JSON.stringify(nactena));
+  ok(a.$("vlastnirow").hidden, "a v klávesnici se neukazuje");
+  a.naKartuKomb();
+  ok(/zatím bez vzoru/.test(a.radekVzoru("v1").textContent),
+     "seznam v nastavení ji ukazuje s vlastní hláškou: " + a.radekVzoru("v1").textContent);
 }
 
 console.log("I2) kombinace v seznamu: stav, úprava, mazání");
@@ -516,12 +543,12 @@ console.log("J) písmena proti číslům");
   ok(a.$("kombvzorhint").textContent === "6 kostek",
      "podřádek nese počet kostek: " + a.$("kombvzorhint").textContent);
   a.klik(a.$("kombpridat"));
-  const vz = a.ulozeneKomb().v[0].vz[1];
+  const vz = a.ulozeneKomb().v[0].vz[0];
   ok(JSON.stringify(vz.v) === "[]" && JSON.stringify(vz.t) === "[2,2,2]",
      "uložily se skupiny, ne hodnoty: " + JSON.stringify(vz));
 
   const P = a.pravidla;
-  const tri = P.aktRezim().v[0].vz[1];
+  const tri = P.aktRezim().v[0].vz[0];
   const pocty = h => P.poctyZHodu(h);
   ok(P.sediVzor(tri, pocty([1,1,6,6,4,4])), "tvar sedne na jiné tři páry");
   ok(!P.sediVzor(tri, pocty([1,1,6,6,4,3])), "na dva páry ne");
@@ -552,11 +579,11 @@ console.log("J1) čísla a písmena v jednom vzoru");
   ok(a.$("kombvzorhint").textContent === "5 kostek",
      "kostky se počítají dohromady: " + a.$("kombvzorhint").textContent);
   a.klik(a.$("kombpridat"));
-  const ulozeny = a.ulozeneKomb().v[0].vz[1];
+  const ulozeny = a.ulozeneKomb().v[0].vz[0];
   ok(JSON.stringify(ulozeny.v) === "[6]" && JSON.stringify(ulozeny.t) === "[2,2]",
      "obě části se uložily zvlášť: " + JSON.stringify(ulozeny));
 
-  const P = a.pravidla, vz = P.aktRezim().v[0].vz[1];
+  const P = a.pravidla, vz = P.aktRezim().v[0].vz[0];
   const sedne = h => P.sediVzor(vz, P.poctyZHodu(h));
   ok(sedne([2,2,4,4,6]), "dvě dvojice a šestka sednou");
   ok(sedne([2,2,4,4,6,6]), "a šestá kostka navíc nevadí");

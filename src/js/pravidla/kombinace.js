@@ -108,9 +108,11 @@ function cistyTvar(x){
   if(n < 2) return null;
   return { v: rozbalPocty(pocty), t: tvar, pocty: pocty, tvar: tvar };
 }
-/* Vlastní kombinace: jméno, body a jeden až šest vzorů, ze kterých stačí
+/* Vlastní kombinace: jméno, body a nula až šest vzorů, ze kterých stačí
    sednout kterýkoli — „dvojice a dvě dvojky **nebo** dvojice a tři trojky“
-   je jedna kombinace za jedny body.
+   je jedna kombinace za jedny body. Bez jediného vzoru se kombinace uloží
+   a přežije i reload — jen nemá co bodovat, takže se nikde nenabídne
+   (kombinaceZap() v tomhle souboru níž ji z klávesnice vyřadí sama).
 
    Starší zápis nesl vzor rovnou v kombinaci a jméno neměl vůbec; přečte se
    jako kombinace o jednom vzoru s výchozím jménem, protože generátor
@@ -128,7 +130,6 @@ function cistaKombinace(x, poradi){
     vz = cistyTvar(x);
     if(vz) vzory.push(vz);
   }
-  if(!vzory.length) return null;
   /* Chybějící `z` znamená zapnuto: kombinace uložené dřív, než přepínač
      existoval, se po aktualizaci nesmějí samy vypnout. */
   return { id: (typeof x.id === "string" && x.id) ? x.id.slice(0, 40) : newId(),

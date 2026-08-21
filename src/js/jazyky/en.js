@@ -207,6 +207,7 @@ export var EN = {
   "pravidla.pozn2": "\u201CAlmost\u201D counts for nothing \u2014 you can only set aside what the table lists whole.",
 
   "komb.nevejde":   "more dice than the mode has",
+  "komb.bezvzoru":  "no pattern yet — won’t show on the counter",
   "pocitadlo.postupkykomb": "Straights and combinations",
   "pocitadlo.kombinace":    "Combinations",
   "stat.n.rezim":   "Most played mode",

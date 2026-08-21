@@ -316,10 +316,11 @@
   .manual[hidden]{display:none}
   #manualwrap{margin-top:8px}
   #manualwrap[hidden]{display:none}
-  /* Vlastní vzory bydlí v panelu, ne v řádku s čipy: jejich popisek je
-     dlouhý (1,1,1+5,5) a je jich až osm, takže by rozpočet šířky řady
-     přestal platit. V panelu dlouhý popisek nevadí. */
-  #vlastnirow{margin-bottom:6px}
+  /* Vlastní kombinace stojí ve vlastní řadě hned pod #strrow, ne v ní:
+     jejich popisek je dlouhý (1,1,1+5,5) a je jich až osm, takže by
+     rozpočet šířky #strrow (třídy k5–k9) přestal platit. Margin-top
+     nahrazuje odstup, který dřív dával #manualwrap coby rodič. */
+  #vlastnirow{margin-top:8px;margin-bottom:6px}
   .manual input{
     flex:1;min-width:0;background:var(--field);border:1px solid var(--edge);border-radius:var(--r);
     color:var(--bone);font-family:inherit;font-size:16px;padding:0 10px;min-height:44px;
@@ -990,8 +991,10 @@
          nerostl skokem, ale postupně podle toho, kolik si kdo zapnul.
          Popisky (2+2+2, 3+2, …) jsou jazykově neutrální a nepřekládají se;
          sazba v .v se dopisuje z JS, protože je editovatelná.
-         Čip „vlastní“ stojí schválně až za nimi: otevírá panel pod řadou,
-         takže má být poslední, ať je zapnutých kombinací kolik chce. -->
+         Čip „vlastní“ stojí schválně až za nimi: otevírá panel ručního
+         zadání pod řadou, takže má být poslední. Vlastní kombinace ale
+         v žádném panelu nejsou — #vlastnirow stojí hned pod #strrow a
+         renderKombi() ho plní pořád, ať je „vlastní“ otevřené nebo ne. -->
     <div class="row" id="strrow">
       <button class="chip" data-str="15"><span>1–5</span><span class="v">500</span></button>
       <button class="chip" data-str="26"><span>2–6</span><span class="v">750</span></button>
@@ -1004,8 +1007,9 @@
       <button class="chip" id="mtoggle"><span data-i18n="pocitadlo.chip.rucne">vlastní</span><span class="v" data-i18n="pocitadlo.chip.rucnev">body</span></button>
     </div>
 
+    <div class="row" id="vlastnirow" hidden></div>
+
     <div id="manualwrap" hidden>
-      <div class="row" id="vlastnirow" hidden></div>
       <div class="manual">
         <input id="mnum" type="number" inputmode="numeric" data-i18n-ph="pocitadlo.body.ph" placeholder="body" data-i18n-aria="pocitadlo.body.ph" aria-label="body" min="0" step="50">
         <button class="chip" id="mless" style="flex:0 0 40px">−</button>
@@ -1614,6 +1618,7 @@
     "rezim.smazat.n": "Smazat režim",
     "rezim.smazat.p": "Hry, které už jsou v historii, si svůj název ponechají.",
     "komb.nevejde": "víc kostek, než režim má",
+    "komb.bezvzoru": "zatím bez vzoru — na počítadle se neukáže",
     "pocitadlo.postupkykomb": "Postupky a kombinace",
     "pocitadlo.kombinace": "Kombinace",
     /* tabulka pravidel — skládá se z režimu, takže texty nemůžou stát
@@ -2018,6 +2023,7 @@
     "pravidla.nicneboduje": "Nothing scores in this mode",
     "pravidla.pozn2": "“Almost” counts for nothing — you can only set aside what the table lists whole.",
     "komb.nevejde": "more dice than the mode has",
+    "komb.bezvzoru": "no pattern yet — won’t show on the counter",
     "pocitadlo.postupkykomb": "Straights and combinations",
     "pocitadlo.kombinace": "Combinations",
     "stat.n.rezim": "Most played mode",
@@ -2654,7 +2660,6 @@
       vz = cistyTvar(x);
       if (vz) vzory.push(vz);
     }
-    if (!vzory.length) return null;
     return {
       id: typeof x.id === "string" && x.id ? x.id.slice(0, 40) : newId(),
       n: typeof x.n === "string" && x.n ? x.n.slice(0, NAZEV_MAX) : t("komb.vychozin", { n: poradi || 1 }),
@@ -4735,6 +4740,7 @@
     return k.n || t("komb.beznazvu");
   }
   function podradekKombinace(rez, k) {
+    if (!k.vz.length) return fmt(k.b) + " · " + t("komb.bezvzoru");
     var poc = poctyKostekKombinace(k, rez.kostek);
     return fmt(k.b) + " · " + zapisKombinace(k) + " · " + (poc.length ? poc.map(function(n) {
       return tn("slovo.kostek", n);
@@ -5377,7 +5383,6 @@
     smaz.type = "button";
     smaz.className = "ghost";
     smaz.textContent = t("spol.smazat");
-    smaz.disabled = k.vz.length < 2;
     smaz.addEventListener("click", function() {
       ptamSeTvar = i;
       renderRezimy();
@@ -5515,13 +5520,7 @@
       $("kombnovy").addEventListener("click", function() {
         var rez = editRezim();
         if (!rez || rez.v.length >= VLASTNI_MAX) return;
-        var k = {
-          id: newId(),
-          n: dalsiJmenoKombinace(rez),
-          b: 250,
-          z: true,
-          vz: [cistyTvar({ v: [], t: [2] })]
-        };
+        var k = { id: newId(), n: dalsiJmenoKombinace(rez), b: 250, z: true, vz: [] };
         rez.v.push(k);
         ulozRezimy();
         naKombiDetail(k.id);

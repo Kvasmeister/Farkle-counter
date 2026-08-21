@@ -54,8 +54,10 @@
          nerostl skokem, ale postupně podle toho, kolik si kdo zapnul.
          Popisky (2+2+2, 3+2, …) jsou jazykově neutrální a nepřekládají se;
          sazba v .v se dopisuje z JS, protože je editovatelná.
-         Čip „vlastní“ stojí schválně až za nimi: otevírá panel pod řadou,
-         takže má být poslední, ať je zapnutých kombinací kolik chce. -->
+         Čip „vlastní“ stojí schválně až za nimi: otevírá panel ručního
+         zadání pod řadou, takže má být poslední. Vlastní kombinace ale
+         v žádném panelu nejsou — #vlastnirow stojí hned pod #strrow a
+         renderKombi() ho plní pořád, ať je „vlastní“ otevřené nebo ne. -->
     <div class="row" id="strrow">
       <button class="chip" data-str="15"><span>1–5</span><span class="v">500</span></button>
       <button class="chip" data-str="26"><span>2–6</span><span class="v">750</span></button>
@@ -68,8 +70,9 @@
       <button class="chip" id="mtoggle"><span data-i18n="pocitadlo.chip.rucne">vlastní</span><span class="v" data-i18n="pocitadlo.chip.rucnev">body</span></button>
     </div>
 
+    <div class="row" id="vlastnirow" hidden></div>
+
     <div id="manualwrap" hidden>
-      <div class="row" id="vlastnirow" hidden></div>
       <div class="manual">
         <input id="mnum" type="number" inputmode="numeric" data-i18n-ph="pocitadlo.body.ph" placeholder="body" data-i18n-aria="pocitadlo.body.ph" aria-label="body" min="0" step="50">
         <button class="chip" id="mless" style="flex:0 0 40px">−</button>
