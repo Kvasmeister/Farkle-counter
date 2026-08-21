@@ -8,7 +8,8 @@
     "build": "node build.mjs",
     "kontrola": "node build.mjs --kontrola && node Testy/kontrola-modulu.mjs",
     "test": "node build.mjs --kontrola && node Testy/kontrola-modulu.mjs && node Testy/vse.mjs",
-    "test:rychle": "node Testy/vse.mjs"
+    "test:rychle": "node Testy/vse.mjs",
+    "deploy": "node nastroje/nasadit.mjs"
   },
   "dependencies": {
     "fake-indexeddb": "^6.2.5",

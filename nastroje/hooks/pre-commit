@@ -1,0 +1,25 @@
+#!/bin/sh
+# Nepustí commit, ve kterém index.html neodpovídá zdrojům v src/.
+#
+# index.html je výstup buildu. Zapomenutý `npm run build` se pozná až tím,
+# že se nasadí včerejší verze — a to je přesně chyba, kterou nikdo nehledá,
+# protože všechno „vypadá" commitnuté.
+#
+# Hook je verzovaný v repu (nastroje/hooks), ne v .git/hooks, aby přežil
+# překlonování. Zapíná se jednou:
+#     git config core.hooksPath nastroje/hooks
+#
+# Obejít se dá `git commit --no-verify` — hodí se, když se commituje
+# rozdělaná práce, která se zrovna nedá složit.
+
+if ! node build.mjs --kontrola >/dev/null 2>&1; then
+  echo ""
+  echo "  index.html NEODPOVÍDÁ zdrojům v src/."
+  echo ""
+  echo "  Spusť:  npm run build"
+  echo "  a přidej index.html do commitu."
+  echo ""
+  echo "  (Commit rozdělané práce projde přes  git commit --no-verify)"
+  echo ""
+  exit 1
+fi
