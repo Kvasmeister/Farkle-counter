@@ -1,0 +1,68 @@
+<div class="modal" id="datemodal" hidden>
+  <div class="modalbox" role="dialog" aria-modal="true" aria-labelledby="datetitle">
+    <div class="modalhead">
+      <h2 id="datetitle" data-i18n="datum.nadpis">Filtr podle data</h2>
+      <button class="modalx" type="button" data-close data-i18n-aria="spol.zavrit" aria-label="Zavřít">×</button>
+    </div>
+    <div class="modalbody">
+      <div class="seg" id="dateseg">
+        <button type="button" class="on" data-i18n="datum.jedenden">Jeden den</button>
+        <button type="button" data-i18n="datum.rozsah">Rozsah</button>
+      </div>
+      <div class="daterow">
+        <label for="dateod" id="dateodl" data-i18n="datum.den">Den</label>
+        <input type="date" id="dateod">
+      </div>
+      <div class="daterow" id="datedorow" hidden>
+        <label for="datedo" data-i18n="datum.do">Do</label>
+        <input type="date" id="datedo">
+      </div>
+      <div class="datebtns">
+        <button class="ghost arch" id="dateok" type="button" data-i18n="spol.pouzit">Použít</button>
+        <button class="ghost bigbtn" id="datezpet" type="button" data-i18n="spol.zpet">Zpět</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="typmodal" hidden>
+  <div class="modalbox" role="dialog" aria-modal="true" aria-labelledby="typtitle">
+    <div class="modalhead">
+      <h2 id="typtitle" data-i18n="typ.nadpis">Filtr podle typu hry</h2>
+      <button class="modalx" type="button" data-close data-i18n-aria="spol.zavrit" aria-label="Zavřít">×</button>
+    </div>
+    <div class="modalbody">
+      <div class="seg" id="typseg">
+        <button type="button" class="on" data-i18n="typ.vse">Vše</button>
+        <button type="button" data-i18n="typ.nabody">Na body</button>
+        <button type="button" data-i18n="typ.nakola">Na kola</button>
+      </div>
+      <div class="daterow" id="typvalrow" hidden>
+        <label for="typval" id="typvall" data-i18n="typ.cil">Cíl</label>
+        <select id="typval"></select>
+      </div>
+      <div class="datebtns">
+        <button class="ghost arch" id="typok" type="button" data-i18n="spol.pouzit">Použít</button>
+        <button class="ghost bigbtn" id="typzpet" type="button" data-i18n="spol.zpet">Zpět</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="sortmodal" hidden>
+  <div class="modalbox" role="dialog" aria-modal="true" aria-labelledby="sorttitle">
+    <div class="modalhead">
+      <h2 id="sorttitle" data-i18n="razeni.nadpis">Řazení historie</h2>
+      <button class="modalx" type="button" data-close data-i18n-aria="spol.zavrit" aria-label="Zavřít">×</button>
+    </div>
+    <div class="modalbody">
+      <div class="datebtns" id="sortbtns">
+        <button class="ghost" type="button" data-podle="datum" data-smer="desc" data-i18n="razeni.nejnovejsi">Od nejnovějších</button>
+        <button class="ghost" type="button" data-podle="datum" data-smer="asc" data-i18n="razeni.nejstarsi">Od nejstarších</button>
+        <button class="ghost" type="button" data-podle="body" data-smer="desc" data-i18n="razeni.nejvic">Od nejvíc bodů</button>
+        <button class="ghost" type="button" data-podle="body" data-smer="asc" data-i18n="razeni.nejmin">Od nejmíň bodů</button>
+      </div>
+    </div>
+  </div>
+</div>
+

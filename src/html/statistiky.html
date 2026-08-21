@@ -1,0 +1,27 @@
+<section class="page" id="page2" role="tabpanel" aria-labelledby="tab2">
+
+<div id="p2list">
+  <div class="lock warn" id="nohist" hidden data-i18n="stat.nedostupna">Historii se teď nedaří načíst. Nic se neztratilo, jen k ní aplikace zrovna nemá přístup — dohrané hry se proto zatím nezapisují. Zkus aplikaci zavřít a otevřít znovu.</div>
+  <div class="seg" id="seg">
+    <button type="button" class="on" data-i18n="stat.seg.statistiky">Statistiky</button>
+    <button type="button" data-i18n="stat.seg.historie">Historie her</button>
+  </div>
+  <div class="fbar" id="fbar" hidden>
+    <button class="ghost" type="button" id="fdatum" data-i18n="filtr.datum">Datum</button>
+    <button class="ghost" type="button" id="ftyp" hidden data-i18n="filtr.typ">Typ</button>
+    <button class="ghost" type="button" id="frazeni" hidden data-i18n="filtr.razeni">Řazení</button>
+    <button class="ghost" type="button" id="freset" data-i18n-aria="filtr.reset.aria" aria-label="Resetovat filtry" data-i18n="filtr.reset">Reset</button>
+  </div>
+  <div id="statlist"></div>
+  <div id="histlist" hidden></div>
+</div>
+
+<div id="p2detail" hidden>
+  <div class="dethead">
+    <button class="ghost back" id="detback" type="button" data-i18n="stat.zpetseznam">« Zpět</button>
+    <h2 id="dettitle"></h2>
+  </div>
+  <div id="detbody"></div>
+</div>
+
+</section>

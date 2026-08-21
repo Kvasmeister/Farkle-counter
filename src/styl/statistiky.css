@@ -1,0 +1,116 @@
+
+  /* dvě velké části stránky Statistiky */
+  .seg{display:flex;gap:6px;margin:14px 0 2px;flex:0 0 auto}
+  .seg button{
+    display:flex;align-items:center;justify-content:center;
+    flex:1;min-height:46px;padding:0 6px;
+    background:transparent;border:1px solid var(--edge);border-radius:var(--r);
+    color:var(--dim);font-family:"IM Fell English SC",Georgia,serif;
+    font-size:13px;letter-spacing:.16em;
+  }
+  .seg button:hover{border-color:var(--brass);color:var(--brass)}
+  .seg button.on{background:var(--brass);border-color:var(--brass);color:var(--onbrass)}
+
+  /* přepínač Statistiky/Historie (#seg) je podmenu tří hlavních záložek
+     (.tabs/.tab výše), takže po něm i vzhledem sáhne: sdílená spodní linka
+     a mosazné podtržení aktivní položky místo orámovaných pilulek. Cíleno
+     na #id, ne na .seg, protože tu třídu sdílí i přepínače v jiných oknech
+     (Pravidla/Návod, filtr data, filtr typu), kterých se redesign netýká. */
+  #seg{gap:0;border-bottom:1px solid var(--edge)}
+  #seg button{
+    border:none;border-radius:0;border-bottom:2px solid transparent;
+    margin-bottom:-1px;min-height:40px;
+    font-size:12px;letter-spacing:.2em;
+  }
+  #seg button:hover{background:transparent;border-bottom-color:var(--brass);color:var(--brass)}
+  #seg button.on{background:transparent;border-bottom-color:var(--brass);color:var(--bone)}
+
+  /* lišta filtrů pod přepínačem. Všechna tlačítka na jednom řádku, stejně
+     široká. Popisky jsou krátké a stálé, zvolený filtr prozradí třída on
+     a s ní mosazný rám — stejný idiom jako přepínače v nastavení.
+     Proti přepínači nad ní se drží záměrně jinak: nižší, bez prostrkání
+     a základním bezpatkovým písmem, aby si ty dvě lišty nekonkurovaly. */
+  .fbar{display:flex;gap:6px;margin:10px 0 2px}
+  .fbar .ghost{
+    flex:1 1 0;min-width:0;min-height:38px;padding:0 6px;
+    font-size:12.5px;line-height:1.2;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  }
+  .fbar .ghost:hover{border-color:var(--brass);color:var(--brass)}
+
+  /* řádek okna výběru data. Nativní <input type="date"> si vykreslí systémové
+     písmo i kalendář — ořez fontu se ho netýká. */
+  .daterow{display:flex;align-items:center;gap:10px;margin:10px 0 0}
+  .daterow label{flex:0 0 46px;font-size:13px;color:var(--dim)}
+  .daterow input,.daterow select{
+    flex:1;min-width:0;min-height:44px;box-sizing:border-box;
+    background:var(--field);border:1px solid var(--edge);border-radius:var(--r);
+    color:var(--bone);font-size:15px;padding:0 10px;
+  }
+
+  /* řádek statistiky */
+  .strow{
+    width:100%;display:flex;align-items:baseline;gap:10px;text-align:left;
+    background:transparent;border:none;border-bottom:1px solid var(--hair);
+    padding:9px 1px;min-height:46px;color:inherit;
+  }
+  .strow:hover:not(:disabled) .sn{color:var(--brass)}
+  .strow:disabled{cursor:default;opacity:.75}
+  .strow .sn{flex:1;min-width:0;font-size:14px}
+  .strow .sd{display:block;font-size:11.5px;color:var(--dim);margin-top:1px}
+  .strow .sv{
+    flex:0 0 auto;font-family:"IM Fell English",Georgia,serif;font-weight:400;
+    font-size:19px;line-height:1;
+  }
+  .strow .chev{flex:0 0 auto;color:var(--dim);font-size:15px;line-height:1}
+
+  /* řádek hry v historii */
+  .grow{
+    width:100%;display:flex;align-items:baseline;gap:10px;text-align:left;
+    background:transparent;border:none;border-bottom:1px solid var(--hair);
+    padding:9px 1px;min-height:48px;color:inherit;
+  }
+  .grow:hover .gn{color:var(--brass)}
+  .grow .gn{flex:1;min-width:0;font-size:13.5px;color:var(--dim)}
+  .grow .gn b{display:block;font-weight:500;font-size:14.5px;color:var(--bone);margin-bottom:1px}
+  .grow .gv{
+    flex:0 0 auto;font-family:"IM Fell English",Georgia,serif;font-weight:400;
+    font-size:20px;line-height:1;
+  }
+
+  /* dělící čára v seznamu her: hry z jednoho dne pod jednou hlavičkou.
+     Nad první z nich se čára nekreslí — seznam by jí začínal zbytečně. */
+  .dsep{
+    border-top:1px solid var(--edge);
+    margin-top:12px;padding:11px 1px 3px;
+    font-family:"IM Fell English SC",Georgia,serif;
+    font-size:12px;letter-spacing:.16em;color:var(--dim);
+  }
+  .dsep:first-child{border-top:none;margin-top:0;padding-top:2px}
+  /* Poslední hra dne má vlastní vlasovou linku a hned za ní by přišla linka
+     oddělovače — dvě čáry pod sebou. Kde prohlížeč umí :has(), ta první
+     zmizí; kde ne, zůstane navíc jedna vlasová linka a nic se neděje. */
+  .grow:has(+ .dsep){border-bottom:none}
+
+  /* značka pod seznamem: tlačítko „Zobrazit dalších…" a zároveň bod,
+     na kterém IntersectionObserver dolije další dávku */
+  .morerow{
+    width:100%;display:flex;align-items:baseline;justify-content:center;
+    gap:10px;text-align:center;
+    background:transparent;border:none;border-bottom:1px solid var(--hair);
+    padding:12px 1px;min-height:46px;color:var(--dim);
+    font-family:"IM Fell English SC",Georgia,serif;
+    font-size:13px;letter-spacing:.16em;
+  }
+  .morerow:hover{color:var(--brass)}
+  .morerow .mz{
+    font-family:inherit;font-size:11.5px;letter-spacing:.06em;opacity:.65;
+  }
+
+  /* podstránka: detail hry nebo žebříček */
+  .dethead{display:flex;align-items:center;gap:10px;margin:14px 0 4px}
+  .dethead h2{
+    font-family:"IM Fell English SC",Georgia,serif;font-size:13px;
+    letter-spacing:.16em;color:var(--dim);min-width:0;
+  }
+  .back{flex:0 0 auto}

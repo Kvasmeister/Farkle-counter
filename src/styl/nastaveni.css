@@ -1,0 +1,142 @@
+
+  /* okno nastavení: pevná karta jako pravidla, uvnitř harmonika */
+  #setmodal .modalbox{height:100%}
+  #setmodal .modalbody{flex:1 1 auto;min-height:0}
+  .setsec{border-top:1px solid var(--edge)}
+  .setsec summary{
+    display:flex;align-items:center;gap:10px;
+    padding:12px 0;cursor:pointer;list-style:none;
+    font-family:"IM Fell English SC",Georgia,serif;font-size:12px;
+    letter-spacing:.16em;text-transform:uppercase;color:var(--dim);
+  }
+  .setsec summary::-webkit-details-marker{display:none}
+  .setsec summary::after{
+    content:"»";flex:0 0 auto;font-family:inherit;font-size:15px;color:var(--dim);
+    transform:rotate(0deg);transition:transform .18s;
+  }
+  .setsec[open] summary{color:var(--bone)}
+  .setsec[open] summary::after{transform:rotate(90deg)}
+  .setsec summary .cnt{margin-left:auto;font-size:11px;letter-spacing:.1em}
+  .setsec .secbody{padding-bottom:6px}
+
+  /* dvě karty nastavení; název zvoleného herního režimu sedí na druhém
+     tlačítku, ať jde z první karty poznat, podle čeho se hraje */
+  .setcard[hidden]{display:none}
+  #setseg button{flex-direction:column;justify-content:center;gap:2px;min-height:54px}
+  #setseg .cnt{font-size:11px;letter-spacing:.06em;opacity:.75;text-transform:none}
+  /* .cap má margin-top nulový, ale hned pod přepínačem karet by seděl natěsno */
+  #setcardrezimy > #rezlist > .cap:first-child{margin-top:14px}
+
+  /* Karta Herní režimy má dvě podstránky jako Statistiky: seznam a detail
+     jednoho režimu. Přepínají se atributem hidden, ne dalším oknem. */
+  #rezlist[hidden],#rezdetail[hidden],#kombdetail[hidden]{display:none}
+  #rezdetail .dethead,#kombdetail .dethead{margin-bottom:4px}
+  #rezdetail h3,#kombdetail h3{margin:0;font-family:"IM Fell English",Georgia,serif;font-weight:400;font-size:19px;color:var(--bone)}
+  /* Nadpis dílčí sekce: linka nad sebou a výraznější písmo než .cap. Šest
+     kategorií pod sebou se bez toho slévalo do jednoho pásu řádků. */
+  .seccap{
+    font-size:12.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--bone);
+    margin:14px 0 8px;padding-top:11px;border-top:1px solid var(--edge);
+  }
+  .seccap:first-child{margin-top:6px;padding-top:0;border-top:0}
+  #reznazevpole,#kombnazevpole{
+    flex:1 1 120px;min-width:0;
+    background:var(--field);border:1px solid var(--edge);border-radius:var(--r);
+    color:var(--bone);font-family:inherit;font-size:16px;padding:0 8px;min-height:40px;
+  }
+  #reznazevpole:focus,#kombnazevpole:focus{outline:none;border-color:var(--brass)}
+  /* Šest polí sazeb vedle sebe by na 320 px nešlo přečíst; dvě do řádku ano. */
+  /* Kulaté „i“ u výběru pravidla pro čtyři a víc stejných. */
+  .ghost.info{
+    flex:0 0 34px;min-width:34px;padding:0;border-radius:50%;
+    font-family:"IM Fell English",Georgia,serif;font-size:15px;letter-spacing:0;
+  }
+  #reznadnapoveda{margin-top:-2px}
+  .trojgrid{display:flex;flex-wrap:wrap;gap:8px}
+  .trojpole{
+    flex:1 1 calc(50% - 4px);display:flex;align-items:center;gap:8px;
+    min-width:0;font-size:14px;color:var(--dim);
+  }
+  .trojpole .kombsazba{flex:1 1 0}
+  .trojpole > span{flex:0 0 44px;font-family:"IM Fell English",Georgia,serif;font-size:16px;color:var(--bone)}
+  /* Pás s rizikem farklu je patička okna nastavení: třetí prvek pružného
+     sloupce .modalbox za .modalhead a .modalbody. Sticky uvnitř těla se pod
+     jeho spodní padding nedostane a pod pásem prosvítal obsah. */
+  .rizpruh{
+    flex:0 0 auto;
+    padding:8px 13px calc(10px + env(safe-area-inset-bottom));
+    background:var(--slate);border-top:1px solid var(--edge);
+    font-size:12.5px;color:var(--dim);line-height:1.5;
+  }
+  .rizpruh[hidden]{display:none}
+  .rizpruh b{
+    display:block;font-family:"IM Fell English",Georgia,serif;font-weight:400;
+    font-size:14px;color:var(--brass);letter-spacing:.02em;
+  }
+  /* Tlačítka v seznamu režimů drží pevnou šířku, ať je na nich cokoliv —
+     jinak sloupec poskakuje podle délky slova a s ním i řádky pod sebou;
+     Zvolit se navíc za běhu mění na Zvoleno. 56 px je těsně nad nejdelším
+     popiskem (české Pravidla), proto padding jen 2 px a nowrap jako pojistka:
+     kdyby se text nevešel, má přetéct, ne zalomit se a zvýšit celý řádek.
+     Selektor musí nést id: samotné `.rezbtn` prohrává
+     s `.setrow .ghost{flex:0 0 auto}` výš. */
+  #setcardrezimy .rezbtn{flex:0 0 56px;padding:0 2px;text-align:center;white-space:nowrap}
+  /* název režimu nad tabulkou pravidel */
+  .rezpruh{
+    font-family:"IM Fell English",Georgia,serif;font-size:17px;color:var(--brass);
+    margin-bottom:8px;letter-spacing:.02em;
+  }
+
+  /* Oddíl kombinací: řádek nese název, pole se sazbou a tlačítka. U vlastního
+     vzoru jsou tlačítka dvě, takže se řádek na úzkém displeji musí umět
+     zalomit — stejná úvaha jako u .kosrow. */
+  .kombrow{flex-wrap:wrap}
+  .kombrow .t{flex:1 1 130px}
+  /* .setrow span je blokový; zápis kombinace má zůstat v řádku s počtem kostek.
+     U vlastního vzoru je zápis rovnou nadpisem řádku, a ten blokový zůstává. */
+  .kombrow .zapis{display:inline;font-family:"IM Fell English",Georgia,serif;font-size:15px;color:var(--bone)}
+  .kombrow b.zapis{display:block;font-size:17px}
+  .kombrow .riziko{color:var(--brass)}
+  .kombsazba{
+    flex:0 0 76px;min-width:0;text-align:right;
+    background:var(--field);border:1px solid var(--edge);border-radius:var(--r);
+    color:var(--bone);font-family:inherit;font-size:16px;padding:0 8px;min-height:40px;
+  }
+  .kombsazba:focus{outline:none;border-color:var(--brass)}
+  .kombsazba:disabled{opacity:.35;cursor:not-allowed}
+  .kombnovy{padding:10px 0 4px}
+  .kombnovy .cap{margin-bottom:6px}
+  .kombnovy .pips{margin-bottom:6px}
+  .kombnovy .manual{margin-top:6px}
+  .kombstav{
+    display:flex;align-items:baseline;gap:8px;margin-bottom:6px;
+    font-family:"IM Fell English",Georgia,serif;font-size:17px;color:var(--bone);
+  }
+  /* náhled rozdělaného vzoru: zápis hodnot patkově, slovní název prózou */
+
+  .kombstav .hint{font-family:"Alegreya Sans","Segoe UI",system-ui,sans-serif;font-size:12.5px;color:var(--dim)}
+  .pismhint{font-size:12px;color:var(--dim);line-height:1.45;margin:-2px 0 2px}
+  /* Písmena patkově jako čísla, ale menší — jsou širší a šest jich musí do
+     řady stejně jako šesti číslic. */
+  #kombpism .chip{font-size:16px}
+  #kombzprava{margin-top:6px}
+
+  #rulesmodal .modalbox{height:100%}
+  #rulesmodal .modalbody{flex:1 1 auto;min-height:0}
+
+  /* okno s informacemi: dvě karty */
+  .modalbody .seg{margin:10px 0 0}
+
+  /* pravidla a návod */
+  .rules{font-size:14px;color:var(--body);margin-top:10px}
+  .rules h3{
+    font-family:"IM Fell English SC",Georgia,serif;font-size:12px;letter-spacing:.18em;
+    color:var(--dim);margin:18px 0 7px;font-weight:400;
+  }
+  .rules h3:first-child{margin-top:6px}
+  .rules ul{list-style:none;margin:0 0 9px;padding:0}
+  .rules li{margin:0 0 6px}
+  .rules p{margin:0 0 9px}
+  .rules table{margin:6px 0 12px}
+  .rules td:last-child{text-align:right;color:var(--bone);font-family:"IM Fell English",Georgia,serif;font-size:16px}
+  .rules .note{color:var(--dim);font-size:13px}

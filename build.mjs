@@ -10,7 +10,13 @@
    Dvě značky, obě se rozbalují doslova, bez přeformátování:
 
      <!--@vloz cesta-->            celý řádek se nahradí obsahem souboru
+     <!--@pozn text-->             poznámka jen pro zdroj, do výstupu nejde
      url("@font fonty/x.woff2")    nahradí se data: URI s base64 fontu
+
+   Rejstříky (styl/styl.css, html/telo.html) jsou samé značky. Popisky v nich
+   patří zdroji, ne výstupu — proto @pozn. Bez toho by se komentáře rejstříku
+   sázely do index.html a rozbily kontrolu „výstup je bajt po bajtu shodný“,
+   která je jediným důkazem, že řez nic nepřesunul omylem.
 
    Fonty leží ve zdroji jako opravdové .woff2, ne jako base64 — pět řádků
    po 80 000 znacích dělalo ze stylu soubor, který se nedal číst ani grepovat.
@@ -29,6 +35,7 @@ const SRC = path.join(koren, "src");
 const CIL = path.join(koren, "index.html");
 
 const VLOZ = /^<!--@vloz (.+?)-->$/;
+const POZN = /^<!--@pozn .*-->$/;
 const FONT = /url\("@font (.+?)"\)/g;
 
 /* Vkládání je rekurzivní: partial smí vložit další partial. Hlídá se cyklus,
@@ -43,7 +50,7 @@ function slozit(soubor, cesta = []) {
     throw new Error("chybí zdroj: " + soubor +
       (cesta.length ? "  (vkládaný z " + path.relative(SRC, cesta[cesta.length - 1]) + ")" : ""));
   }
-  return fs.readFileSync(plna, "utf8").split("\n").map((radek) => {
+  return fs.readFileSync(plna, "utf8").split("\n").filter((r) => !POZN.test(r)).map((radek) => {
     const m = VLOZ.exec(radek);
     if (!m) return radek;
     /* Vložený soubor končí newlinem, marker byl celý řádek — proto se zahodí

@@ -1,0 +1,72 @@
+<div class="modal" id="rulesmodal" hidden>
+  <div class="modalbox" role="dialog" aria-modal="true" aria-labelledby="rulestitle">
+    <div class="modalhead">
+      <h2 id="rulestitle" data-i18n="pravidla.nadpis">Pravidla a návod</h2>
+      <button class="modalx" type="button" data-close data-i18n-aria="spol.zavrit" aria-label="Zavřít">×</button>
+    </div>
+    <div class="modalbody">
+      <div class="seg" id="infoseg">
+        <button type="button" class="on" data-i18n="pravidla.seg.pravidla">Pravidla</button>
+        <button type="button" data-i18n="pravidla.seg.navod">Návod</button>
+      </div>
+      <!-- Pravidla se skládají z herního režimu (pravidlaHTML). Statické tu
+           zůstat nemůžou: každý režim boduje jinak a tabulka by lhala. Texty
+           proto stojí v RUCNI, ne v data-i18n. -->
+      <div class="rules infocard" id="cardrules">
+    <div class="rezpruh" id="pravidlarezim"></div>
+    <div id="pravidlatelo"></div>
+  </div>
+
+      <div class="rules infocard" id="cardguide" hidden>
+    <h3 data-i18n="navod.kolo.h">Kolo</h3>
+    <p data-i18n-html="navod.kolo.p">Klávesnice zapisuje, co je odložené z hodu. Body se sčítají v řádku <b>na stole</b> a použité kostky ubývají ze zbývajících.</p>
+    <ul>
+      <li data-i18n-html="navod.kolo.li1"><b>Házet dál</b> — otevře nový hod a v popisku ukazuje, kolika kostkami. Po odložení všech šesti nabídne horké kostky a hází se znovu všemi.</li>
+      <li data-i18n-html="navod.kolo.li2"><b>Zapsat</b> — převede body ze stolu do skóre a otevře nové kolo.</li>
+      <li data-i18n-html="navod.kolo.li3"><b>Farkle</b> — body na stole propadnou a v zápise zůstane kolo s nulou.</li>
+    </ul>
+
+    <h3 data-i18n="navod.klavesnice.h">Klávesnice</h3>
+    <p data-i18n-html="navod.klavesnice.p"><b>jednička</b> a <b>pětka</b> přidávají po jedné kostce. <b>Stejné hodnoty</b> mají v prvním řádku počet, ve druhém hodnotu; tlačítko vpravo ukazuje výsledek a přidá ho. <b>Postupky</b> jsou tři pevné kombinace. <b>ručně</b> otevře pole pro body a šipky pro počet kostek.</p>
+    <p class="note" data-i18n="navod.klavesnice.pozn">Kombinace, které se nevejdou do zbývajících kostek, jsou zašedlé. Které čipy v řadě vůbec jsou a za kolik bodují, řídí herní režim.</p>
+
+    <h3 data-i18n="navod.opravy.h">Opravy</h3>
+    <p data-i18n-html="navod.opravy.p1">Přepínač <b>zadat / opravit</b> vedle popisu hodu přepíná vnitřní kartu panelu. Karta <i>opravit</i> ukazuje každou odloženou položku jako tlačítko s křížkem, seskupené po hodech; smazání položky přepočítá i počty kostek v následujících hodech.</p>
+    <p data-i18n-html="navod.opravy.p2"><b>Zpět</b> ubírá po jednom odzadu v rozehraném kole — nejdřív položky, pak celé hody. Na zapsaná kola nesahá; jakmile v kole nic nezbývá, tlačítko zšedne.</p>
+    <p data-i18n-html="navod.opravy.p3"><b>Opravit</b> v Zápisu kol zapíná křížky u jednotlivých kol. Křížek vyvolá potvrzení; smazané kolo se odečte ze skóre a zbylá kola se přečíslují. Bez odehraných kol je tlačítko schované.</p>
+
+    <h3 data-i18n="navod.hra.h">Typ hry</h3>
+    <p data-i18n-html="navod.hra.p">Ikona kostky otevírá panel s typem hry a cílem, a to i uprostřed hry. <b>Do bodů</b> hraje na 2 000 až 10 000 nebo na vlastní číslo a druhý řádek skóre ukazuje, kolik zbývá. Kolo, kterým se cíl překročí, se počítá celé; po jeho zapsání je hra u konce. <b>Na kola</b> jen počítá kola; volitelný limit hru po posledním kole zamkne, bez limitu hra neskončí sama.</p>
+
+    <h3 data-i18n="navod.rezimy.h">Herní režimy</h3>
+    <p data-i18n-html="navod.rezimy.p1">Farkle se hraje v několika verzích a každá boduje jinak. <b>Herní režim</b> v nastavení drží celou tabulku: kolika kostkami se hází, kolik platí jednička, pětka a jednotlivé trojice, co dělá čtvrtá a další stejná kostka, které postupky bodují a jaké kombinace navíc jsou zapnuté. Přednastavené jsou tři — <i>KCD</i>, <i>Klasické kostky</i> a <i>Pět kostek</i>; vlastních jde přidat dvacet a každý se dá předělat celý.</p>
+    <p data-i18n-html="navod.rezimy.p2">Tlačítko <b>Pravidla</b> u režimu ukáže jeho tabulku, <b>Upravit</b> otevře jeho nastavení a <b>Zvolit režim</b> ho postaví do hry. Kombinace navíc i vlastní vzory patří vždycky jednomu režimu, ne aplikaci — přepnutím režimu se tedy vymění i ony.</p>
+    <p data-i18n-html="navod.rezimy.p3">Přepnout režim jde jen tehdy, když není co rozehrané: kolo zapsané podle jedněch pravidel a další podle jiných by dalo skóre, které nic neznamená. Rozehranou hru proto nejdřív dohraj a začni <b>Novou hrou</b>. Každá hra si režim odnese do historie a statistika <i>Nejhranější režim</i> počítá, čeho je nejvíc.</p>
+
+    <h3 data-i18n="navod.stranky.h">Tři stránky</h3>
+    <p data-i18n="navod.stranky.p">Záložky nahoře a swipenutí do stran přepínají mezi:</p>
+    <ul>
+      <li data-i18n-html="navod.stranky.li1"><b>Počítadlo</b> — skóre a hraní.</li>
+      <li data-i18n-html="navod.stranky.li2"><b>Zápis kol</b> — čtyři statistiky a tabulka kol, Nová hra a Zapsat do historie.</li>
+      <li data-i18n-html="navod.stranky.li3"><b>Statistiky</b> — přepínač mezi rekordy a seznamem dohraných her. Rekord se rozklikne na žebříček, hra na svůj detail.</li>
+    </ul>
+
+    <h3 data-i18n="navod.historie.h">Historie</h3>
+    <p data-i18n="navod.historie.p1">Statistiky vychází jen z her v historii; nezapsaná hra se do rekordů nepromítne.</p>
+    <p data-i18n-html="navod.historie.p2"><b>Zapsat do historie</b> si vyžádá druhé klepnutí jen tehdy, když jsou na stole nezapsané body. Po uložení se přepne na <b>Uloženo v historii</b> a po dalším hraní na <b>Aktualizovat v historii</b>, což přepíše tentýž záznam místo zakládání nového. Když se ta hra mezitím smaže z historie, nabídne tlačítko <b>Obnovit do historie</b> — vrátí týž záznam z koše, takže se hra nikdy nezapíše dvakrát.</p>
+    <p data-i18n-html="navod.historie.p3"><b>Automatické ukládání</b> v nastavení zapíše hru do historie samo, jakmile skončí — po posledním kole nebo po kole, kterým se překročí cíl. Uložení oznámí okénko, které samo zmizí. Hra na neomezený počet kol se takhle uložit nedá, protože nemá konec. Co bylo z historie smazané ručně, automat sám nevrací.</p>
+
+    <h3 data-i18n="navod.kos.h">Koš</h3>
+    <p data-i18n-html="navod.kos.p1"><b>Nová hra</b> odkládá smazanou hru do nastavení, do oddílu <i>Smazané rozehrané hry</i> — drží posledních pět. <b>Smazat z historie</b> ukládá hru do oddílu <i>Smazané hry z historie</i>, kde jich zůstává deset. V obou oddílech vrací hru zpátky tlačítko <i>Obnovit</i>; <i>Trvale smazat</i> ji po potvrzení zahodí nadobro.</p>
+    <p data-i18n-html="navod.kos.p2">Když hra ještě není v historii, <b>Nová hra</b> se po potvrzení zeptá ještě jednou a nabídne ji rovnou uložit.</p>
+
+    <h3 data-i18n="navod.zaloha.h">Záloha</h3>
+    <p data-i18n-html="navod.zaloha.p">Data jsou uložená jen v tomto prohlížeči. <b>Export do souboru</b> vytvoří textový soubor s přehledem her, jehož poslední řádek nese data pro import — bez něj se soubor načíst nedá. <b>Zkopírovat do schránky</b> dává stejný obsah bez stahování. <b>Import ze souboru</b> i <b>Import ze schránky</b> nabídnou volbu mezi přidáním nových her a nahrazením celé historie.</p>
+
+    <h3 data-i18n="navod.drobnosti.h">Drobnosti</h3>
+    <p data-i18n-html="navod.drobnosti.p">Ikona vpravo nahoře přepíná světlý a tmavý vzhled. <b>Celá obrazovka</b> v nastavení schová lišty prohlížeče; na iPhonu chybí, Safari to neumí. <b>Nezhasínat displej</b> tamtéž drží obrazovku rozsvícenou, dokud se hraje; po třech minutách bez doteku se pustí a telefon zhasne jako obvykle. Aplikace běží offline a dá se přidat na plochu.</p>
+  </div>
+    </div>
+  </div>
+</div>
+

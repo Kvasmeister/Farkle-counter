@@ -1,0 +1,102 @@
+
+  /* ---- hustota podle výšky displeje ----
+     Priorita: klávesnice a obě skóre jsou vidět vždy, bez rolování.
+     S klesající výškou se nejdřív stahují mezery, teprve pak ustupují
+     doplňkové údaje (řádek „zbývá“, popis hodu). */
+
+  /* velké displeje: pohodlné rozestupy */
+  @media (min-height:800px){
+    .score .line{padding:7px 1px}
+    .act,.rollbtn{min-height:52px}
+  }
+
+  /* běžné telefony v prohlížeči: 720–800 px */
+  @media (max-height:799px){
+    :root{--tap:42px}
+    .score .line{padding:4px 1px}
+    .turn{margin-top:11px}
+    .cap.gap{margin-top:9px}
+    .pad{padding:9px 13px}
+    .act,.rollbtn{min-height:48px}
+  }
+
+  /* menší telefony a prohlížeč s lištami: 620–720 px */
+  @media (max-height:719px){
+    :root{--tap:40px}
+    body{padding:calc(9px + env(safe-area-inset-top)) calc(13px + env(safe-area-inset-right)) calc(5px + env(safe-area-inset-bottom)) calc(13px + env(safe-area-inset-left))}
+    .tab{min-height:36px;font-size:11px}
+    #seg button{min-height:36px;font-size:11px}
+    .score .line{padding:3px 1px}
+    .score .line b{font-size:31px}
+    .score .sub b{font-size:20px}
+    .turn{margin-top:9px}
+    .turnbar{padding:6px 12px}
+    .turnbar .p{font-size:24px}
+    .rollhead{padding:5px 12px}
+    .rollhead .n{font-size:14px}
+    .pad{padding:8px 12px}
+    .cap{margin-bottom:4px}
+    .cap.gap{margin-top:7px}
+    .seccap{margin:11px 0 6px;padding-top:9px}
+    .row,.kind,.pips,.kind .col{gap:5px}
+    .rollbtnwrap{padding-top:7px}
+    .acts{gap:6px}
+    .act,.rollbtn{min-height:46px;font-size:14.5px}
+  }
+
+  /* iPhone SE2 v Safari, Galaxy S8: 540–640 px */
+  @media (max-height:639px){
+    :root{--tap:38px}
+    body{padding:calc(7px + env(safe-area-inset-top)) calc(12px + env(safe-area-inset-right)) calc(4px + env(safe-area-inset-bottom)) calc(12px + env(safe-area-inset-left))}
+    .top{padding-bottom:4px}
+    .wordmark{font-size:20px}
+    .fs{min-height:32px}
+    .tab{min-height:30px}
+    #seg button{min-height:30px}
+    .score .sub{display:none}          /* „zbývá“ ustoupí; skóre a kolo zůstávají */
+    .score .line b{font-size:26px}
+    .turn{margin-top:7px}
+    .rollhead{padding:4px 12px}
+    .rollhead .n{font-size:13px}
+    .sheettabs button{min-height:30px;padding:0 9px;font-size:10px}
+    .pad{padding:7px 12px}
+    .cap{font-size:10px;letter-spacing:.14em}
+    .cap.gap{margin-top:6px}
+    .seccap{font-size:11.5px;letter-spacing:.11em;margin:9px 0 5px;padding-top:8px}
+    .chip .v,.rollbtn .v,.act .v{font-size:10px}
+    .act,.rollbtn{min-height:42px}
+    .rollbtnwrap{padding-top:5px}
+    /* přilepená dvojice na Zápisu kol nesmí sníst půl obrazovky */
+    .arch,.bigbtn{min-height:42px}
+    .archwrap{padding-top:7px;gap:6px}
+  }
+
+  /* velmi nízké okno: pod 540 px */
+  @media (max-height:539px){
+    :root{--tap:36px}
+    /* mizí jen popis hodu — počet kostek je i na tlačítku „Házet dál“.
+       Záložky zadat/opravit musí zůstat, jinak je režim oprav nedosažitelný.
+       Se single potomkem by je space-between hodilo doleva, proto flex-end. */
+    #rollline{display:none}
+    .rollhead{padding:3px 12px;justify-content:flex-end}
+    .score .line b{font-size:25px}
+    .chip{font-size:13px}
+    .pips .chip{font-size:17px}
+  }
+
+  /* Aplikace je jen na výšku. Rotaci hlídá manifest (orientation: portrait)
+     a Screen Orientation API; iOS nepodporuje ani jedno, proto ještě tohle. */
+  #rot{display:none}
+  @media (orientation:landscape) and (max-height:559px){
+    #rot{
+      display:flex;position:fixed;inset:0;z-index:200;
+      flex-direction:column;align-items:center;justify-content:center;gap:10px;
+      background:var(--soot);color:var(--dim);text-align:center;
+      padding:24px calc(20px + env(safe-area-inset-right)) 24px calc(20px + env(safe-area-inset-left));
+    }
+    #rot b{font-family:"IM Fell English SC",Georgia,serif;font-size:19px;
+      letter-spacing:.1em;font-weight:400;color:var(--bone)}
+    #rot span{font-size:14px;max-width:26em}
+  }
+
+  @media(prefers-reduced-motion:reduce){*{transition:none!important}}

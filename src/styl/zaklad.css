@@ -1,0 +1,83 @@
+
+  :root{
+    --soot:#14120F;
+    --slate:#1D1A16;
+    --edge:#35302A;
+    --hair:#221F1A;
+    --bone:#E9DFC8;
+    --dim:#968D7E;
+    --brass:#C08A2E;
+    --verdigris:#5F8C74;
+    --oxblood:#A53224;
+    --field:#14120F;
+    --press:#242019;
+    --selbg:#241E13;
+    --dangerbg:#241715;
+    --danger:#E08B7E;
+    --onbrass:#14120F;
+    --ongreen:#0F1411;
+    --body:#C9C0AC;
+    --r:3px;
+    --tap:44px;
+    color-scheme:dark;
+  }
+  html[data-theme="light"]{
+    --soot:#F5EFE2;
+    --slate:#FBF7EE;
+    --edge:#C8BCA4;
+    --hair:#E2D9C6;
+    --bone:#25211A;
+    --dim:#6E6555;
+    --brass:#8A5B10;
+    --verdigris:#2E5F47;
+    --oxblood:#93291C;
+    --field:#FFFDF7;
+    --press:#EAE2D0;
+    --selbg:#F2E6C9;
+    --dangerbg:#F6E2DD;
+    --danger:#8E2E1F;
+    --onbrass:#FFFBF2;
+    --ongreen:#F2F8F4;
+    --body:#3B3529;
+    color-scheme:light;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;touch-action:manipulation;
+    -webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+  /* Formuláře si výběr textu a callout nechávají — jinak by na starším
+     WebKitu hrozilo, že se pole nedá pořádně editovat, a vlastní pole pro
+     vložení zálohy (#pastearea) navíc potřebuje fungující kontextové menu
+     kvůli vkládání ze schránky. */
+  input,textarea,select{-webkit-user-select:auto;user-select:auto}
+  #pastearea{-webkit-touch-callout:default}
+  html{overscroll-behavior:none}
+  body{overscroll-behavior:none}
+  /* Atribut hidden vypíná prohlížeč pravidlem [hidden]{display:none} ve svém
+     výchozím stylu. Jakékoli autorské pravidlo s display ho ale přebije bez
+     ohledu na specificitu — a tříd s display:flex nebo grid je tu dost.
+     Jedno pravidlo s !important to sjednotí a nedovolí to znovu. */
+  [hidden]{display:none!important}
+
+  html,body{margin:0;padding:0}
+  body{
+    background:var(--soot);
+    color:var(--bone);
+    font-family:"Alegreya Sans","Segoe UI",system-ui,sans-serif;
+    font-size:16px;
+    line-height:1.45;
+    padding:
+      calc(12px + env(safe-area-inset-top))
+      calc(14px + env(safe-area-inset-right))
+      calc(6px + env(safe-area-inset-bottom))
+      calc(14px + env(safe-area-inset-left));
+    max-width:560px;
+    margin:0 auto;
+    height:100vh;
+    height:100dvh;
+    display:flex;
+    flex-direction:column;
+    overflow:hidden;
+    -webkit-text-size-adjust:100%;
+  }
+  h1,h2{margin:0;font-weight:400}
+  button{font-family:inherit;color:inherit;cursor:pointer}
+  button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--brass);outline-offset:2px}

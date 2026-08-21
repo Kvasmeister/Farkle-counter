@@ -1,0 +1,117 @@
+
+  /* hlavička */
+  .top{position:relative;display:flex;align-items:center;gap:8px;padding-bottom:8px;border-bottom:1px solid var(--edge);flex:0 0 auto}
+  .wordmark{font-family:"IM Fell English SC",Georgia,serif;font-size:22px;letter-spacing:.06em;line-height:1.2}
+  .fs{
+    background:transparent;border:1px solid var(--edge);border-radius:var(--r);
+    color:var(--dim);padding:0 9px;min-height:36px;flex:0 0 auto;display:flex;align-items:center;
+  }
+  .fs:hover{border-color:var(--brass);color:var(--brass)}
+  .wordmark{margin-right:auto}
+  .goal{font-size:13px;color:var(--dim);display:flex;align-items:center;gap:6px;flex-wrap:wrap;min-width:0}
+  .goal select{min-width:0;max-width:46vw}
+  .goal select,.goal input{
+    background:transparent;border:1px solid var(--edge);border-radius:var(--r);
+    color:var(--bone);font-family:inherit;font-size:16px;padding:0 6px;min-height:40px;
+  }
+  .goal input{width:74px;background:var(--field)}
+  .goal input:focus{outline:none;border-color:var(--brass)}
+
+  /* stránky */
+  .tabs{display:flex;margin-top:10px;border-bottom:1px solid var(--edge);flex:0 0 auto}
+  .tab{
+    flex:1;background:transparent;border:none;border-bottom:2px solid transparent;
+    color:var(--dim);font-family:"IM Fell English SC",Georgia,serif;font-size:12px;
+    letter-spacing:.2em;padding:0 4px;min-height:40px;margin-bottom:-1px;
+  }
+  .tab[aria-selected="true"]{color:var(--bone);border-bottom-color:var(--brass)}
+  .pages{
+    display:flex;flex:1 1 auto;min-height:0;
+    overflow-x:auto;overscroll-behavior-x:contain;
+    scroll-snap-type:x mandatory;scroll-behavior:smooth;scrollbar-width:none;
+  }
+  .pages::-webkit-scrollbar{display:none}
+  .page{flex:0 0 100%;min-width:100%;scroll-snap-align:start;overflow-y:auto;overscroll-behavior-y:contain;-webkit-overflow-scrolling:touch}
+  /* Svislé posuvníky jsou schované všude, kde se scrolluje. Kreslí se na
+     hraně scrollujícího prvku, ne okna — u vycentrovaného okna nastavení by
+     tedy stejně seděly uvnitř. Stejný idiom už používá .pages a .sheets. */
+  .page,#page0,.modalbody,.fix{scrollbar-width:none;-ms-overflow-style:none}
+  .page::-webkit-scrollbar,#page0::-webkit-scrollbar,
+  .modalbody::-webkit-scrollbar,.fix::-webkit-scrollbar{display:none}
+
+  /* Počítadlo: klávesnice a obě skóre mají přednost a nikdy se neořezávají.
+     Když se to na velmi nízký displej nevejde, stránka roluje — nic se neztratí. */
+  #page0{display:flex;flex-direction:column;overflow-y:auto;padding-bottom:2px}
+  #page0 .score{flex:0 0 auto}
+  #page0 .turn{flex:0 0 auto;display:flex;flex-direction:column}
+  #page0 .pad,#page0 .rollhead,#page0 .turnbar,#page0 .sheets{flex:0 0 auto}
+  #page0 .rollbtnwrap{margin-top:auto;flex:0 0 auto}
+  #page0 .lock{flex:0 0 auto}
+  #page0 .acts{margin-top:0;padding-top:8px;flex:0 0 auto}
+
+  /* volba režimu a cíle (stránka Zápis kol) */
+  .setup{
+    position:absolute;top:100%;left:0;right:0;z-index:30;margin-top:5px;
+    display:flex;align-items:center;gap:8px;flex-wrap:wrap;
+    border:1px solid var(--brass);border-radius:var(--r);
+    padding:8px 10px;background:var(--slate);
+    box-shadow:0 10px 26px rgba(0,0,0,.45);
+  }
+  .setup[hidden]{display:none}
+  #gamebtn.on{border-color:var(--brass);color:var(--brass)}
+
+  /* okna: pravidla a nastavení aplikace */
+  .modal{
+    position:fixed;inset:0;z-index:150;display:flex;
+    align-items:flex-end;justify-content:center;
+    background:rgba(0,0,0,.55);
+    padding-top:calc(14px + env(safe-area-inset-top));
+  }
+  html[data-theme="light"] .modal{background:rgba(20,18,15,.32)}
+  .modal[hidden]{display:none}
+  .modalbox{
+    width:100%;max-width:560px;max-height:100%;min-height:0;
+    display:flex;flex-direction:column;
+    background:var(--slate);border:1px solid var(--edge);border-bottom:none;
+    border-radius:var(--r) var(--r) 0 0;
+    box-shadow:0 -12px 32px rgba(0,0,0,.45);
+  }
+  .modalhead{
+    flex:0 0 auto;display:flex;align-items:center;justify-content:space-between;gap:10px;
+    padding:9px 12px;border-bottom:1px solid var(--edge);
+  }
+  .modalhead h2{
+    font-family:"IM Fell English SC",Georgia,serif;font-size:15px;
+    letter-spacing:.16em;color:var(--bone);
+  }
+  .modalx{
+    background:transparent;border:1px solid var(--edge);border-radius:var(--r);
+    color:var(--dim);min-width:38px;min-height:38px;font-size:19px;line-height:1;padding:0;
+  }
+  .modalx:hover{border-color:var(--bone);color:var(--bone)}
+  .modalbody{
+    overflow-y:auto;overscroll-behavior-y:contain;-webkit-overflow-scrolling:touch;
+    padding:4px 13px calc(14px + env(safe-area-inset-bottom));
+  }
+  .setrow{
+    display:flex;align-items:center;justify-content:space-between;gap:12px;
+    padding:11px 0;border-bottom:1px solid var(--hair);
+  }
+  .setrow:last-child{border-bottom:none}
+  .setrow .t{min-width:0}
+  .setrow b{display:block;font-weight:500;font-size:14.5px}
+  .setrow span{display:block;font-size:12.5px;color:var(--dim)}
+  .setrow .ghost{flex:0 0 auto}
+  /* Přepínač jazyka. Šestnáct pixelů proto, že pod tuhle hranici iOS při
+     rozbalení stránku přiblíží; ostatní selecty v aplikaci to drží stejně. */
+  .setrow select{
+    flex:0 0 auto;max-width:44vw;
+    background:var(--field);border:1px solid var(--edge);border-radius:var(--r);
+    color:var(--bone);font-family:inherit;font-size:16px;padding:0 8px;min-height:40px;
+  }
+  /* Řádky v koši mají dvě tlačítka. Na úzkém displeji se dvojice zalomí pod
+     popis hry, proto flex-basis u .t — bez něj by se popis smrskl na nic
+     a k zalomení by nikdy nedošlo. */
+  .kosrow{flex-wrap:wrap}
+  .kosrow .t{flex:1 1 150px}
+  .setbtns{display:flex;align-items:center;gap:8px;flex:0 0 auto;margin-left:auto}

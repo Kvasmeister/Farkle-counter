@@ -1,0 +1,256 @@
+<div class="modal" id="setmodal" hidden>
+  <div class="modalbox" role="dialog" aria-modal="true" aria-labelledby="settitle">
+    <div class="modalhead">
+      <h2 id="settitle" data-i18n="nast.nadpis">Nastavení</h2>
+      <button class="modalx" type="button" data-close data-i18n-aria="spol.zavrit" aria-label="Zavřít">×</button>
+    </div>
+    <div class="modalbody">
+      <!-- Dvě karty jako podmenu Statistik. Kombinace mají vlastní kartu,
+           protože jinak se okno nedalo projít bez rolování přes cizí oddíly. -->
+      <div class="seg" id="setseg">
+        <button type="button" class="on" data-i18n="nast.seg.obecne">Obecné</button>
+        <!-- název zvoleného režimu sedí vedle popisku, ne v něm: do katalogu
+             se tak nedostane žádná značka a překlad nepřepíše ten prvek -->
+        <button type="button"><span data-i18n="nast.seg.rezimy">Herní režimy</span><span class="cnt" id="reznazev"></span></button>
+      </div>
+      <div class="setcard" id="setcardobecne">
+      <div class="setrow" id="jazykrow">
+        <div class="t"><b data-i18n="nast.jazyk.n">Jazyk</b><span data-i18n="nast.jazyk.p">Změní se hned, bez restartu aplikace.</span></div>
+        <select id="jazyksel" data-i18n-aria="nast.jazyk.aria" aria-label="Jazyk rozhraní"></select>
+      </div>
+      <div class="setrow" id="fsrow">
+        <div class="t"><b data-i18n="nast.fs.n">Celá obrazovka</b><span data-i18n="nast.fs.p">Skryje lišty prohlížeče.</span></div>
+        <button class="ghost" id="fs" type="button" data-i18n="nast.vypnuto">Vypnuto</button>
+      </div>
+      <div class="setrow" id="svitrow">
+        <div class="t"><b data-i18n="nast.svit.n">Nezhasínat displej</b><span data-i18n="nast.svit.p">Displej zůstane svítit, dokud se s aplikací pracuje. Po třech minutách bez doteku se pustí a telefon zhasne jako obvykle.</span></div>
+        <button class="ghost" id="svit" type="button" data-i18n="nast.vypnuto">Vypnuto</button>
+      </div>
+      <div class="setrow" id="autorow">
+        <div class="t"><b data-i18n="nast.auto.n">Automatické ukládání</b><span data-i18n="nast.auto.p">Hru zapíše do historie, jakmile skončí. Hra na neomezený počet kol se automaticky neukládá.</span></div>
+        <button class="ghost" id="auto" type="button" data-i18n="nast.vypnuto">Vypnuto</button>
+      </div>
+      <details class="setsec" id="seckos">
+        <summary><span data-i18n="nast.koshry">Smazané rozehrané hry</span><span class="cnt" id="koscnt"></span></summary>
+        <div class="secbody"><div id="koslist"></div></div>
+      </details>
+
+      <details class="setsec" id="seckoshist">
+        <summary><span data-i18n="nast.koshist">Smazané hry z historie</span><span class="cnt" id="koshistcnt"></span></summary>
+        <div class="secbody"><div id="koshistlist"></div></div>
+      </details>
+
+      <details class="setsec" id="seczal">
+        <summary><span data-i18n="nast.zaloha">Záloha historie</span></summary>
+        <div class="secbody">
+          <div class="setrow">
+            <div class="t"><b data-i18n="nast.exp.n">Export do souboru</b><span data-i18n="nast.exp.p">Textový soubor s přehledem her a daty pro pozdější import.</span></div>
+            <button class="ghost" id="expbtn" type="button" data-i18n="nast.exp.btn">Uložit</button>
+          </div>
+          <div class="setrow">
+            <div class="t"><b data-i18n="nast.kop.n">Zkopírovat do schránky</b><span data-i18n="nast.kop.p">Pro případ nefunkčního stahování.</span></div>
+            <button class="ghost" id="copybtn" type="button" data-i18n="nast.kop.btn">Kopírovat</button>
+          </div>
+          <div class="setrow">
+            <div class="t"><b data-i18n="nast.impf.n">Import ze souboru</b><span data-i18n="nast.impf.p">Načte zálohu a nabídne přidání nebo nahrazení.</span></div>
+            <button class="ghost" id="impbtn" type="button" data-i18n="nast.impf.btn">Vybrat soubor</button>
+          </div>
+          <div class="setrow">
+            <div class="t"><b data-i18n="nast.imps.n">Import ze schránky</b><span data-i18n="nast.imps.p">Vlož text zálohy do pole a načti ho.</span></div>
+            <button class="ghost" id="pastebtn" type="button" data-i18n="nast.imps.btn">Vložit text</button>
+          </div>
+          <div id="pastebox" hidden>
+            <textarea id="pastearea" data-i18n-ph="nast.vlozit.ph" placeholder="Sem vlož zkopírovanou zálohu"></textarea>
+            <div class="improw">
+              <button class="ghost" id="pasteload" type="button" data-i18n="nast.nacist">Načíst</button>
+              <button class="ghost" id="pastecancel" type="button" data-i18n="spol.zrusit">Zrušit</button>
+            </div>
+          </div>
+          <div id="impbox" hidden>
+            <div class="msg" id="impinfo"></div>
+            <div class="improw">
+              <button class="ghost" id="impadd" type="button" data-i18n="nast.pridatnove">Přidat nové</button>
+              <button class="ghost warn" id="imprep" type="button" data-i18n="nast.nahraditvse">Nahradit vše</button>
+            </div>
+          </div>
+          <div class="msg" id="zalmsg" hidden></div>
+        </div>
+      </details>
+
+      <div class="setrow mistorow" id="mistorow">
+        <div class="t"><b data-i18n="nast.misto.n">Zabrané místo</b><span id="mistocelkem" data-i18n="nast.misto.zjistuji">Zjišťuji&#8230;</span></div>
+        <button class="ghost" id="mistobtn" type="button" data-i18n="nast.misto.btn">Detail</button>
+      </div>
+      <div class="msg misto" hidden></div>
+      <input type="file" id="impfile" accept=".txt,text/plain" hidden>
+      </div>
+
+      <!-- Herní režimy: seznam a detail jednoho režimu jako podstránky téže
+           karty, stejným vzorem jako dvojice #p2list a #p2detail ve Statistikách.
+           Řádky se staví z uzlů v renderRezimy(); staticky tu stojí jen to,
+           co se nemění, aby to mohlo nést data-i18n a sebrat se do češtiny
+           při startu. -->
+      <div class="setcard" id="setcardrezimy" hidden>
+        <div id="rezlist">
+          <div class="cap" data-i18n="rezim.nadpis">Herní režim</div>
+          <div class="msg" id="rezzamek" hidden></div>
+          <div id="rezrows"></div>
+          <div class="setrow">
+            <div class="t">
+              <b data-i18n="rezim.novy.n">Vlastní režim</b>
+              <span data-i18n="rezim.novy.p">Postaví se od pravidel KCD a dá se předělat celý.</span>
+            </div>
+            <div class="setbtns"><button class="ghost rezbtn" id="reznovy" type="button" data-i18n="rezim.novy.btn">Přidat</button></div>
+          </div>
+          <div class="msg" id="rezstrop" hidden></div>
+        </div>
+
+        <div id="rezdetail" hidden>
+          <div class="dethead">
+            <button class="ghost back" id="rezback" type="button" data-i18n="rezim.zpetseznam">« Zpět</button>
+            <h3 id="reztitul"></h3>
+          </div>
+
+          <div class="setrow" id="reznazevrow" hidden>
+            <div class="t">
+              <b data-i18n="rezim.nazev.n">Název</b>
+              <span data-i18n="rezim.nazev.p">Pod tímhle jménem se režim ukáže v historii.</span>
+            </div>
+            <input id="reznazevpole" type="text" maxlength="40" data-i18n-aria="rezim.nazev.n" aria-label="Název">
+          </div>
+          <div class="setrow">
+            <div class="t">
+              <b data-i18n="rezim.kostek.n">Počet kostek</b>
+              <span data-i18n="rezim.kostek.p">Kolika kostkami se hází na začátku kola i po horkých kostkách.</span>
+            </div>
+            <select id="rezkostek" data-i18n-aria="rezim.kostek.n" aria-label="Počet kostek">
+              <option value="5">5</option>
+              <option value="6">6</option>
+            </select>
+          </div>
+
+          <!-- Šest sekcí pod sebou, každá s vlastním nadpisem a linkou.
+               Obsah staví renderRezDetail(); staticky tu stojí jen to, co se
+               nemění, aby to mohlo nést data-i18n. -->
+          <div class="seccap" data-i18n="rezim.cap.sam">Samostatné kostky</div>
+          <div id="rezsam"></div>
+
+          <div class="seccap" data-i18n="rezim.cap.stejna">Stejná čísla</div>
+          <div class="setrow">
+            <div class="t">
+              <b data-i18n="rezim.rozs.n">Rozšířený režim</b>
+              <span data-i18n="rezim.rozs.p">Rozdělí stejná čísla na dvojice, trojice, čtveřice, pětice a šestice zvlášť.</span>
+            </div>
+            <div class="setbtns"><button class="ghost" id="rezrozs" type="button"></button></div>
+          </div>
+          <!-- V základním pohledu jeden práh, v rozšířeném pět podsekcí;
+               #rezprahrow se proto skrývá a mřížky staví renderRezStej(). -->
+          <div class="setrow" id="rezprahrow">
+            <div class="t">
+              <b data-i18n="rezim.prah.n">Od kolika kostek</b>
+              <span data-i18n="rezim.prah.p">Kolik stejných čísel musí padnout, aby se dala odložit.</span>
+            </div>
+            <select id="rezprah" data-i18n-aria="rezim.prah.n" aria-label="Od kolika kostek"></select>
+            <div class="setbtns"><button class="ghost" id="rezstejzap" type="button"></button></div>
+          </div>
+          <div id="rezstej"></div>
+
+          <!-- Pravidlo nad nejvyšší zapnutou skupinou. Stojí staticky kvůli
+               data-i18n, ale renderRezStej() si ho přesune pod tu skupinu,
+               ke které zrovna patří — a když je nejvyšší skupina na počtu
+               kostek režimu, schová ho úplně. Nadpis se řídí počtem, takže
+               ho dopisuje vykreslení a katalogu nepatří. -->
+          <div id="reznadwrap" hidden>
+            <div class="setrow">
+              <div class="t">
+                <b id="reznadtit"></b>
+                <span data-i18n="rezim.nad.p">Co udělá každá další kostka nad nejvyšší nastavenou skupinou.</span>
+              </div>
+              <select id="reznad" data-i18n-aria="rezim.nad.n" aria-label="Pravidlo nad nejvyšší skupinou">
+                <option value="x2" data-i18n="rezim.nad.x2">zdvojnásobí</option>
+                <option value="nasobek" data-i18n="rezim.nad.nasobek">násobí skupinu</option>
+                <option value="pevne" data-i18n="rezim.nad.pevne">pevné body</option>
+              </select>
+              <button class="ghost info" id="reznadinfo" type="button" data-i18n-aria="rezim.nad.info" aria-label="Co ta pravidla znamenají">i</button>
+            </div>
+            <div class="msg" id="reznadnapoveda" hidden></div>
+            <div class="trojgrid" id="reznadp" hidden></div>
+          </div>
+
+          <div class="seccap" data-i18n="rezim.cap.post">Postupky</div>
+          <div id="rezpost"></div>
+
+          <div class="seccap" data-i18n="nast.komb">Kombinace navíc</div>
+          <div id="komblist"></div>
+
+          <div class="seccap" data-i18n="rezim.cap.vlastni">Vlastní kombinace</div>
+          <div class="setrow">
+            <div class="t">
+              <b data-i18n="komb.novy.n">Vlastní kombinace</b>
+              <span data-i18n="komb.novy.p">Naťuká se po kostkách a může bodovat víc vzory najednou.</span>
+            </div>
+            <div class="setbtns"><button class="ghost rezbtn" id="kombnovy" type="button" data-i18n="komb.novy.btn">Přidat</button></div>
+          </div>
+          <div id="kombvlastni"></div>
+          <div class="msg" id="kombzprava" hidden></div>
+
+          <div class="seccap" data-i18n="rezim.cap.nastaveni">Nastavení</div>
+          <div class="setrow" id="rezduplrow"></div>
+          <div class="setrow" id="rezkonecrow"></div>
+        </div>
+
+        <!-- Editor jedné vlastní kombinace: třetí podstránka téže karty,
+             stejným vzorem jako seznam a detail režimu. Jméno, body, stav
+             a jeden až šest vzorů, ze kterých stačí sednout kterýkoli. -->
+        <div id="kombdetail" hidden>
+          <div class="dethead">
+            <button class="ghost back" id="kombback" type="button" data-i18n="komb.zpetrezim">« Zpět</button>
+            <h3 id="kombtitul"></h3>
+          </div>
+
+          <div class="setrow">
+            <div class="t">
+              <b data-i18n="komb.nazev.n">Název</b>
+              <span data-i18n="komb.nazev.p">Pod tímhle jménem stojí kombinace na čipu i v pravidlech.</span>
+            </div>
+            <input id="kombnazevpole" type="text" maxlength="40" data-i18n-aria="komb.nazev.n" aria-label="Název">
+          </div>
+          <div id="kombbodyrow"></div>
+          <div id="kombstavrow"></div>
+
+          <div class="seccap" data-i18n="komb.cap.vzory">Vzory</div>
+          <div id="kombvzory"></div>
+
+          <div class="seccap" data-i18n="komb.cap.novyvzor">Nový vzor</div>
+          <div class="kombnovy">
+            <div class="kombstav"><span id="kombvzor"></span><span class="hint" id="kombvzorhint"></span></div>
+            <!-- Dvě řady: čísla jsou konkrétní hodnoty, písmena skupiny
+                 „libovolná, ale stejná“. Do jednoho vzoru jdou obě, takže se
+                 dají naťukat i dvě dvojice a šestka. -->
+            <div class="cap" data-i18n="komb.cap.cisla">Konkrétní hodnoty</div>
+            <div class="pips" id="kombpips"></div>
+            <div class="cap" data-i18n="komb.cap.pismena">Libovolné, ale stejné</div>
+            <div class="pips" id="kombpism"></div>
+            <div class="pismhint" data-i18n="komb.pismena.p">Stejné písmeno znamená stejnou hodnotu. Každé písmeno padne na jinou hodnotu, a na jinou než čísla ve vzoru.</div>
+            <div class="manual">
+              <button class="chip" id="kombzrus" style="flex:0 0 92px" data-i18n="komb.vymazat">Vymazat</button>
+              <button class="addbtn" id="kombpridat" data-i18n="komb.pridatvzor">Přidat vzor</button>
+            </div>
+            <div class="msg" id="kombvzorzprava" hidden></div>
+          </div>
+
+          <div class="seccap" data-i18n="rezim.cap.nastaveni">Nastavení</div>
+          <div id="kombsmazrow"></div>
+        </div>
+      </div>
+    </div>
+    <!-- Pás rizika je při stavbě pravidel ten údaj, podle kterého se pozná,
+         jestli režim dává smysl, takže je vidět pořád. Stojí za .modalbody,
+         ne v ní: jako patička pružného sloupce sedí na spodní hraně okna
+         doopravdy, kdežto sticky uvnitř se pod spodní padding scrollujícího
+         prvku nedostane a pod pásem prosvítal obsah. Text mu dopisuje
+         renderRezPruh(), skrývání řídí ukazRezPruh(). -->
+    <div class="rizpruh" id="rezriziko" hidden></div>
+  </div>
+</div>
+

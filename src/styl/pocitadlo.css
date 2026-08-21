@@ -1,0 +1,156 @@
+
+  /* přehled na stránce zápisu */
+  .stats{display:flex;gap:8px;margin:16px 0 18px}
+  .stats div{flex:1;border:1px solid var(--edge);border-radius:var(--r);padding:8px 10px}
+  .stats b{display:block;font-family:"IM Fell English",Georgia,serif;font-size:22px;font-weight:400;line-height:1.1}
+  .stats span{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim)}
+
+  /* skóre */
+  .score{padding:6px 0 2px}
+  .score .line{
+    display:flex;align-items:baseline;justify-content:space-between;gap:12px;
+    padding:5px 1px;border-bottom:1px solid var(--hair);
+  }
+  .score .line span{
+    font-family:"IM Fell English SC",Georgia,serif;font-size:12px;
+    letter-spacing:.22em;color:var(--dim);
+  }
+  .score .line b{
+    font-family:"IM Fell English",Georgia,serif;font-weight:400;
+    font-size:clamp(34px,5.2vh,46px);line-height:1;
+  }
+  .score .sub b{font-size:clamp(20px,3vh,26px);color:var(--dim)}
+  .score.won .line b{color:var(--brass)}
+  .score.won .sub b{color:var(--brass)}
+
+  /* vrubovka */
+  .tally{display:flex;gap:4px;align-items:flex-end;justify-content:center;min-height:24px;margin:7px 0 3px;flex-wrap:wrap}
+  .tally i{display:block;width:3px;height:14px;background:var(--edge);border-radius:1px;transition:height .18s,background .18s}
+  .tally i.cut{background:var(--brass);height:22px}
+  .tallycap{text-align:center;font-size:12px;color:var(--dim)}
+
+  /* kolo */
+  .turn{margin-top:14px;border:1px solid var(--edge);border-radius:var(--r);background:var(--slate)}
+  .turnbar{display:flex;align-items:center;justify-content:space-between;padding:9px 13px;border-bottom:1px solid var(--edge)}
+  .turnbar .l{font-family:"IM Fell English SC",Georgia,serif;font-size:13px;letter-spacing:.14em;color:var(--dim)}
+  .turnbar .p{font-family:"IM Fell English",Georgia,serif;font-size:26px;line-height:1}
+
+  .rollhead{padding:7px 13px;border-bottom:1px solid var(--edge);display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:nowrap}
+  .rollhead .n{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .rollhead .n{font-size:15px}
+  .rollhead .n b{font-weight:500}
+  .rollhead .hot{display:block;font-size:12.5px;color:var(--brass);margin-top:1px}
+
+  .pad{padding:10px 13px}
+  .cap{font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--dim);margin:0 0 6px}
+  .cap.gap{margin-top:10px}
+  .row{display:flex;flex-wrap:wrap;gap:6px}
+
+  .chip{
+    flex:1 1 auto;min-width:0;background:transparent;
+    border:1px solid var(--edge);border-radius:var(--r);
+    padding:4px 8px;min-height:var(--tap);font-size:14px;text-align:center;white-space:nowrap;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    transition:border-color .12s,background .12s;
+  }
+  .chip .v{display:block;font-size:11px;color:var(--dim);margin-top:1px}
+  .chip:hover:not(:disabled){border-color:var(--brass)}
+  .chip:active:not(:disabled){background:var(--press)}
+  .chip:disabled{opacity:.28;cursor:not-allowed}
+  .chip.sel{border-color:var(--brass);background:var(--selbg)}
+  /* Symetrické zalomení řady čipů. Samo od sebe by se pět zalomilo jako 4 + 1
+     a osamělý čip by se roztáhl přes celou šířku. Třídu podle počtu
+     viditelných čipů nasazuje JS — počet sourozenců CSS nezná. Basis je
+     o kousek menší než podíl šířky, aby se do řádku vešly mezery. */
+  .row.k5 .chip,.row.k6 .chip{flex:1 1 calc(33.333% - 8px)}
+  .row.k7 .chip,.row.k8 .chip{flex:1 1 calc(25% - 8px)}
+  /* Devět čipů nastane při všech třech postupkách, všech pěti kombinacích
+     a čipu vlastní; tři řady po třech jsou čitelnější než 4 + 4 + 1. */
+  .row.k9 .chip{flex:1 1 calc(33.333% - 8px)}
+  /* .row má display:flex z autorského listu, takže samotné [hidden] nestačí */
+  .row[hidden]{display:none}
+
+  .kind{display:flex;gap:6px;align-items:stretch}
+  .kind .col{display:flex;flex-direction:column;gap:6px;flex:1}
+  .pips{display:flex;gap:5px}
+  .pips .chip{flex:1;padding:0;min-height:var(--tap);font-family:"IM Fell English",Georgia,serif;font-size:19px}
+  .addbtn{
+    background:var(--brass);border:none;border-radius:var(--r);color:var(--onbrass);
+    font-weight:700;font-size:14px;padding:0 14px;min-height:44px;
+  }
+  .addbtn:disabled{background:var(--edge);color:var(--dim);cursor:not-allowed}
+
+  .manual{display:flex;gap:6px}
+  .manual[hidden]{display:none}
+  #manualwrap{margin-top:8px}
+  #manualwrap[hidden]{display:none}
+  /* Vlastní vzory bydlí v panelu, ne v řádku s čipy: jejich popisek je
+     dlouhý (1,1,1+5,5) a je jich až osm, takže by rozpočet šířky řady
+     přestal platit. V panelu dlouhý popisek nevadí. */
+  #vlastnirow{margin-bottom:6px}
+  .manual input{
+    flex:1;min-width:0;background:var(--field);border:1px solid var(--edge);border-radius:var(--r);
+    color:var(--bone);font-family:inherit;font-size:16px;padding:0 10px;min-height:44px;
+  }
+  .manual input:focus{outline:none;border-color:var(--brass)}
+
+  /* dvě vnitřní stránky boxu kola: zadávání / opravy */
+  .sheettabs{display:flex;gap:4px;flex:0 0 auto}
+  .sheettabs button{
+    background:transparent;border:1px solid var(--edge);border-radius:var(--r);
+    color:var(--dim);font-size:11px;letter-spacing:.12em;text-transform:uppercase;
+    padding:0 11px;min-height:34px;
+  }
+  .sheettabs button.on{color:var(--bone);border-color:var(--edge);background:var(--press)}
+  /* overflow-x:hidden vypíná posun prstem i kolečkem, ale scrollTo() z
+     goSheet() funguje dál — karty se přepínají výhradně tlačítky. */
+  .sheets{
+    display:flex;overflow-x:hidden;overscroll-behavior-x:contain;
+    scroll-behavior:smooth;scrollbar-width:none;
+  }
+  .sheets::-webkit-scrollbar{display:none}
+  .sheet{flex:0 0 100%;min-width:100%;position:relative}
+  .fix{position:absolute;inset:0;overflow-y:auto;padding:11px 13px}
+  .fix .lbl{
+    font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--dim);
+    margin:0 0 5px;display:flex;justify-content:space-between;gap:10px;
+  }
+  .fix .lbl b{font-family:"IM Fell English",Georgia,serif;font-size:15px;
+    letter-spacing:0;text-transform:none;font-weight:400;color:var(--bone)}
+  .fix .grp{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:11px}
+  .fix .grp:last-child{margin-bottom:0}
+  .fix .ent{
+    display:inline-flex;align-items:center;gap:9px;background:transparent;
+    border:1px solid var(--edge);border-radius:var(--r);padding:0 9px 0 11px;min-height:42px;font-size:14px;
+  }
+  .fix .ent b{font-weight:400;color:var(--dim)}
+  .fix .ent::after{content:"\00D7";font-size:17px;line-height:1;color:var(--oxblood)}
+  .fix .ent:hover{border-color:var(--oxblood)}
+  .fix .ent:active{background:var(--dangerbg)}
+  .fix .none{color:var(--dim);font-style:italic;font-size:13.5px}
+  .rollbtnwrap{padding-top:10px}
+  .rollbtn{
+    width:100%;background:transparent;border:1px solid var(--brass);color:var(--brass);
+    border-radius:var(--r);min-height:50px;padding:6px 10px;font-size:15px;font-weight:700;
+  }
+  .rollbtn:hover:not(:disabled){background:var(--brass);color:var(--onbrass)}
+  .rollbtn:disabled{border-color:var(--edge);color:var(--dim);cursor:not-allowed}
+  /* Riziko farklu sedí na tlačítku Farkle: mluví o farklu a tlačítko nemizí
+     nikdy, kdežto #rollline se pod 540 px skrývá. Barva jde z currentColor
+     přes opacity, aby přežila i překlopení pozadí při hoveru. */
+  .rollbtn .v,.act .v{display:block;font-size:11px;font-weight:400;opacity:.72;margin-top:2px}
+
+  /* akce */
+  .lock{
+    margin-top:10px;border:1px solid var(--brass);border-radius:var(--r);
+    background:var(--selbg);color:var(--brass);
+    padding:8px 11px;font-size:13px;line-height:1.35;text-align:center;
+  }
+  .lock.warn{border-color:var(--oxblood);background:var(--dangerbg);color:var(--danger)}
+  /* margin-top a padding-top řídí #page0 .acts výš — .acts je jen tam */
+  .acts{display:flex;gap:8px}
+  .act{flex:1;border-radius:var(--r);min-height:50px;padding:6px 10px;font-size:15px;font-weight:700;border:1px solid}
+  .bank{background:var(--verdigris);border-color:var(--verdigris);color:var(--ongreen)}
+  .bank:disabled{background:transparent;border-color:var(--edge);color:var(--dim);cursor:not-allowed}
+  .bust{background:transparent;border-color:var(--oxblood);color:var(--danger)}
+  .bust:hover{background:var(--oxblood);color:var(--bone)}

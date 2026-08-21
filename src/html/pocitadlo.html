@@ -1,0 +1,102 @@
+<section class="page" id="page0" role="tabpanel" aria-labelledby="tab0">
+
+<div class="score" id="total">
+  <div class="line"><span data-i18n="pocitadlo.zapsano">zapsáno</span><b id="score">0</b></div>
+  <div class="line sub"><span id="restlabel" data-i18n="pocitadlo.zbyva">zbývá</span><b id="rest">0</b></div>
+</div>
+
+<section class="turn">
+  <div class="turnbar">
+    <div class="l" id="turnlabel">Kolo 1 — na stole</div>
+    <div class="p" id="pot">0</div>
+  </div>
+
+  <div class="rollhead">
+    <div class="n" id="rollline"></div>
+    <div class="sheettabs" id="sheettabs">
+      <button type="button" class="on" data-i18n="pocitadlo.zadat">zadat</button>
+      <button type="button" data-i18n="pocitadlo.opravit">opravit</button>
+    </div>
+  </div>
+
+  <div class="sheets" id="sheets">
+  <div class="sheet">
+  <div class="pad">
+    <!-- Samostatně bodující hodnoty. Šest čipů stojí staticky tady a jen se
+         skrývají, stejně jako postupky a kombinace. Popisek i sazbu dopisuje
+         renderKombi() z režimu, takže data-i18n na nich není: prvek, do
+         kterého zapisuje vykreslení, nesmí patřit katalogu.
+         Do řady se vejdou tři, aniž by se čipy zmenšily — při čtyřech a víc
+         se celá řada schová a zadává se přes 1× ve Stejných hodnotách. -->
+    <div class="cap" id="singlecap" data-i18n="pocitadlo.zhodu">Co si z hodu necháváš</div>
+    <div class="row" id="singlerow">
+      <button class="chip" data-single="1"><span></span><span class="v"></span></button>
+      <button class="chip" data-single="2" hidden><span></span><span class="v"></span></button>
+      <button class="chip" data-single="3" hidden><span></span><span class="v"></span></button>
+      <button class="chip" data-single="4" hidden><span></span><span class="v"></span></button>
+      <button class="chip" data-single="5"><span></span><span class="v"></span></button>
+      <button class="chip" data-single="6" hidden><span></span><span class="v"></span></button>
+    </div>
+
+    <div class="cap gap" data-i18n="pocitadlo.stejne">Stejné hodnoty</div>
+    <div class="kind">
+      <div class="col">
+        <div class="pips" id="counts"></div>
+        <div class="pips" id="pips"></div>
+      </div>
+      <button class="addbtn" id="addkind" disabled>+ 0</button>
+    </div>
+
+    <div class="cap gap" id="strcap" data-i18n="pocitadlo.postupky">Postupky</div>
+    <!-- Přednastavené kombinace stojí staticky tady a jen se skrývají: je jich
+         pevný počet, takže snapshot prvků při startu i sběr češtiny fungují
+         beze změny. Do stejné řady jako postupky proto, aby náklad na šířku
+         nerostl skokem, ale postupně podle toho, kolik si kdo zapnul.
+         Popisky (2+2+2, 3+2, …) jsou jazykově neutrální a nepřekládají se;
+         sazba v .v se dopisuje z JS, protože je editovatelná.
+         Čip „vlastní“ stojí schválně až za nimi: otevírá panel pod řadou,
+         takže má být poslední, ať je zapnutých kombinací kolik chce. -->
+    <div class="row" id="strrow">
+      <button class="chip" data-str="15"><span>1–5</span><span class="v">500</span></button>
+      <button class="chip" data-str="26"><span>2–6</span><span class="v">750</span></button>
+      <button class="chip" data-str="16"><span>1–6</span><span class="v">1 500</span></button>
+      <button class="chip" data-kombi="2p" hidden>2+2<span class="v"></span></button>
+      <button class="chip" data-kombi="3p" hidden>2+2+2<span class="v"></span></button>
+      <button class="chip" data-kombi="32" hidden>3+2<span class="v"></span></button>
+      <button class="chip" data-kombi="33" hidden>3+3<span class="v"></span></button>
+      <button class="chip" data-kombi="42" hidden>4+2<span class="v"></span></button>
+      <button class="chip" id="mtoggle"><span data-i18n="pocitadlo.chip.rucne">vlastní</span><span class="v" data-i18n="pocitadlo.chip.rucnev">body</span></button>
+    </div>
+
+    <div id="manualwrap" hidden>
+      <div class="row" id="vlastnirow" hidden></div>
+      <div class="manual">
+        <input id="mnum" type="number" inputmode="numeric" data-i18n-ph="pocitadlo.body.ph" placeholder="body" data-i18n-aria="pocitadlo.body.ph" aria-label="body" min="0" step="50">
+        <button class="chip" id="mless" style="flex:0 0 40px">−</button>
+        <button class="chip" id="mkost" style="flex:0 0 74px">1 kost.</button>
+        <button class="chip" id="mmore" style="flex:0 0 40px">+</button>
+        <button class="addbtn" id="madd" data-i18n="pocitadlo.pridat">Přidat</button>
+      </div>
+    </div>
+  </div>
+  </div>
+  <div class="sheet"><div class="fix" id="fix"></div></div>
+  </div>
+</section>
+
+<div class="rollbtnwrap">
+  <button class="rollbtn" id="rollon" disabled data-i18n="pocitadlo.hazetdal">Házet dál</button>
+</div>
+
+<div class="lock" id="lock" hidden></div>
+<div class="lock warn" id="nosave" hidden data-i18n="pocitadlo.neuklada">Ukládání nefunguje — rozehraná hra po zavření prohlížeče zmizí. Historii si zazálohuj v nastavení.</div>
+
+<div class="acts">
+  <button class="ghost" id="undo" style="flex:0 0 auto;padding:0 14px" data-i18n="pocitadlo.zpet">Zpět</button>
+  <button class="act bank" id="bank" disabled data-i18n="pocitadlo.zapsatapredat">Zapsat a předat</button>
+  <!-- Popisek ve vlastním spanu, hodnota vedle něj: do prvku zapisuje
+       vykreslení i katalog, a o jeden prvek se přetahovat nesmějí. -->
+  <button class="act bust" id="bust"><span data-i18n="pocitadlo.farkle">Farkle</span><span class="v" id="bustriz"></span></button>
+</div>
+
+</section>

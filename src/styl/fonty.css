@@ -1,0 +1,11 @@
+  /* fonty jsou v repu, aplikace funguje offline */
+  @font-face{font-family:"IM Fell English";src:url("@font fonty/imfell-english-400.woff2") format("woff2");
+    font-weight:400;font-style:normal;font-display:swap}
+  @font-face{font-family:"IM Fell English SC";src:url("@font fonty/imfell-english-sc-400.woff2") format("woff2");
+    font-weight:400;font-style:normal;font-display:swap}
+  @font-face{font-family:"Alegreya Sans";src:url("@font fonty/alegreya-sans-400.woff2") format("woff2");
+    font-weight:400;font-style:normal;font-display:swap}
+  @font-face{font-family:"Alegreya Sans";src:url("@font fonty/alegreya-sans-500.woff2") format("woff2");
+    font-weight:500;font-style:normal;font-display:swap}
+  @font-face{font-family:"Alegreya Sans";src:url("@font fonty/alegreya-sans-700.woff2") format("woff2");
+    font-weight:700;font-style:normal;font-display:swap}
