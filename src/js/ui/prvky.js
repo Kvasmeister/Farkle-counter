@@ -23,10 +23,10 @@ var elScore=$("score"), elTotal=$("total"), elRest=$("rest"), elRestLabel=$("res
     elRoundSel=$("roundsel"), elRoundNum=$("roundnum"),
     elPips=$("pips"), elCounts=$("counts"), elAddKind=$("addkind"),
     elMnum=$("mnum"), elMkost=$("mkost"), elMToggle=$("mtoggle"), elManual=$("manualwrap"),
-    elStrRow=$("strrow"), elStrCap=$("strcap"), elVlastniRow=$("vlastnirow"),
+    elStrRow=$("strrow"), elStrCap=$("strcap"),
     elSingleRow=$("singlerow"), elSingleCap=$("singlecap");
 var elDataSingle = Array.prototype.slice.call(document.querySelectorAll("[data-single]")),
     elDataStr    = Array.prototype.slice.call(document.querySelectorAll("[data-str]")),
     elDataKombi  = Array.prototype.slice.call(document.querySelectorAll("[data-kombi]"));
 
-export { $, elAddKind, elArch, elBank, elBust, elBustRiz, elCounts, elDataKombi, elDataSingle, elDataStr, elEmpty, elFix, elGoalNum, elGoalSel, elKosHistList, elKosList, elLock, elMToggle, elManual, elMkost, elMnum, elModeSel, elPips, elPot, elRest, elRestLabel, elRollLine, elRollOn, elRoundNum, elRoundSel, elRows, elScore, elSingleCap, elSingleRow, elStrCap, elStrRow, elTally, elTallyCap, elTotal, elTurnLabel, elUndo, elVlastniRow };
+export { $, elAddKind, elArch, elBank, elBust, elBustRiz, elCounts, elDataKombi, elDataSingle, elDataStr, elEmpty, elFix, elGoalNum, elGoalSel, elKosHistList, elKosList, elLock, elMToggle, elManual, elMkost, elMnum, elModeSel, elPips, elPot, elRest, elRestLabel, elRollLine, elRollOn, elRoundNum, elRoundSel, elRows, elScore, elSingleCap, elSingleRow, elStrCap, elStrRow, elTally, elTallyCap, elTotal, elTurnLabel, elUndo };

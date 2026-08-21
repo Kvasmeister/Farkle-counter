@@ -138,7 +138,7 @@ console.log("C) migrace ze starých kombinací navíc");
   ok(a.rez().id === "kcd2", "hraje se dál podle KCD2");
   ok(a.rez().p["3p"] === 500, "zapnutá kombinace se přestěhovala do režimu: " + JSON.stringify(a.rez().p));
   ok(a.rez().v.length === 1 && a.rez().v[0].b === 1500, "a vlastní vzor taky");
-  ok(a.$("vlastnirow").children.length === 1, "čip vzoru je v klávesnici");
+  ok(a.$("strrow").querySelectorAll(".chip-vlastni").length === 1, "čip vzoru je v klávesnici");
   a.zvol("klasika");
   ok(a.stare() !== null, "starý klíč se nemaže, je to záchranná síť");
   ok(a.ulozeno().p.kcd2.p["3p"] === 500, "a v novém klíči leží jako odchylka KCD2: " +

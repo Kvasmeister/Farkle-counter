@@ -7,10 +7,11 @@
    cesta k ručnímu zadání. Nadpis nad řadou proto mluví o tom, co v ní
    právě je: Postupky, Postupky a kombinace, nebo Kombinace.
 
-   Vlastní kombinace stojí ve své vlastní řadě #vlastnirow hned pod
-   #strrow a jsou vidět pořád, stejně jako přednastavené kombinace v
-   #strrow — na čipu „vlastní“ nezávisí, ten otevírá jen panel ručního
-   zadání bodů.
+   Vlastní kombinace stojí v téže řadě jako postupky a přednastavené
+   kombinace, těsně před čipem „vlastní“ (ten zůstává poslední). Na rozdíl
+   od statických čipů se ale vkládají a mažou dynamicky při každém
+   překreslení (renderVlastniCipy() níž) — značí se třídou chip-vlastni,
+   aby šly najít a smazat, aniž by se sáhlo na sourozence.
 
    Samostatné hodnoty mají dvě cesty a rozhoduje jejich počet: do tří se
    vejdou do vlastní řady, při čtyřech a víc se řada schová a nastupuje
@@ -39,12 +40,12 @@ import {
   elDataKombi,
   elDataSingle,
   elDataStr,
+  elMToggle,
   elPips,
   elSingleCap,
   elSingleRow,
   elStrCap,
-  elStrRow,
-  elVlastniRow
+  elStrRow
 } from "./prvky.js";
 import { render } from "./vykresleni.js";
 
@@ -90,10 +91,10 @@ function renderKind(){
 /* ---------- čipy postupek a kombinací v klávesnici ----------
    Postupky i přednastavené kombinace stojí v HTML natvrdo a jen se skrývají,
    takže snapshot prvků i sběr češtiny při startu fungují beze změny. Co je
-   z nich vidět, rozhoduje herní režim. Vlastní kombinace se kreslí dynamicky
-   do vlastní řady #vlastnirow (renderVlastniCipy() níž) — jejich popisek je
-   dlouhý a je jich až osm, takže do rozpočtu šířky #strrow nepatří, ale
-   vidět jsou stejně rovnou, bez čipu „vlastní“. */
+   z nich vidět, rozhoduje herní režim. Vlastní kombinace se do stejné řady
+   vkládají dynamicky (renderVlastniCipy() níž), proto se počítají zvlášť a
+   přičítají se do stejného součtu `komb`, ať zalomení řady (třídy k5–k9)
+   i nadpis nad ní počítají se všemi čipy dohromady. */
 function renderKombi(){
   var l = left(), lock = locked(), rez = aktRezim(), videt = 0, post = 0, komb = 0;
   elDataStr.forEach(function(b){
@@ -108,6 +109,7 @@ function renderKombi(){
     b.disabled = lock || PRESETY[k].d > l;
     b.querySelector(".v").textContent = fmt(sazba(rez, k));
   });
+  komb += renderVlastniCipy(rez, l, lock);
   /* Řada samostatných hodnot: do tří čipů se vejde beze změny velikosti,
      při čtyřech a víc mizí celá i s nadpisem a zadává se přes 1× ve
      Stejných hodnotách. Popisek je týž text jako štítek v historii, takže
@@ -128,43 +130,50 @@ function renderKombi(){
   elStrCap.textContent = t(post ? (komb ? "pocitadlo.postupkykomb" : "pocitadlo.postupky")
                                 : "pocitadlo.kombinace");
   /* Zalomení se srovnává podle počtu viditelných čipů: samo od sebe by
-     se pět zalomilo jako 4 + 1 a osamělý čip by zabral celou šířku. */
+     se pět zalomilo jako 4 + 1 a osamělý čip by zabral celou šířku. Počítá
+     se až tady, po renderVlastniCipy() výš, ať jsou dynamické čipy vlastních
+     kombinací v řadě už vložené. */
   Array.prototype.forEach.call(elStrRow.children, function(el){ if(!el.hidden) videt++; });
   ["k5","k6","k7","k8","k9"].forEach(function(c){ elStrRow.classList.remove(c); });
   if(videt >= 5 && videt <= 9) elStrRow.classList.add("k" + videt);
-
-  renderVlastniCipy(rez, l, lock);
 }
 /* Kombinace s víc vzory se odkládá jedním čipem, dokud je jasné, kolik
    kostek to stojí. Když se do zbývajících kostek vejdou vzory o různých
    velikostech, řada se na místě překlopí na volbu — stejný dvoukrokový
    vzor jako mazání v koších, a klik navíc jen tehdy, když je opravdu
-   z čeho vybírat. */
+   z čeho vybírat.
+
+   Čipy se vkládají přímo do #strrow, těsně před čip „vlastní“ (insertBefore
+   na elMToggle) — nejdřív se ale smažou ty z minulého překreslení (třída
+   chip-vlastni), aby se řada nezacyklila do nekonečna. Vrací počet
+   zapnutých vlastních kombinací, ať si ho volající přičte k počtu
+   kombinací navíc pro nadpis řady a zalomení. */
 var vybiramKombi = null;
 function renderVlastniCipy(rez, l, lock){
   var komb = kombinaceZap(rez), vybrana = null;
-  elVlastniRow.innerHTML = "";
+  Array.prototype.forEach.call(elStrRow.querySelectorAll(".chip-vlastni"), function(el){ el.remove(); });
   komb.forEach(function(k){ if(k.id === vybiramKombi) vybrana = k; });
   if(vybrana && !lock){
-    elVlastniRow.appendChild(kombiVolbaCip(vybrana, l));
+    var volba = kombiVolbaCip(vybrana, l);
+    volba.classList.add("chip-vlastni");
+    elStrRow.insertBefore(volba, elMToggle);
     poctyKostekKombinace(vybrana, Math.min(rez.kostek, l)).forEach(function(n){
       var b = document.createElement("button");
-      b.type = "button"; b.className = "chip"; b.dataset.kostek = String(n);
+      b.type = "button"; b.className = "chip chip-vlastni"; b.dataset.kostek = String(n);
       b.textContent = tn("pocitadlo.kostzkr", n);
       b.addEventListener("click", function(){
         vybiramKombi = null;
         keep(kodVzoru(vybrana, n), vybrana.b, n);
       });
-      elVlastniRow.appendChild(b);
+      elStrRow.insertBefore(b, elMToggle);
     });
-    elVlastniRow.hidden = false;
-    return;
+    return komb.length;
   }
   vybiramKombi = null;
   komb.forEach(function(k){
     var b = document.createElement("button");
     b.type = "button";
-    b.className = "chip";
+    b.className = "chip chip-vlastni";
     b.dataset.vzor = k.id;
     b.innerHTML = esc(nazevKombinace(k)) + '<span class="v">' + esc(fmt(k.b)) + "</span>";
     var moznosti = poctyKostekKombinace(k, Math.min(rez.kostek, l));
@@ -176,9 +185,9 @@ function renderVlastniCipy(rez, l, lock){
       vybiramKombi = k.id;
       render();
     });
-    elVlastniRow.appendChild(b);
+    elStrRow.insertBefore(b, elMToggle);
   });
-  elVlastniRow.hidden = komb.length === 0;
+  return komb.length;
 }
 /* První čip volby je sama kombinace: říká, o kterou jde, a klepnutím
    volbu zruší. */

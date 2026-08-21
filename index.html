@@ -316,11 +316,6 @@
   .manual[hidden]{display:none}
   #manualwrap{margin-top:8px}
   #manualwrap[hidden]{display:none}
-  /* Vlastní kombinace stojí ve vlastní řadě hned pod #strrow, ne v ní:
-     jejich popisek je dlouhý (1,1,1+5,5) a je jich až osm, takže by
-     rozpočet šířky #strrow (třídy k5–k9) přestal platit. Margin-top
-     nahrazuje odstup, který dřív dával #manualwrap coby rodič. */
-  #vlastnirow{margin-top:8px;margin-bottom:6px}
   .manual input{
     flex:1;min-width:0;background:var(--field);border:1px solid var(--edge);border-radius:var(--r);
     color:var(--bone);font-family:inherit;font-size:16px;padding:0 10px;min-height:44px;
@@ -991,10 +986,11 @@
          nerostl skokem, ale postupně podle toho, kolik si kdo zapnul.
          Popisky (2+2+2, 3+2, …) jsou jazykově neutrální a nepřekládají se;
          sazba v .v se dopisuje z JS, protože je editovatelná.
-         Čip „vlastní“ stojí schválně až za nimi: otevírá panel ručního
-         zadání pod řadou, takže má být poslední. Vlastní kombinace ale
-         v žádném panelu nejsou — #vlastnirow stojí hned pod #strrow a
-         renderKombi() ho plní pořád, ať je „vlastní“ otevřené nebo ne. -->
+         Čip „vlastní“ zůstává schválně poslední: otevírá panel ručního
+         zadání pod řadou. Vlastní kombinace stojí v téže řadě těsně před
+         ním — renderKombi()/renderVlastniCipy() (ui/klavesnice.js) je tam
+         vkládá a maže dynamicky, značené třídou chip-vlastni, aby se
+         nesáhlo na tyhle statické čipy. -->
     <div class="row" id="strrow">
       <button class="chip" data-str="15"><span>1–5</span><span class="v">500</span></button>
       <button class="chip" data-str="26"><span>2–6</span><span class="v">750</span></button>
@@ -1006,8 +1002,6 @@
       <button class="chip" data-kombi="42" hidden>4+2<span class="v"></span></button>
       <button class="chip" id="mtoggle"><span data-i18n="pocitadlo.chip.rucne">vlastní</span><span class="v" data-i18n="pocitadlo.chip.rucnev">body</span></button>
     </div>
-
-    <div class="row" id="vlastnirow" hidden></div>
 
     <div id="manualwrap" hidden>
       <div class="manual">
@@ -4057,7 +4051,6 @@
   var elManual = $("manualwrap");
   var elStrRow = $("strrow");
   var elStrCap = $("strcap");
-  var elVlastniRow = $("vlastnirow");
   var elSingleRow = $("singlerow");
   var elSingleCap = $("singlecap");
   var elDataSingle = Array.prototype.slice.call(document.querySelectorAll("[data-single]"));
@@ -4289,6 +4282,7 @@
       b.disabled = lock || PRESETY[k].d > l;
       b.querySelector(".v").textContent = fmt(sazba(rez, k));
     });
+    komb += renderVlastniCipy(rez, l, lock);
     var samo = pocetSamostatnych(rez), radaVidet = samo > 0 && samo <= SAMOSTATNE_V_RADE;
     elDataSingle.forEach(function(b) {
       var v = Number(b.dataset.single), body = rez.sam[v] || 0;
@@ -4308,37 +4302,39 @@
       elStrRow.classList.remove(c);
     });
     if (videt >= 5 && videt <= 9) elStrRow.classList.add("k" + videt);
-    renderVlastniCipy(rez, l, lock);
   }
   var vybiramKombi = null;
   function renderVlastniCipy(rez, l, lock) {
     var komb = kombinaceZap(rez), vybrana = null;
-    elVlastniRow.innerHTML = "";
+    Array.prototype.forEach.call(elStrRow.querySelectorAll(".chip-vlastni"), function(el) {
+      el.remove();
+    });
     komb.forEach(function(k) {
       if (k.id === vybiramKombi) vybrana = k;
     });
     if (vybrana && !lock) {
-      elVlastniRow.appendChild(kombiVolbaCip(vybrana, l));
+      var volba = kombiVolbaCip(vybrana, l);
+      volba.classList.add("chip-vlastni");
+      elStrRow.insertBefore(volba, elMToggle);
       poctyKostekKombinace(vybrana, Math.min(rez.kostek, l)).forEach(function(n) {
         var b = document.createElement("button");
         b.type = "button";
-        b.className = "chip";
+        b.className = "chip chip-vlastni";
         b.dataset.kostek = String(n);
         b.textContent = tn("pocitadlo.kostzkr", n);
         b.addEventListener("click", function() {
           vybiramKombi = null;
           keep(kodVzoru(vybrana, n), vybrana.b, n);
         });
-        elVlastniRow.appendChild(b);
+        elStrRow.insertBefore(b, elMToggle);
       });
-      elVlastniRow.hidden = false;
-      return;
+      return komb.length;
     }
     vybiramKombi = null;
     komb.forEach(function(k) {
       var b = document.createElement("button");
       b.type = "button";
-      b.className = "chip";
+      b.className = "chip chip-vlastni";
       b.dataset.vzor = k.id;
       b.innerHTML = esc(nazevKombinace(k)) + '<span class="v">' + esc(fmt(k.b)) + "</span>";
       var moznosti = poctyKostekKombinace(k, Math.min(rez.kostek, l));
@@ -4353,9 +4349,9 @@
         vybiramKombi = k.id;
         render();
       });
-      elVlastniRow.appendChild(b);
+      elStrRow.insertBefore(b, elMToggle);
     });
-    elVlastniRow.hidden = komb.length === 0;
+    return komb.length;
   }
   function kombiVolbaCip(k, l) {
     var b = document.createElement("button");

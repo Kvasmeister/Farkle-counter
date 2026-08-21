@@ -199,8 +199,7 @@ import {
   elTally,
   elTallyCap,
   elTurnLabel,
-  elUndo,
-  elVlastniRow
+  elUndo
 } from "./ui/prvky.js";
 import { bank, bust, keep, novaHra, reset, rollOn, undo } from "./akce.js";
 import { AUKEY, autoZap, schovejToast, zkusAutoUlozit } from "./ui/autoulozeni.js";

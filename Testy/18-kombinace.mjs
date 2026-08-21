@@ -31,6 +31,13 @@ function app(opt){
   return { w, d, $, klik, i18n: w.__i18n, pravidla: w.__pravidla,
     stav: () => JSON.parse(w.localStorage.getItem("farkle-solo-v3") || "{}"),
     hist: () => JSON.parse(w.localStorage.getItem("farkle-hist-v1") || "[]"),
+    /* Čipy vlastních kombinací sedí přímo v #strrow (třída chip-vlastni),
+       ne v samostatné schované řadě. `hidden` tu napodobuje starší API
+       (žádný čip = neukazuje se) tak, aby zbytek sady zůstal beze změny. */
+    vlastniRow(){
+      const children = [...$("strrow").querySelectorAll(".chip-vlastni")];
+      return { hidden: children.length === 0, children };
+    },
     /* Kombinace patří od zavedení herních režimů jednomu režimu, ne aplikaci.
        Sada zkouší ten výchozí (KCD2), do kterého se starý klíč
        farkle-kombinace-v1 při startu přestěhuje.
@@ -130,13 +137,13 @@ console.log("A) výchozí stav: klávesnice vypadá jako dřív");
   ok(a.cipy().every(b => b.hasAttribute("hidden")), "a všechny jsou ve výchozím stavu skryté");
   ok(a.$("strrow").className === "row", "řada nemá třídu zalomení: " + JSON.stringify(a.$("strrow").className));
   ok(a.ulozeneKomb() === null, "bez zásahu se do úložiště nic nezapisuje");
-  ok(a.$("vlastnirow").hidden, "panel vlastních vzorů je prázdný a schovaný");
+  ok(a.vlastniRow().hidden, "žádná vlastní kombinace se nekreslí");
 }
 
 console.log("A2) čip vlastní je vždycky poslední v řadě");
 {
-  /* Otevírá panel pod řadou, takže mezi čipy uprostřed nepatří — a to ať je
-     zapnutých kombinací kolik chce. */
+  /* Otevírá panel ručního zadání, takže mezi čipy uprostřed nepatří — a to
+     ať je zapnutých kombinací (přednastavených i vlastních) kolik chce. */
   const a = app();
   ok([...a.$("strrow").children].pop() === a.$("mtoggle"),
      "bez zapnutých kombinací je poslední");
@@ -145,6 +152,11 @@ console.log("A2) čip vlastní je vždycky poslední v řadě");
   ok(deti.pop() === b.$("mtoggle"), "se všemi pěti zapnutými taky");
   ok(deti.filter(x => !x.hidden).length === 8 && b.$("strrow").className === "row k9",
      "a řada s devíti čipy se zalomí 3 + 3 + 3: " + b.$("strrow").className);
+  const c = app({ komb: { p: {}, v: [{ id: "v1", b: 500, v: [1,1,1,5,5] }] } });
+  const detiC = [...c.$("strrow").children];
+  ok(detiC.pop() === c.$("mtoggle"), "i s vlastní kombinací zůstává poslední");
+  ok(detiC.pop() === c.vlastniRow().children[0],
+     "vlastní kombinace sedí těsně před ním, ne za ním");
 }
 
 console.log("B) uložení a načtení farkle-kombinace-v1");
@@ -163,8 +175,8 @@ console.log("B) uložení a načtení farkle-kombinace-v1");
   const c = app({ komb: "rozbito" });
   ok(c.cipy().every(x => x.hasAttribute("hidden")), "nesmysl místo objektu nic neshodí");
   const dd = app({ komb: { p: {}, v: [{ b: 1500, v: [1,1,1,5,5] }, { b: 0, v: [1,1] }, { b: 100, v: [7,9] }, "x"] } });
-  ok(dd.$("vlastnirow").children.length === 1, "z rozbitého pole vzorů projde jen ten platný: " +
-     dd.$("vlastnirow").children.length);
+  ok(dd.vlastniRow().children.length === 1, "z rozbitého pole vzorů projde jen ten platný: " +
+     dd.vlastniRow().children.length);
 }
 
 console.log("C) strop osmi vlastních kombinací");
@@ -172,7 +184,7 @@ console.log("C) strop osmi vlastních kombinací");
   const devet = [];
   for(let i = 0; i < 9; i++) devet.push({ id: "v" + i, b: 100 + i, v: [1, 1] });
   const a = app({ komb: { p: {}, v: devet } });
-  ok(a.$("vlastnirow").children.length === 8, "z devíti se načte osm: " + a.$("vlastnirow").children.length);
+  ok(a.vlastniRow().children.length === 8, "z devíti se načte osm: " + a.vlastniRow().children.length);
   a.naKartuKomb();
   ok(a.$("kombnovy").disabled, "tlačítko Přidat je na stropu zamčené");
   ok(!a.$("kombzprava").hidden && /8/.test(a.$("kombzprava").textContent),
@@ -191,8 +203,7 @@ console.log("D) kódy štítků v položce i v zapsaném kole");
      "zapsané kolo veze kód, ne text: " + JSON.stringify(a.stav().turns[0]));
 
   const b = app({ komb: { p: {}, v: [{ id: "v1", b: 1500, v: [1,1,1,5,5] }] } });
-  b.klik(b.$("mtoggle"));
-  b.klik(b.$("vlastnirow").children[0]);
+  b.klik(b.vlastniRow().children[0]);
   ok(JSON.stringify(b.stav().rolls[0].items) === '[{"k":"k1500x5","p":1500,"d":5}]',
      "vlastní vzor nese body i kostky přímo v kódu: " + JSON.stringify(b.stav().rolls[0].items));
   ok(b.stitky()[0] === "vlastní 1\u202F500 · 5 kost.", "štítek se skládá z kódu: " + b.stitky()[0]);
@@ -225,8 +236,7 @@ console.log("E) štítky v obou jazycích");
   ok(a.stitky().join(" | ") === "tři dvojice | dvě trojice", "a zpátky česky");
 
   const b = app({ komb: { p: {}, v: [{ id: "v1", b: 1500, v: [1,1,1,5,5] }] } });
-  b.klik(b.$("mtoggle"));
-  b.klik(b.$("vlastnirow").children[0]);
+  b.klik(b.vlastniRow().children[0]);
   b.prepni("en");
   ok(b.stitky()[0] === "custom 1,500 · 5 dice", "vlastní vzor anglicky: " + b.stitky()[0]);
 }
@@ -240,10 +250,9 @@ console.log("F) zákaz čipu podle počtu zbývajících kostek");
   ok(!a.cip("32").disabled, "pětikostková ještě jde");
   a.jednicka(); a.jednicka();      /* zbývají tři */
   ok(a.cip("32").disabled, "a na třech se zamkne taky");
-  a.klik(a.$("mtoggle"));
-  ok(!a.$("vlastnirow").children[0].disabled, "tříkostkový vlastní vzor je pořád živý");
+  ok(!a.vlastniRow().children[0].disabled, "tříkostkový vlastní vzor je pořád živý");
   a.jednicka();                    /* zbývají dvě */
-  ok(a.$("vlastnirow").children[0].disabled, "na dvou se zamkne i on");
+  ok(a.vlastniRow().children[0].disabled, "na dvou se zamkne i on");
 }
 
 console.log("G) změna sazby nepřepíše historii");
@@ -316,7 +325,7 @@ console.log("I) nová vlastní kombinace");
   ok(a.$("kombnazevpole").value === "Kombinace 1", "a stojí i v poli");
   ok(a.vzoryVEditoru().length === 0,
      "kombinace vzniká bez vzoru: " + a.zapisyVzoru().join(" / "));
-  ok(a.$("vlastnirow").hidden, "bez vzoru se čip v klávesnici neukazuje");
+  ok(a.vlastniRow().hidden, "bez vzoru se čip v klávesnici neukazuje");
   const radekNove = a.radekVzoru(a.ulozeneKomb().v[0].id);
   ok(/zatím bez vzoru/.test(radekNove.textContent),
      "seznam v nastavení říká, že zatím nemá vzor: " + radekNove.textContent);
@@ -338,7 +347,7 @@ console.log("I) nová vlastní kombinace");
   const ulozena = a.ulozeneKomb().v[0];
   ok(ulozena.vz.length === 1 && ulozena.vz[0].v.join("") === "11155",
      "a uložil se: " + JSON.stringify(ulozena.vz));
-  ok(!a.$("vlastnirow").hidden && a.$("vlastnirow").children.length === 1,
+  ok(!a.vlastniRow().hidden && a.vlastniRow().children.length === 1,
      "s prvním vzorem se čip objeví v klávesnici rovnou, bez klikání na „vlastní“");
   ok(!a.vzoryVEditoru()[0].querySelector(".setbtns button").disabled,
      "i jediný vzor jde smazat — kombinace bez vzoru se jen přestane nabízet");
@@ -386,10 +395,10 @@ console.log("I) nová vlastní kombinace");
   ok(!radek.querySelector(".kombsazba"), "pole se sazbou v seznamu není");
   ok(/1 kombinace navíc/.test(a.podradekRezimu("kcd2")),
      "seznam režimů kombinaci počítá: " + a.podradekRezimu("kcd2"));
-  ok(!a.$("vlastnirow").hidden && a.$("vlastnirow").children.length === 1,
+  ok(!a.vlastniRow().hidden && a.vlastniRow().children.length === 1,
      "a v klávesnici je čip");
-  ok(a.$("vlastnirow").children[0].textContent.indexOf("Naše pravidlo") === 0,
-     "čip nese jméno kombinace: " + a.$("vlastnirow").children[0].textContent);
+  ok(a.vlastniRow().children[0].textContent.indexOf("Naše pravidlo") === 0,
+     "čip nese jméno kombinace: " + a.vlastniRow().children[0].textContent);
 }
 
 console.log("I1) kombinace bez vzoru přežije reload a v klávesnici se neukáže");
@@ -401,7 +410,7 @@ console.log("I1) kombinace bez vzoru přežije reload a v klávesnici se neuká�
   const nactena = a.pravidla.aktRezim().v;
   ok(nactena.length === 1 && nactena[0].vz.length === 0,
      "kombinace bez vzoru přežila normalizaci při načtení: " + JSON.stringify(nactena));
-  ok(a.$("vlastnirow").hidden, "a v klávesnici se neukazuje");
+  ok(a.vlastniRow().hidden, "a v klávesnici se neukazuje");
   a.naKartuKomb();
   ok(/zatím bez vzoru/.test(a.radekVzoru("v1").textContent),
      "seznam v nastavení ji ukazuje s vlastní hláškou: " + a.radekVzoru("v1").textContent);
@@ -422,15 +431,14 @@ console.log("I2) kombinace v seznamu: stav, úprava, mazání");
   /* vypnutí: kombinace zůstává v seznamu, ale mizí z klávesnice */
   a.klik(tlac[0]);
   ok(a.ulozeneKomb().v[0].z === false, "vypnutí se uložilo");
-  ok(a.$("vlastnirow").hidden, "čip zmizel z panelu");
+  ok(a.vlastniRow().hidden, "čip zmizel z řady");
   ok(!/kombinace/.test(a.podradekRezimu("kcd2")), "a do počtu se nezapočítává: " + a.podradekRezimu("kcd2"));
   ok(a.radekVzoru("v1"), "v seznamu ale zůstala");
   a.klik(a.radekVzoru("v1").querySelector(".setbtns button"));
-  ok(a.ulozeneKomb().v[0].z === true && !a.$("vlastnirow").hidden, "zapnutí ji vrátí");
+  ok(a.ulozeneKomb().v[0].z === true && !a.vlastniRow().hidden, "zapnutí ji vrátí");
 
   /* body se mění jen v editoru a historii nepřepíšou */
-  a.klik(a.$("mtoggle"));
-  a.klik(a.$("vlastnirow").children[0]);
+  a.klik(a.vlastniRow().children[0]);
   a.klik(a.$("bank"));
   a.klik(a.$("arch"));
   ok(a.hist()[0].turns[0].p === 1500, "hra je v historii za 1 500");
@@ -438,7 +446,7 @@ console.log("I2) kombinace v seznamu: stav, úprava, mazání");
   a.doEditoru("v1");
   a.zadejBody(900);
   ok(a.ulozeneKomb().v[0].b === 900, "nová sazba se uložila: " + a.ulozeneKomb().v[0].b);
-  ok(a.$("vlastnirow").children[0].querySelector(".v").textContent === "900",
+  ok(a.vlastniRow().children[0].querySelector(".v").textContent === "900",
      "čip ji ukazuje hned");
   ok(a.hist()[0].turns[0].p === 1500, "ale dohraná hra si pamatuje původní body: " +
      a.hist()[0].turns[0].p);
@@ -451,15 +459,15 @@ console.log("I2) kombinace v seznamu: stav, úprava, mazání");
   ok(a.ulozeneKomb().v.length === 0, "potvrzení kombinaci smaže");
   ok(a.$("kombdetail").hidden && !a.$("rezdetail").hidden,
      "a editor se zavře, protože nemá co ukazovat");
-  ok(a.$("vlastnirow").hidden, "panel v klávesnici se schoval");
+  ok(a.vlastniRow().hidden, "čip v klávesnici zmizel");
 }
 
 console.log("I3) kombinace uložená bez příznaku z se čte jako zapnutá");
 {
   /* vzory uložené dřív, než přepínač existoval, se nesmějí samy vypnout */
   const a = app({ komb: { p: {}, v: [{ id: "v1", b: 1500, v: [1,1,1,5,5] }] } });
-  ok(!a.$("vlastnirow").hidden && a.$("vlastnirow").children.length === 1,
-     "čip je v panelu");
+  ok(!a.vlastniRow().hidden && a.vlastniRow().children.length === 1,
+     "čip je v klávesnici");
   a.naKartuKomb();
   ok(a.radekVzoru("v1").querySelector(".setbtns button").textContent === "Zapnuto",
      "a přepínač hlásí zapnuto");
@@ -506,18 +514,17 @@ console.log("I5) volba počtu kostek u kombinace o vzorech různé velikosti");
 {
   const a = app({ komb: { p: {}, v: [{ id: "v1", n: "Naše", b: 800, z: true,
     vz: [{ v: [2,2], t: [2] }, { v: [3,3,3], t: [2] }] }] } });
-  a.klik(a.$("mtoggle"));
-  ok(a.$("vlastnirow").children.length === 1, "kombinace je jeden čip, ne dva");
-  a.klik(a.$("vlastnirow").children[0]);
+  ok(a.vlastniRow().children.length === 1, "kombinace je jeden čip, ne dva");
+  a.klik(a.vlastniRow().children[0]);
   ok(a.stav().rolls[0].items.length === 0, "první klepnutí ještě neodkládá");
-  const volby = [...a.$("vlastnirow").children];
+  const volby = [...a.vlastniRow().children];
   ok(volby.length === 3 && volby[1].textContent === "4 kost." && volby[2].textContent === "5 kost.",
      "řada se překlopí na volbu: " + volby.map(x => x.textContent).join(" | "));
   a.klik(volby[0]);
-  ok(a.$("vlastnirow").children.length === 1 && a.stav().rolls[0].items.length === 0,
+  ok(a.vlastniRow().children.length === 1 && a.stav().rolls[0].items.length === 0,
      "klepnutí na kombinaci volbu odvolá");
-  a.klik(a.$("vlastnirow").children[0]);
-  a.klik([...a.$("vlastnirow").children][2]);
+  a.klik(a.vlastniRow().children[0]);
+  a.klik([...a.vlastniRow().children][2]);
   ok(JSON.stringify(a.stav().rolls[0].items) === '[{"k":"k800x5","p":800,"d":5}]',
      "volba odloží zvolený počet kostek: " + JSON.stringify(a.stav().rolls[0].items));
 
@@ -525,8 +532,7 @@ console.log("I5) volba počtu kostek u kombinace o vzorech různé velikosti");
   const b = app({ komb: { p: {}, v: [{ id: "v1", n: "Naše", b: 800, z: true,
     vz: [{ v: [2,2], t: [2] }, { v: [3,3,3], t: [2] }] }] } });
   b.jednicka(); b.jednicka();          /* zbývají čtyři */
-  b.klik(b.$("mtoggle"));
-  b.klik(b.$("vlastnirow").children[0]);
+  b.klik(b.vlastniRow().children[0]);
   ok(b.stav().rolls[0].items.length === 3 &&
      b.stav().rolls[0].items[2].k === "k800x4",
      "jediná možnost se odloží rovnou: " + JSON.stringify(b.stav().rolls[0].items[2]));
@@ -597,14 +603,14 @@ console.log("J1) čísla a písmena v jednom vzoru");
      kombinace, ne tvarem — jméno si volí hráč. */
   a.$("kombnazevpole").value = "Dvě dvojice a šestka";
   a.$("kombnazevpole").dispatchEvent(new a.w.Event("input", { bubbles: true }));
-  ok(a.$("vlastnirow").children[0].textContent.indexOf("Dvě dvojice a šestka") === 0,
-     "čip: " + a.$("vlastnirow").children[0].textContent);
+  ok(a.vlastniRow().children[0].textContent.indexOf("Dvě dvojice a šestka") === 0,
+     "čip: " + a.vlastniRow().children[0].textContent);
   ok(/Dvě dvojice a šestka/.test(a.$("cardrules").textContent), "a okno pravidel taky");
   ok(/A,A\+B,B\+6/.test(a.$("cardrules").textContent),
      "pravidla za jménem sázejí i zápis vzorů");
   a.prepni("en");
-  ok(a.$("vlastnirow").children[0].textContent.indexOf("Dvě dvojice a šestka") === 0,
-     "jméno se nepřekládá, je to text hráče: " + a.$("vlastnirow").children[0].textContent);
+  ok(a.vlastniRow().children[0].textContent.indexOf("Dvě dvojice a šestka") === 0,
+     "jméno se nepřekládá, je to text hráče: " + a.vlastniRow().children[0].textContent);
 }
 
 console.log("J1b) vzor uložený se starým příznakem any");
@@ -618,8 +624,8 @@ console.log("J1b) vzor uložený se starým příznakem any");
      "z hodnot se staly skupiny: " + JSON.stringify(vz.tvar));
   ok(P.zapisVzoru(vz) === "A,A+B,B+C,C", "zápis: " + P.zapisVzoru(vz));
   ok(P.sediVzor(vz, P.poctyZHodu([1,1,6,6,4,4])), "a pořád sedne na jiné tři páry");
-  ok(a.$("vlastnirow").children[0].textContent.indexOf("Kombinace 1") === 0,
-     "čip nese výchozí jméno: " + a.$("vlastnirow").children[0].textContent);
+  ok(a.vlastniRow().children[0].textContent.indexOf("Kombinace 1") === 0,
+     "čip nese výchozí jméno: " + a.vlastniRow().children[0].textContent);
 }
 
 console.log("K) riziko na tlačítku Farkle");
@@ -689,8 +695,7 @@ console.log("M) záloha unese kolo s kombinací");
   const a = app({ komb: { p: { "3p": 500 }, v: [{ id: "v1", b: 1500, v: [1,1,1,5,5] }] } });
   a.klik(a.cip("3p"));
   a.klik(a.$("rollon"));                 /* horké kostky */
-  a.klik(a.$("mtoggle"));
-  a.klik(a.$("vlastnirow").children[0]);
+  a.klik(a.vlastniRow().children[0]);
   a.klik(a.$("bank"));
   a.klik(a.$("arch"));
   a.naKartuKomb();
