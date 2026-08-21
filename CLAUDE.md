@@ -24,6 +24,7 @@ stojí v hlavičce jejího modulu — každý soubor v `src/js/` začíná bloke
 | měnit bodování | `docs/farkle-pravidla-verze.md` |
 | chápat, proč je něco takhle | `docs/plany/` (02, 04, 05 hotové; 01 a 03 zbývají) |
 | hledat podivnost nalezenou při refaktoru | `docs/nalezy.md` |
+| nasadit na web | část 6 — `npm run deploy` |
 
 ---
 
@@ -297,38 +298,73 @@ v obou motivech. jsdom nic nevykresluje.
 
 ## 6. Nasazení
 
-Po **každé** změně zvýšit verzi v `sw.js`:
+Repo je napojené přes git, nenahrává se ručně. GitHub Pages servírují větev
+`main` z kořene, takže **co je na `main`, to je na webu**.
+
+```
+1. zvyš VERZE v sw.js                     ← dělá majitel projektu
+2. npm run deploy -- -m "co se změnilo"
+```
+
+`npm run deploy` složí `index.html`, ověří importy, pustí všech 20 sad,
+porovná VERZE s nasazeným stavem a teprve pak commitne a pushne. Když
+kterýkoli krok selže, nic se neodešle.
+
+### Verze
 
 ```js
-const VERZE = "kostky-v14";
+const VERZE = "kostky-v39";
 ```
 
 **Verzi zvyšuje výhradně majitel projektu, ne asistent.** Asistent na ni
 upozorní a nechá ji být.
 
-Bez zvýšení si zařízení nechají starou verzi z cache. Nová naskočí až při
-druhém spuštění — první ji stáhne na pozadí. Totéž platí pro návod.
+`SOUBORY` se cachují pod jménem VERZE a service worker se aktivuje podle ní.
+Nasadit nový `index.html` se starým číslem znamená, že zařízení, která
+aplikaci už mají, si nechají tu svou — a nikdo nepozná proč. Skript proto
+deploy **odmítne**, když se `index.html` změnil a číslo zůstalo. Je-li to
+opravdu záměr: `npm run deploy -- --stejna-verze -m "…"`.
 
-Postup: `npm run build`, pak nahrát `index.html`. Ruční editace navíc je
-potřeba, jen když přibude nový soubor (dopsat do `SOUBORY`), použije se nový
-znak mimo ořez fontu, nebo se změní barvy motivu (`theme-color` v HTML
-i `background_color`/`theme_color` v manifestu).
+Nová verze naskočí až při **druhém** spuštění: navigace je network-first,
+takže nové HTML dorazí hned, ale nový worker se aktivuje až po něm. Totéž
+platí pro návod — a je to tak lepší, ukáže se rovnou nová verze návodu.
 
-**Nahrávání na GitHub:** `sw.js` a `manifest.webmanifest` přes web UI
-neprocházejí — prohlížeč jim mění příponu. Řešení: **Add file → Create new
-file**, název napsat ručně a obsah vložit. Obrázky nahrát normálně.
+### Pojistka proti zapomenutému buildu
+
+`nastroje/hooks/pre-commit` odmítne commit, ve kterém `index.html`
+neodpovídá `src/`. Hook je verzovaný v repu, ne v `.git/hooks`, aby přežil
+překlonování; po čerstvém klonu se jednou zapne:
+
+```
+git config core.hooksPath nastroje/hooks
+```
+
+Rozdělaná práce, která se zrovna nedá složit, projde přes
+`git commit --no-verify`.
+
+### Ruční editace navíc
+
+Potřeba, jen když přibude nový soubor (dopsat do `SOUBORY` v `sw.js`),
+použije se nový znak mimo ořez fontu (část 7), nebo se změní barvy motivu
+(`theme-color` v HTML i `background_color`/`theme_color` v manifestu).
+
+### Kde leží git
+
+Pracovní soubory jsou v OneDrivu, ale `.git` **není** — je to jednořádkový
+soubor ukazující na `C:\Users\Jachy\git\Kostky.git`. Důvod: `.git` je hodně
+drobných souborů, které git rychle vytváří a maže (`index.lock`), a hlídač
+synchronizace umí jeden chytit uprostřed zápisu. Zdrojové soubory OneDrive
+synchronizuje dál a historie je od začátku i na GitHubu.
 
 ### Verze a návod
 
 `sw.js` odpoví na `{ dotaz: "verze" }` přes `MessageChannel`; aplikace se
 zeptá po startu (strop 2 s) a porovná s `farkle-navod-v1`. Číslo verze je
-díky tomu jen na jednom místě. Navigace je network-first se stropem 2,5 s
-(`SIT_STROP`); po vypršení se fetch **neruší** a doběhne do cache. Do cache
-jde jen odpověď, která je `ok`, není `redirected` a má `type === "basic"` —
-bez toho si aplikace uměla přepsat `index.html` přihlašovací stránkou
-hotelové Wi-Fi a byla rozbitá i offline.
-
----
+díky tomu jen na jednom místě. Navigace má strop 2,5 s (`SIT_STROP`);
+po vypršení se fetch **neruší** a doběhne do cache. Do cache jde jen
+odpověď, která je `ok`, není `redirected` a má `type === "basic"` — bez toho
+si aplikace uměla přepsat `index.html` přihlašovací stránkou hotelové Wi-Fi
+a byla rozbitá i offline.
 
 ## 7. Fonty a znaky
 
