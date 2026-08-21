@@ -68,7 +68,12 @@
     --body:#3B3529;
     color-scheme:light;
   }
-  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;touch-action:manipulation;
+  /* touch-action:manipulation gesta necháváme jen pro odstranění 300ms
+     zpoždění kliku a dvojklik-zoomu — pinch-zoom mezi svá gesta počítá
+     (viz MDN), takže ho nezakazuje. Blokuje ho až výčet pan-x pan-y: bez
+     klíčového slova pinch-zoom v seznamu prohlížeč gesto nepovolí, panning
+     (scroll uvnitř stránek) zůstává funkční. */
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;touch-action:pan-x pan-y;
     -webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
   /* Formuláře si výběr textu a callout nechávají — jinak by na starším
      WebKitu hrozilo, že se pole nedá pořádně editovat, a vlastní pole pro
