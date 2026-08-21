@@ -202,5 +202,5 @@ function nastavJazyk(kod, ulozit){
 
 /* `jazyk` se vyváží jako živá vazba: nastavJazyk() ho přepisuje a
    přepínač v nastavení musí vidět aktuální hodnotu, ne kopii z importu. */
-export { t, tn, kat, naJazyk, nastavJazyk, prelozStatiku, prekresliVse,
-         sberCestinu, zjistiJazyk, jazyk, JAZYKY, VYCHOZI, NAZVY, I18N };
+
+export { ANOTACE, I18N, JAZYKY, JKEY, MESICE_EN, NAZVY, PREKRESLI, VYCHOZI, ctiText, hodiny, jazyk, kat, naJazyk, nastavJazyk, pisText, prekresliVse, prelozStatiku, primarni, projdiAnotace, sberCestinu, sebrano, t, tn, vloz, zeSystemu, zjistiJazyk };

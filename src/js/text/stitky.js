@@ -57,5 +57,4 @@ function popisKola(tah){
   return c === null ? d : kodyNaText(c);
 }
 
-
 export { kodyNaText, popisKola, stitek, textKodu };

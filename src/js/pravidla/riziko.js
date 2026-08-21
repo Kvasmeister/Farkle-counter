@@ -168,4 +168,4 @@ function rizikoHotovo(rez){
   return zakladJakoKcd2(rez) || !!rizikoCache[podpisRezimu(rez)];
 }
 
-export { RIZIKO, RIZIKO_2P, RIZIKO_3P, bodujeSKombinacemi, bodujeZaklad, naRizikoHotovo, poctyZHodu, podpisRezimu, rizikoBezi, rizikoCache, rizikoHotovo, spocitejRiziko, tabulkaRizika, zakladJakoKcd2 };
+export { RIZIKO, RIZIKO_2P, RIZIKO_3P, bodujeSKombinacemi, bodujeZaklad, naRizikoHotovo, poHotovo, poctyZHodu, podpisRezimu, rizikoBezi, rizikoCache, rizikoHotovo, spocitejRiziko, tabulkaRizika, zakladJakoKcd2 };

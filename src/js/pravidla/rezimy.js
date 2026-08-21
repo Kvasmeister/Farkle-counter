@@ -329,4 +329,5 @@ function nazevRezimu(rez){
   if(!rez.vlastni) return t("rezim.n." + rez.id);
   return rez.nazev || t("rezim.beznazvu");
 }
+
 export { NADP_ZAKLAD, NAD_DRUHY, POCTY_STEJ, PRAH_ZAKLAD, PRESET_REZIMY, PRESET_REZ_PORADI, REZIMY, REZIMY_MAX, REZKEY, SAMOSTATNE_V_RADE, SAM_ZAKLAD, TROJ_ZAKLAD, VYCHOZI_REZIM, aktRezim, cistaSestice, cistyRezim, jePreset, kopieMapy, kopieStej, kostek, mezeBodu, nactiRezimy, nazevRezimu, nejvyssiStej, novyIdRezimu, odchylkyRezimu, pocetSamostatnych, poctyStej, prahStej, rezimPodleId, sestiZap, seznamRezimu, stejZap, stejnaMapa, stejnaStej, stejnePole, ulozRezimy, venKombinaci, venRezim, zPresetu };

@@ -30,9 +30,15 @@ const kde = new Map();
 const vsechny = soubory(JS);
 for (const f of vsechny) {
   const s = fs.readFileSync(f, "utf8");
+  const jmena = [];
   const m = /^export \{([\s\S]*?)\};$/m.exec(s);
-  if (!m) continue;
-  for (const raw of m[1].split(",")) {
+  if (m) jmena.push(...m[1].split(","));
+  /* i `export function X(){}` a `export var X` — init() funkce se jinak
+     nedají najít a hlásily by se jako jména bez původu */
+  for (const mm of s.matchAll(/^export\s+(?:function|var|let|const)\s+([A-Za-z_$][\w$]*)/gm)) {
+    jmena.push(mm[1]);
+  }
+  for (const raw of jmena) {
     const n = raw.trim();
     if (!n) continue;
     if (kde.has(n)) {
