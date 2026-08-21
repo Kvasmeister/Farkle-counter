@@ -442,9 +442,19 @@ console.log("N2) strážní kontrola klíčů volaných z JS");
   const I = a.i18n.I18N, RUCNI = a.i18n.RUCNI;
 
   /* Ručně psaný katalog se v souboru vyřízne, aby definice klíče
-     neplatila jako jeho použití. */
-  const zac = html.indexOf("var RUCNI = {");
-  const kon = html.indexOf("for(var rucniKlic in RUCNI)");
+     neplatila jako jeho použití.
+
+     Hranice bere z popisků modulů, které esbuild sází nad každý slepený
+     soubor. Dřív se řezalo podle "var RUCNI = {" a "for(var rucniKlic in
+     RUCNI)", jenže esbuild druhý zápis přepisuje na "for (rucniKlic in
+     RUCNI)" s vytaženým var — marker se tím rozpadl. Popisek modulu je
+     stabilnější a řeže přesně na hranici souboru.
+
+     Pozor, co tady NENÍ: anglický katalog zůstává uvnitř `mimoKatalog`,
+     stejně jako dřív. Kontrola osiřelých klíčů je tím slabší, než vypadá —
+     viz docs/nalezy.md #1. Zachováno schválně, aby řez nic nezměnil. */
+  const zac = html.indexOf("// src/js/jazyky/cs.js");
+  const kon = html.indexOf("// src/js/jazyky/en.js");
   ok(zac > 0 && kon > zac, "ručně psaný katalog je v souboru k nalezení");
   const mimoKatalog = html.slice(0, zac) + html.slice(kon);
 

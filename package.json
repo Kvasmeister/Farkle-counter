@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "Farkle počítadlo — zdroj v src/, nasazuje se složený index.html",
   "private": true,
-  "type": "commonjs",
+  "type": "module",
   "scripts": {
     "build": "node build.mjs",
     "kontrola": "node build.mjs --kontrola",
