@@ -205,3 +205,13 @@ export function initPlatforma(){
     if(zapnuto){ vezmi(); odpocet(); }
   })();
 }
+
+/* Registrace service workeru. Kdyby se nepovedla, aplikace běží dál, jen
+   bez offline režimu — proto tichý catch. */
+export function initServiceWorker(){
+  if("serviceWorker" in navigator){
+    window.addEventListener("load", function(){
+      navigator.serviceWorker.register("sw.js").catch(function(){});
+    });
+  }
+}

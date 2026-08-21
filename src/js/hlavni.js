@@ -1,8 +1,21 @@
-/* Zbytek aplikace — zatím pořád jeden uzávěr.
+/* Start aplikace — jediné místo, kde je vidět pořadí.
 
-   Řezy 4 a 5 z něj vytáhly jazyky a celou doménu pravidel; další
-   odkrajují stav, text a UI. Importy stojí nad IIFE, protože v ES modulu
-   musí být na nejvyšší úrovni. */
+   Modul při importu nedělá nic; všechno se spouští odsud, shora dolů.
+   Dřív se vedlejší efekty spouštěly tím, že se k nim ve zdroji došlo,
+   a pořadí startu bylo emergentní vlastností souboru o 6 550 řádcích.
+
+   POŘADÍ NENÍ LIBOVOLNÉ:
+     1. jazyk musí být dřív než cokoli, co volá t() — tedy prakticky
+        před vším ostatním, včetně platformních přepínačů
+     2. pravidla (nactiRezimy) dřív než klávesnice a vykreslení, protože
+        podle režimu se řídí, které čipy vůbec existují
+     3. sondy pro testy až po obojím
+     4. init* moduly navěsí posluchače na hotový DOM
+     5. load() na konci: dotáhne rozehranou hru a překreslí
+
+   INVARIANT: složený skript sedí na KONCI <body>. Prvky se sbírají hned
+   při načtení (ui/prvky.js), takže v <head> nebo s defer by tu byly null.
+*/
 import { t, tn, kat, naJazyk, nastavJazyk, sberCestinu, zjistiJazyk,
          jazyk, JAZYKY, NAZVY, VYCHOZI, I18N } from "./jazyky/jadro.js";
 import { RUCNI } from "./jazyky/cs.js";
@@ -236,6 +249,8 @@ import { prepniAuto } from "./ui/autoulozeni.js";
 import { pridatKostku, ubratKostku, zrusVyber } from "./ui/klavesnice.js";
 import { zrusRozdelaneRezimy } from "./ui/nastaveni-rezimy.js";
 import { prepniOpravy, zrusPtaniKosu } from "./ui/zapis.js";
+import { initServiceWorker } from "./ui/platforma.js";
+import { initUdalosti } from "./ui/udalosti.js";
 
 (function(){
   "use strict";
@@ -251,6 +266,10 @@ import { prepniOpravy, zrusPtaniKosu } from "./ui/zapis.js";
     if(el) el.hidden = !nejde;
   });
 
+  /* ---------- 1. jazyk ----------
+     Čeština se sbírá z <body>, teprve pak se případně přepíše jiným
+     jazykem. Sběr smí proběhnout jen jednou — podruhé by sebral už
+     přeložený text. */
   sberCestinu();
   nastavJazyk(zjistiJazyk(), false);
 
@@ -262,17 +281,13 @@ import { prepniOpravy, zrusPtaniKosu } from "./ui/zapis.js";
                       kod: function(){ return jazyk; } };
   }catch(e){}
 
-  function ukazNeukladame(){
-    var el = document.getElementById("nosave");
-    if(!el) return;
-    el.hidden = !neukladame;
-  }
 
 
 
 
 
 
+  /* ---------- 2. pravidla ---------- */
   nactiRezimy();
 
   /* Líný výčet rizika doběhne až po setTimeout a pak se musí překreslit.
@@ -301,6 +316,10 @@ import { prepniOpravy, zrusPtaniKosu } from "./ui/zapis.js";
   }catch(e){}
 
 
+  /* ---------- 4. moduly rozhraní ----------
+     Pořadí mezi nimi nerozhoduje: každý si jen navěsí posluchače a
+     přečte svůj kus DOMu. Rozhoduje jen to, že běží AŽ TEĎ — platformní
+     přepínače volají t() a katalog je hotový od kroku 1. */
   initKlavesnice();
 
 
@@ -312,131 +331,7 @@ import { prepniOpravy, zrusPtaniKosu } from "./ui/zapis.js";
   initStranky();
   initZaloha();
   initFiltry();
-
-  /* ---------- události ---------- */
-  elDataSingle.forEach(function(b){
-    b.addEventListener("click", function(){
-      var rez = aktRezim(), v = Number(b.dataset.single), body = rez.sam[v] || 0;
-      if(!(body > 0)) return;
-      keep(kodStejnych(1, v), body, 1);
-    });
-  });
-  elDataStr.forEach(function(b){
-    b.addEventListener("click", function(){
-      var rez = aktRezim(), k = b.dataset.str, s = STRAIGHTS[k];
-      if(!(rez.post[k] > 0)) return;
-      keep(s.k, rez.post[k], s.d);
-    });
-  });
-  /* Sazba se čte až při klepnutí, aby změna v nastavení platila hned. */
-  elDataKombi.forEach(function(b){
-    b.addEventListener("click", function(){
-      var k = b.dataset.kombi;
-      var rez = aktRezim();
-      if(!kombZap(rez, k) || !kombVRezimu(rez, k)) return;
-      keep(PRESETY[k].k, sazba(rez, k), PRESETY[k].d);
-    });
-  });
-  elAddKind.addEventListener("click", function(){
-    if(selValue === null) return;
-    keep(kodStejnych(selCount, selValue), kindPoints(selValue, selCount), selCount);
-    zrusVyber();
-  });
-  elMToggle.addEventListener("click", function(){
-    var open = elManual.hidden;
-    elManual.hidden = !open;
-    elMToggle.classList.toggle("sel", open);
-    if(open) elMnum.focus();
-  });
-  $("mless").addEventListener("click", function(){ ubratKostku(); render(); });
-  $("mmore").addEventListener("click", function(){ pridatKostku(); render(); });
-  $("madd").addEventListener("click", function(){
-    var v = parseInt(elMnum.value, 10);
-    if(!v || v <= 0){ elMnum.focus(); return; }
-    keep("v", v, Math.min(manualDice, left()));
-    elMnum.value = "";
-  });
-  elMnum.addEventListener("keydown", function(e){ if(e.key === "Enter") $("madd").click(); });
-
-  elRollOn.addEventListener("click", rollOn);
-  elBank.addEventListener("click", bank);
-  $("bust").addEventListener("click", bust);
-  $("undo").addEventListener("click", undo);
-  $("fixturns").addEventListener("click", function(){
-    prepniOpravy();
-  });
-  $("reset").addEventListener("click", reset);
-  elArch.addEventListener("click", archive);
-  $("newback").addEventListener("click", function(){ zavriModal(); });
-  $("newdrop").addEventListener("click", function(){ zavriModal(); novaHra(); });
-  /* Uložit a začít novou: wipe() teprve po potvrzeném zápisu, jinak by se
-     hra ztratila v domnění, že je v historii. Po zápisu má S.archivedId
-     hodnotu a kosPush() uvnitř novaHra() už zálohu nepotřebuje. */
-  $("newsave").addEventListener("click", function(){
-    var b = this;
-    b.disabled = true;
-    zapisHru(function(ok){
-      b.disabled = false;
-      if(!ok){
-        hlaskaNaTlacitku(b, t(klicSelhani("chyba.mistoulozit")), t("nova.ulozit"));
-        return;
-      }
-      zavriModal();
-      novaHra();
-    });
-  });
-  $("setbtn").addEventListener("click", function(){
-    /* rozdělaná otázka ani vybraná karta se z minula nepřenášejí */
-    zrusPtaniKosu();
-    zrusRozdelaneRezimy();
-    naKartuNastaveni(0);
-    renderKos(); renderZaloha(); renderRezimy();
-  });
-
-  /* Změna cíle, režimu i limitu může hru zamknout — a zamknutá hra je
-     dohraná, takže se sem spouštěč patří stejně jako za bank() a bust(). */
-  elModeSel.addEventListener("change", function(){
-    S.mode = elModeSel.value;
-    syncGoalUI();
-    render();
-    zkusAutoUlozit();
-  });
-  elGoalSel.addEventListener("change", function(){
-    if(elGoalSel.value === "custom"){
-      elGoalNum.hidden = false;
-      elGoalNum.value = S.goal;
-      elGoalNum.focus();
-      elGoalNum.select();
-    } else {
-      S.goal = Number(elGoalSel.value);
-      elGoalNum.hidden = true;
-      render();
-      zkusAutoUlozit();
-    }
-  });
-  elGoalNum.addEventListener("input", function(){
-    var v = parseInt(elGoalNum.value, 10);
-    if(v && v > 0){ S.goal = v; render(); zkusAutoUlozit(); }
-  });
-  elRoundSel.addEventListener("change", function(){
-    if(elRoundSel.value === "custom"){
-      S.roundGoal = S.roundGoal > 0 ? S.roundGoal : Math.max(10, S.turns.length + 1);
-      elRoundNum.hidden = false;
-      elRoundNum.value = S.roundGoal;
-      elRoundNum.focus();
-      elRoundNum.select();
-      render();
-      zkusAutoUlozit();
-    } else {
-      S.roundGoal = null;
-      elRoundNum.hidden = true;
-      render();
-    }
-  });
-  elRoundNum.addEventListener("input", function(){
-    var v = parseInt(elRoundNum.value, 10);
-    if(v && v > 0){ S.roundGoal = v; render(); zkusAutoUlozit(); }
-  });
+  initUdalosti();
 
   /* ---------- přepínač jazyka ----------
      Volby se skládají z JAZYKY, ne z HTML: přidání jazyka se tak obejde bez
@@ -489,7 +384,7 @@ import { prepniOpravy, zrusPtaniKosu } from "./ui/zapis.js";
     mark();
   })();
 
-  /* ---------- start ---------- */
+  /* ---------- 5. start ---------- */
   /* o trvalost se říká až po prvním doteku, dřív ji prohlížeče odmítají */
   document.addEventListener("pointerdown", function jednou(){
     document.removeEventListener("pointerdown", jednou, true);
@@ -507,10 +402,5 @@ import { prepniOpravy, zrusPtaniKosu } from "./ui/zapis.js";
     pripravUloziste(function(){ renderArch(); renderP2(); renderZaloha2(); });
   });
 
-  /* ---------- offline režim ---------- */
-  if("serviceWorker" in navigator){
-    window.addEventListener("load", function(){
-      navigator.serviceWorker.register("sw.js").catch(function(){});
-    });
-  }
+  initServiceWorker();
 })();

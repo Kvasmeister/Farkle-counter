@@ -7918,80 +7918,17 @@
       }
     })();
   }
+  function initServiceWorker() {
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", function() {
+        navigator.serviceWorker.register("sw.js").catch(function() {
+        });
+      });
+    }
+  }
 
-  // src/js/app.js
-  (function() {
-    "use strict";
-    naSelhaniUlozeni(function(nejde) {
-      var el = document.getElementById("nosave");
-      if (el) el.hidden = !nejde;
-    });
-    naNedostupnouHistorii(function(nejde) {
-      var el = document.getElementById("nohist");
-      if (el) el.hidden = !nejde;
-    });
-    sberCestinu();
-    nastavJazyk(zjistiJazyk(), false);
-    try {
-      window.__i18n = {
-        I18N,
-        JAZYKY,
-        VYCHOZI,
-        NAZVY,
-        RUCNI,
-        t,
-        tn,
-        kat,
-        kod: function() {
-          return jazyk;
-        }
-      };
-    } catch (e) {
-    }
-    function ukazNeukladame() {
-      var el = document.getElementById("nosave");
-      if (!el) return;
-      el.hidden = !neukladame;
-    }
-    nactiRezimy();
-    naRizikoHotovo(function() {
-      render();
-      var e = editRezim();
-      if (e) renderRezPruh(e);
-    });
-    try {
-      window.__pravidla = {
-        kindPoints,
-        STRAIGHTS,
-        PRESETY,
-        RIZIKO,
-        RIZIKO_3P,
-        RIZIKO_2P,
-        PRESET_REZIMY,
-        REZIMY,
-        POCTY_STEJ,
-        aktRezim: function() {
-          return aktRezim();
-        },
-        sediVzor,
-        sediKombinace,
-        poctyZHodu,
-        zapisVzoru,
-        tabulka: function(rez) {
-          return tabulkaRizika(rez);
-        }
-      };
-    } catch (e) {
-    }
-    initKlavesnice();
-    initKartyPravidel();
-    initKartaRezimy();
-    initNastaveni();
-    initOkna();
-    initPlatforma();
-    initStranky();
-    initZaloha();
-    initFiltry();
+  // src/js/ui/udalosti.js
+  function initUdalosti() {
     elDataSingle.forEach(function(b) {
       b.addEventListener("click", function() {
         var rez = aktRezim(), v = Number(b.dataset.single), body = rez.sam[v] || 0;
@@ -8132,6 +8069,77 @@
         zkusAutoUlozit();
       }
     });
+  }
+
+  // src/js/hlavni.js
+  (function() {
+    "use strict";
+    naSelhaniUlozeni(function(nejde) {
+      var el = document.getElementById("nosave");
+      if (el) el.hidden = !nejde;
+    });
+    naNedostupnouHistorii(function(nejde) {
+      var el = document.getElementById("nohist");
+      if (el) el.hidden = !nejde;
+    });
+    sberCestinu();
+    nastavJazyk(zjistiJazyk(), false);
+    try {
+      window.__i18n = {
+        I18N,
+        JAZYKY,
+        VYCHOZI,
+        NAZVY,
+        RUCNI,
+        t,
+        tn,
+        kat,
+        kod: function() {
+          return jazyk;
+        }
+      };
+    } catch (e) {
+    }
+    nactiRezimy();
+    naRizikoHotovo(function() {
+      render();
+      var e = editRezim();
+      if (e) renderRezPruh(e);
+    });
+    try {
+      window.__pravidla = {
+        kindPoints,
+        STRAIGHTS,
+        PRESETY,
+        RIZIKO,
+        RIZIKO_3P,
+        RIZIKO_2P,
+        PRESET_REZIMY,
+        REZIMY,
+        POCTY_STEJ,
+        aktRezim: function() {
+          return aktRezim();
+        },
+        sediVzor,
+        sediKombinace,
+        poctyZHodu,
+        zapisVzoru,
+        tabulka: function(rez) {
+          return tabulkaRizika(rez);
+        }
+      };
+    } catch (e) {
+    }
+    initKlavesnice();
+    initKartyPravidel();
+    initKartaRezimy();
+    initNastaveni();
+    initOkna();
+    initPlatforma();
+    initStranky();
+    initZaloha();
+    initFiltry();
+    initUdalosti();
     (function() {
       var sel = $("jazyksel");
       JAZYKY.forEach(function(kod) {
@@ -8195,12 +8203,7 @@
         renderZaloha2();
       });
     });
-    if ("serviceWorker" in navigator) {
-      window.addEventListener("load", function() {
-        navigator.serviceWorker.register("sw.js").catch(function() {
-        });
-      });
-    }
+    initServiceWorker();
   })();
 })();
 </script>
