@@ -1,6 +1,6 @@
 # Testy
 
-Nejsou součástí aplikace, na GitHub Pages nevadí. Sady 01–07 a 09–19 se spouštějí
+Nejsou součástí aplikace, na GitHub Pages nevadí. Sady 00–07 a 09–19 se spouštějí
 v Node přes jsdom, který skutečně vykoná skript ze stránky — testuje se
 chování, ne text. Sada 08 běží v `node:vm` s náhradami za `caches` a `fetch`,
 protože service worker v jsdom spustit nejde. Sada 11 si podstrkuje vlastní
@@ -12,16 +12,39 @@ takže ostatní sady běží po cestě `localStorage`. To je záměr: ta cesta z
 živá jako propad, když IndexedDB není k dispozici.
 
 ```
-npm init -y
-npm i jsdom fake-indexeddb
-node test/01-limit-kol.mjs
+npm install
+npm test                    build --kontrola + kontrola importů + všech 20 sad
+node Testy/vse.mjs          jen sady, se souhrnem
+node Testy/vse.mjs 18 19    jen vyjmenované
+node Testy/01-limit-kol.mjs jedna sada, plný výpis
 ```
 
 `index.html` i `sw.js` se hledají o složku výš než testy, na pracovním
 adresáři nezáleží.
 
+**`index.html` se needituje ručně** — je to výstup buildu ze `src/`.
+`npm test` proto nejdřív ověří, že odpovídá zdrojům; jinak by se testovala
+včerejší verze. Sady čtou složený `index.html`, protože testují chování.
+Kontroly, které se ptají na *kód*, čtou `src/` — esbuild si totiž jména
+vybírá sám a při kolizi přejmenuje `t` na `t2` (viz `docs/nalezy.md` #3).
+
+### Nástroje vedle sad
+
+| soubor | co dělá |
+|---|---|
+| `vse.mjs` | pustí všechny sady, vypíše souhrn a padlé nakonec |
+| `kontrola-modulu.mjs` | jména bez původu v `src/js` = zapomenutý import |
+| `volna-jmena.mjs` | analýza rozsahů nad modulem (acorn), sdílená |
+| `doplnit-importy.mjs` | dopíše chybějící importy podle skutečné analýzy |
+| `doplnit-exporty.mjs` | dopíše `export { … }` podle deklarací |
+| `do-initu.mjs` | přesune příkazy nejvyšší úrovně do `init()` funkce |
+
+Poslední tři vznikly při refaktoru a hodí se, kdykoli se bude kód stěhovat
+mezi moduly. Ruční odhad, co který kus potřebuje, selhal hned napoprvé.
+
 | soubor | co hlídá | kontrol |
 |---|---|---|
+| 00-start | kouřová zkouška: skript proběhl bez výjimky, sondy `__i18n` a `__pravidla` stojí, skóre je vykreslené, klávesnice má čipy. Dvě vteřiny, pouští se první — esbuild neznámé identifikátory nehlásí a chybějící import se jinak projeví rozsypáním osmnácti sad naráz | 8 |
 | 01-limit-kol | režimy hry, limit kol, zámek po posledním kole i po dosažení cíle v bodech, hranice tlačítka Zpět, migrace starého uložení, ruční zadání při nule kostek, zámek Zapsat nad rozehraným hodem bez odložené položky | 64 |
 | 02-hlavicka-okna | čtyři tlačítka v liště, okna pravidel a nastavení, zaostření, klávesnice, přepínání ikony motivu přes atribut `hidden` a jeho paměť | 28 |
 | 03-historie-kos | zápis a aktualizace v historii, varování na nezapsané body, koš, obnova, trvalé smazání z obou košů včetně potvrzení, vazba na záznam po smazání z historie a po obnově z koše, zmizení klíče vyprázdněného koše, farkle jako poslední úsek popisu kola v detailu hry i v živé tabulce a jeho nepřítomnost v uložených datech | 68 |
@@ -42,8 +65,8 @@ adresáři nezáleží.
 | 18-kombinace | kombinace navíc uvnitř výchozího režimu KCD: pět přednastavených skrytých ve výchozím stavu včetně dvou dvojic, čip *vlastní* poslední v řadě za všech okolností a zalomení devíti čipů, uložení a načtení `farkle-kombinace-v1` včetně poškozených dat, strop osmi vlastních kombinací a šesti vzorů v jedné, kódy `c2p`–`c42` i `k…x…` v položce i v zapsaném kole, jejich čtení bez zapnuté kombinace, štítky v obou jazycích, zákaz čipu podle zbývajících kostek, změna sazby nepřepisující historii, sazba pamatovaná přes vypnutí a zapnutí, editor kombinace jako podstránka — jméno, body, stav, víc vzorů a jejich dvoukrokové mazání, volba počtu kostek u vzorů různé velikosti a přímé odložení, když je z čeho vybírat jediné, zápis vzoru písmeny a čísly včetně zákazu, aby písmeno sáhlo na hodnotu psanou číslem, migrace vzoru uloženého se starým příznakem `any` i bez jména, riziko na tlačítku Farkle včetně horkých kostek a zámku, líný přepočet výčtem, export i import kola s kombinací, strážní odvození všech tří konstantních tabulek rizika výčtem přes `kindPoints()` a `STRAIGHTS` | 177 |
 | 19-rezimy | tři přednastavené herní režimy a výchozí KCD, přepnutí a jeho přežití reloadu, neznámé id spadlé na výchozí, migrace `farkle-kombinace-v1` do odchylky `kcd2` se zachovaným starým klíčem, ukládání jen odchylek presetu a jejich zmizení po obnovení výchozích, strážní odvození celé tabulky pro všechna tři pravidla nad prahem, pětikostkový režim včetně horkých kostek, skrytého čipu 6× a oříznutí hodu uloženého na šest, klávesnice řízená režimem včetně tří znění nadpisu řady a sazby postupky, okno pravidel podle režimu i pro jiný než zvolený, zámek přepnutí nad rozehranou hrou, vlastní režim od přidání po smazání včetně zákazu smazat zvolený a stropu dvaceti, režim v záznamu, souhrnu i záloze oběma směry, čitelnost hry po smazání jejího režimu, statistika nejhranějšího režimu a její žebříček, strážní odvození tabulek rizika výčtem a líný přepočet u přepsaných pravidel, samostatné kostky a stejná čísla s prahem, rozšířený rozpad na dvojice až šestice a sbalení zpátky, pravidlo nad nejvyšší zapnutou skupinou, čtení starých polí `dvoj` a `troj`, pravidlo tří čipů samostatných hodnot proti mřížce 1×, čip 2× podle dvojic, kódy `d2`–`d6` a `n2…` shodné oběma cestami zadání, duplikace režimu včetně nových id vlastních kombinací, návrat z pravidel do nastavení křížkem, riziko na tlačítku Farkle, pás rizika v patičce okna včetně pětikostkového režimu, stavu „počítá se“ a skrytí nad seznamem i na druhé kartě, jedna šířka tlačítek v seznamu měřená přes `getComputedStyle`, nápověda u pravidla nad skupinou | 209 |
 
-Po zásahu do `index.html` nebo `sw.js` spusť všech devatenáct. Dohromady je to
-1453 kontrol.
+Po zásahu do `src/` nebo `sw.js` spusť `npm test` — všech dvacet sad.
+Dohromady je to 1 461 kontrol.
 
 **Past:** jsdom nerozlišuje původ pravidel v kaskádě — atribut `hidden` u něj
 vypne i prvek, kterému autorský list nastavuje `display:flex`, zatímco skutečný
@@ -144,3 +167,12 @@ takhle jednoduché selektory zvládá, takže se dá měřit výsledek:
 odehrané v aplikaci nese `c`, seedovaný starý záznam `d` — kontroly proto
 sahají do `localStorage` přímo. Stejné místo drží i sada 01 (poslední kolo
 po farklu uprostřed hodu).
+
+**Past:** nečekat pevný počet milisekund na asynchronní věc. Sady 05, 16 a 18
+čekaly na `FileReader` 60 ms a padaly zhruba v polovině běhů — v jednom
+procesu běží víc jsdomů naráz a líný výčet rizika ve vedlejší instanci umí
+zablokovat smyčku na desítky ms. Čeká se proto na výsledek: obě místa, kam
+dorazí (`#impbox`, `#zalmsg`), se před odesláním schovají a pak se čeká na
+jejich odkrytí. Bez toho schování by druhý import v téže aplikaci našel panel
+odemčený po tom prvním, skončil hned a četl text, který ještě nikdo nepřepsal.
+Viz `docs/nalezy.md` #6.
