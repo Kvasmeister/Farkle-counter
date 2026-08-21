@@ -6,8 +6,8 @@
   "type": "module",
   "scripts": {
     "build": "node build.mjs",
-    "kontrola": "node build.mjs --kontrola",
-    "test": "node build.mjs --kontrola && node Testy/vse.mjs",
+    "kontrola": "node build.mjs --kontrola && node Testy/kontrola-modulu.mjs",
+    "test": "node build.mjs --kontrola && node Testy/kontrola-modulu.mjs && node Testy/vse.mjs",
     "test:rychle": "node Testy/vse.mjs"
   },
   "dependencies": {
@@ -15,6 +15,8 @@
     "jsdom": "^30.0.1"
   },
   "devDependencies": {
+    "acorn": "^8.18.0",
+    "acorn-walk": "^8.3.5",
     "esbuild": "^0.25.0"
   }
 }
