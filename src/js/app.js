@@ -68,9 +68,90 @@ import {
   rizikoHotovo,
   tabulkaRizika
 } from "./pravidla/riziko.js";
+import { nazevRezimu } from "./pravidla/rezimy.js";
+import {
+  DETAILY,
+  HIST,
+  histAll,
+  histWrite,
+  idb,
+  klicSelhani,
+  naNedostupnouHistorii,
+  nactiDetail,
+  pripravUloziste,
+  proHistorii,
+  rezim
+} from "./stav/historie.js";
+import {
+  HODY_ODD,
+  HODY_TXT,
+  KKOD,
+  KODY,
+  NKOD,
+  POLOZKY_ODD,
+  POLOZKY_TXT,
+  SAM_KODY,
+  kodStejnych,
+  kodyZPopisu
+} from "./stav/kody.js";
+import {
+  S,
+  cur,
+  gameEmpty,
+  kopieKola,
+  left,
+  load,
+  makeRecord,
+  naSelhaniUlozeni,
+  neukladame,
+  potTotal,
+  rollPoints,
+  save,
+  snapshot,
+  usedInRoll
+} from "./stav/stav.js";
+import {
+  HKEY,
+  KEY,
+  KHKEY,
+  KKEY,
+  KOSH_MAX,
+  KOS_MAX,
+  kosAll,
+  kosHistAll,
+  kosHistWrite,
+  kosWrite
+} from "./stav/uloziste.js";
+import {
+  gBody,
+  gFarkle,
+  gFarklePrvni,
+  gFarklePrvniRekord,
+  gKol,
+  gKolKCili,
+  gNejhorsiKolo,
+  gNejlepsiKolo,
+  gNejvicHodu,
+  gPrumer,
+  gRezim,
+  gSerie,
+  gZtraceno,
+  nazevRezimuZaznamu
+} from "./stav/zaznam.js";
 
 (function(){
   "use strict";
+
+  /* Pruhy o selhání úložiště jsou UI: stav i historie jen ohlásí, co se
+     stalo, a překreslit si to musí ten, kdo ví, kde ty pruhy jsou. */
+  naSelhaniUlozeni(function(nejde){
+    var el = document.getElementById("nosave");
+    if(el) el.hidden = !nejde;
+  });
+  naNedostupnouHistorii(function(nejde){
+    var el = document.getElementById("nohist");
+    if(el) el.hidden = !nejde;
+  });
 
   sberCestinu();
   nastavJazyk(zjistiJazyk(), false);
@@ -83,393 +164,13 @@ import {
                       kod: function(){ return jazyk; } };
   }catch(e){}
 
-  /* ---------- stav ----------
-     rolls = hody v rozehraném kole, poslední je ten, který právě řeším
-     roll  = { thrown: kolika kostkami se hází, hot: bool, items: [...] }  */
-  /* Herní režim ve stavu není: jeho jedinou pravdou je REZIMY.akt. Dvě
-     proměnné na tutéž věc by se dřív nebo později rozešly, a rozejít se
-     nemají — přepnout režim jde jen nad prázdnou hrou. Do záznamu se režim
-     dopisuje až v snapshot(). */
-  var S = { mode:"points", goal:4000, roundGoal:null, banked:0, turns:[],
-            rolls:[{thrown:6, hot:false, items:[]}], archivedId:null, dirty:false,
-            autoUlozeno:false };
-
-  var KEY  = "farkle-solo-v3";   /* rozehraná hra */
-  var HKEY = "farkle-hist-v1";   /* dohrané hry */
-  var KKEY = "farkle-kos-v1";    /* neviditelná záloha přepsaných her */
-  var KHKEY = "farkle-koshist-v1"; /* hry smazané z historie */
-  var KOS_MAX = 5;
-  var KOSH_MAX = 10;
-  /* Když ukládání nefunguje (soukromé okno, plné úložiště), uživatel se to dnes
-     dozvěděl až tím, že po zavření prohlížeče byla hra pryč. Příznak se proto
-     zvedne při prvním selhání a pruh v panelu kola zmizí, až se zápis povede.
-     Pruh nastavuje ukazNeukladame() přímo, ne přes render() — render() volá
-     save(), takže by vznikla smyčka. */
-  var neukladame = false;
-  function save(){
-    try{
-      localStorage.setItem(KEY, JSON.stringify(S));
-      if(neukladame){ neukladame = false; ukazNeukladame(); }
-      return true;
-    }catch(e){
-      if(!neukladame){ neukladame = true; ukazNeukladame(); }
-      return false;
-    }
-  }
   function ukazNeukladame(){
     var el = document.getElementById("nosave");
     if(!el) return;
     el.hidden = !neukladame;
   }
 
-  /* Uložený stav se nekontroluje jen povrchně: chybějící turns nebo items
-     dřív shodily render() a aplikace zůstala bez ovládání, ze kterého se
-     nedalo dostat ani do nastavení a vyexportovat data. Proto se každé pole
-     dorovná na správný typ. Volá se vždy, i pro výchozí stav. */
-  function ozdrav(){
-    S.mode = (S.mode === "rounds") ? "rounds" : "points";
-    S.banked = naCislo(S.banked, 0);
-    S.goal = (typeof S.goal === "number" && S.goal > 0) ? S.goal : 4000;
-    if(typeof S.roundGoal !== "number" || S.roundGoal < 1){ S.roundGoal = null; }
-    if(typeof S.archivedId !== "string"){ S.archivedId = null; }
-    S.dirty = !!S.dirty;
-    S.autoUlozeno = !!S.autoUlozeno;
 
-    S.turns = (Array.isArray(S.turns) ? S.turns : []).map(function(tah){
-      return kopieKola(tah);
-    });
-
-    S.rolls = (Array.isArray(S.rolls) && S.rolls.length ? S.rolls : [{}]).map(function(r){
-      /* Strop je počet kostek režimu, ne šestka: hra uložená v šestikostkovém
-         režimu se nesmí přenést do pětikostkového s hodem na šest kostek. */
-      var max = kostek(), thrown = naCislo(r && r.thrown, max);
-      return {
-        thrown: (thrown >= 1 && thrown <= max) ? Math.floor(thrown) : max,
-        hot: !!(r && r.hot),
-        items: (Array.isArray(r && r.items) ? r.items : []).map(function(i){
-          var o = { p: naCislo(i && i.p, 0),
-                    d: Math.max(0, Math.floor(naCislo(i && i.d, 0))) };
-          if(i && typeof i.k === "string"){ o.k = i.k; return o; }
-          /* rozehraná hra uložená starší verzí nese v položce text: kód se
-             z něj vytáhne, a nejde-li to, text se veze dál nedotčený */
-          var kod = (i && typeof i.l === "string") ? kodZTextu(i.l) : "v";
-          if(kod === null){ o.l = i.l; } else { o.k = kod; }
-          return o;
-        })
-      };
-    });
-  }
-  function load(cb){
-    try{
-      var raw = localStorage.getItem(KEY);
-      if(raw){
-        var d = null, cele = false;
-        try{ d = JSON.parse(raw); cele = true; }catch(e){}
-        if(cele && d && typeof d.banked === "number" && Array.isArray(d.rolls) && d.rolls.length){
-          S = d;
-        } else {
-          /* nečitelná data nemažeme potichu — ať se z prohlížeče dají vytáhnout */
-          try{ localStorage.setItem(KEY + "-vadny", raw); }catch(e){}
-        }
-      }
-    }catch(e){}
-    ozdrav();
-    cb();
-  }
-
-  /* ---------- koš a koš historie ----------
-     Obojí zůstává v localStorage. Na rozdíl od historie je shora omezené
-     (5 a 10 záznamů, dohromady pod 30 kB), neroste a čte se synchronně
-     z nastavení — přesun do IndexedDB by přidal migraci a transakce
-     bez užitku. */
-  function readList(key){
-    try{
-      var d = JSON.parse(localStorage.getItem(key));
-      return Array.isArray(d) ? d : [];
-    }catch(e){ return []; }
-  }
-  function writeList(key, list){
-    try{ localStorage.setItem(key, JSON.stringify(list)); return true; }
-    catch(e){ return false; }
-  }
-  /* Prázdný koš se z úložiště rovnou maže. Jinak by tam zůstalo dvouznakové
-     "[]" a v rozpisu zabraného místa by to vypadalo, že v koši něco leží.
-     Historie touhle cestou nechodí — na jejím klíči stojí migrace do
-     IndexedDB a zmizet nesmí. */
-  function kosZapis(key, list){
-    if(list && list.length) return writeList(key, list);
-    try{ localStorage.removeItem(key); return true; }catch(e){ return false; }
-  }
-  function kosAll(){ return readList(KKEY); }
-  function kosWrite(list){ return kosZapis(KKEY, list); }
-  function kosHistAll(){ return readList(KHKEY); }
-  function kosHistWrite(list){ return kosZapis(KHKEY, list); }
-
-  /* ---------- úložiště historie ----------
-     localStorage má strop kolem 5 MB, tedy zhruba tři tisíce her. Historie
-     se proto stěhuje do IndexedDB. Aby se kvůli tomu nemusel přepsat celý
-     řetěz vykreslování, drží se za běhu v paměti:
-
-       HIST         jediná pravda za běhu, naplní se jednou při startu
-       histAll()    vrací kopii a zůstává synchronní
-       histWrite()  mění paměť hned a do úložiště zapisuje na pozadí
-
-     Kopie proto, že renderP2() výsledek třídí na místě — bez ní by přeházel
-     zdrojové pole.
-
-     Tvar dat se v této etapě nemění: v IndexedDB leží celé záznamy, přesně
-     tak, jak dosud ležely v localStorage. */
-  var HIST = [];
-  var UKEY  = "farkle-uloziste-v1";   /* "idb", jakmile migrace proběhla */
-  var HZAL  = HKEY + "-zaloha";       /* přejmenovaný původní klíč */
-  var IDB_JMENO = "kostky", IDB_VERZE = 4;
-  var SOUHRNY = "souhrny", DETAILY = "detaily";
-  /* Firefox v soukromém okně umí na open() viset donekonečna, proto strop */
-  var IDB_STROP = 3000;
-
-  var rezim = "ls";            /* "ls" | "idb" */
-  var idb = null;
-  var historieNedostupna = false;
-
-  /* Souhrn nese všechno, co seznam a statistiky potřebují, bez popisů kol.
-     Deset tisíc souhrnů je v paměti kolem 2 MB, detaily by byly desítky.
-     Staví se na třech místech: při zápisu hry, při migraci a při importu. */
-  function souhrnZ(rec){
-    var kolKCili = gKolKCili(rec);
-    return {
-      id: rec.id, savedAt: rec.savedAt,
-      mode: rec.mode, goal: rec.goal, roundGoal: rec.roundGoal || null,
-      /* Chybějící `rezim` se dopočítá až při čtení (gRezim), takže se kvůli
-         němu nezvedá IDB_VERZE — všechny dřívější hry se hrály podle KCD2. */
-      rezim: gRezim(rec), rezimN: rec.rezimN || null,
-      banked: rec.banked || 0,
-      kol: gKol(rec), farklu: gFarkle(rec), farkluprvni: gFarklePrvni(rec),
-      nejlepsi: gNejlepsiKolo(rec), nejhorsi: gNejhorsiKolo(rec),
-      serie: gSerie(rec),
-      kolKCili: kolKCili,
-      hodu: gNejvicHodu(rec), ztraceno: gZtraceno(rec)
-    };
-  }
-  function detailZ(rec){
-    return { id: rec.id, turns: (rec.turns || []).map(function(tah){
-      return kopieKola(tah);
-    }) };
-  }
-
-  function otevriIDB(hotovo){
-    var rozhodnuto = false;
-    function konec(v){ if(rozhodnuto) return; rozhodnuto = true; hotovo(v); }
-    var api = null;
-    try{ api = window.indexedDB || null; }catch(e){ api = null; }
-    if(!api){ konec(null); return; }
-    var req;
-    try{ req = api.open(IDB_JMENO, IDB_VERZE); }catch(e){ konec(null); return; }
-    setTimeout(function(){ konec(null); }, IDB_STROP);
-    /* Rozdělení jedné police na dvě běží uvnitř versionchange transakce.
-       Když cokoli selže, transakce se zruší celá a databáze zůstane na
-       předchozí verzi i s původní policí — nevznikne stav napůl. */
-    req.onupgradeneeded = function(){
-      var db = req.result, tx = req.transaction;
-      if(!db.objectStoreNames.contains(SOUHRNY)) db.createObjectStore(SOUHRNY, { keyPath: "id" });
-      if(!db.objectStoreNames.contains(DETAILY)) db.createObjectStore(DETAILY, { keyPath: "id" });
-      if(db.objectStoreNames.contains("hry")){
-        var kur = tx.objectStore("hry").openCursor();
-        kur.onsuccess = function(){
-          var c = kur.result;
-          if(c){
-            var rec = c.value;
-            tx.objectStore(SOUHRNY).put(souhrnZ(rec));
-            tx.objectStore(DETAILY).put(detailZ(rec));
-            c.continue();
-            return;
-          }
-          db.deleteObjectStore("hry");
-        };
-        /* souhrny právě vznikly přes souhrnZ() nad plnými záznamy, nová pole
-           v nich tedy už jsou — dopočítávat není co */
-        return;
-      }
-      dopoctiHody(tx);
-    };
-    req.onsuccess = function(){ konec(req.result); };
-    req.onerror = function(){ konec(null); };
-    req.onblocked = function(){ konec(null); };
-  }
-
-  /* Doplnění polí `hodu`, `ztraceno` a `farkluprvni` do souhrnů uložených
-     starší verzí. Běží uvnitř versionchange transakce: když cokoli selže,
-     transakce se zruší celá a databáze zůstane na předchozí verzi —
-     nevznikne stav, kdy má polovina her nová pole a druhá ne. Mapa se staví
-     celá dopředu a teprve pak se sahá na souhrny; dva otevřené kurzory nad
-     dvěma policemi v téže transakci se nemíchají. Na čerstvé instalaci jsou
-     obě police prázdné, takže dopočet nestojí nic. */
-  function dopoctiHody(tx){
-    var mapa = {}, kd = tx.objectStore(DETAILY).openCursor();
-    kd.onsuccess = function(){
-      var c = kd.result;
-      if(c){
-        var d = c.value;
-        mapa[d.id] = { hodu: gNejvicHodu(d), ztraceno: gZtraceno(d), farkluprvni: gFarklePrvni(d) };
-        c.continue();
-        return;
-      }
-      var ks = tx.objectStore(SOUHRNY).openCursor();
-      ks.onsuccess = function(){
-        var s = ks.result;
-        if(!s) return;
-        var v = s.value;
-        if(v.hodu === undefined || v.ztraceno === undefined || v.farkluprvni === undefined){
-          var m = mapa[v.id];
-          v.hodu = m ? m.hodu : null;
-          v.ztraceno = m ? m.ztraceno : null;
-          v.farkluprvni = m ? m.farkluprvni : null;
-          s.update(v);
-        }
-        s.continue();
-      };
-    };
-  }
-
-  /* null znamená „nepodařilo se přečíst", ne „nic tam není" — ten rozdíl je
-     zásadní, viz historieNedostupna níž. Načítají se jen souhrny; detail se
-     dotáhne až při rozkliknutí hry. */
-  function ctiIDB(db, hotovo){
-    var tx;
-    try{ tx = db.transaction(SOUHRNY, "readonly"); }
-    catch(e){ hotovo(null); return; }
-    var st = tx.objectStore(SOUHRNY), req;
-    try{
-      req = st.getAll ? st.getAll() : null;
-    }catch(e){ hotovo(null); return; }
-    if(req){
-      req.onsuccess = function(){ hotovo(Array.isArray(req.result) ? req.result : []); };
-      req.onerror = function(){ hotovo(null); };
-      return;
-    }
-    var out = [], kur = st.openCursor();
-    kur.onsuccess = function(){
-      var c = kur.result;
-      if(c){ out.push(c.value); c.continue(); } else { hotovo(out); }
-    };
-    kur.onerror = function(){ hotovo(null); };
-  }
-
-  /* Detail jedné hry. hotovo(null) znamená, že se nepovedlo přečíst. */
-  function nactiDetail(id, hotovo){
-    if(rezim !== "idb" || !idb){ hotovo(null); return; }
-    var tx;
-    try{ tx = idb.transaction(DETAILY, "readonly"); }
-    catch(e){ hotovo(null); return; }
-    var req = tx.objectStore(DETAILY).get(id);
-    req.onsuccess = function(){
-      var d = req.result;
-      hotovo(d && Array.isArray(d.turns) ? d.turns : []);
-    };
-    req.onerror = function(){ hotovo(null); };
-  }
-
-  /* `souhrny` nese jen záznamy, které se opravdu mění (nové i upravené) —
-     volající (histWrite()) je vybírá porovnáním reference proti předchozímu
-     HIST. Nezměněné záznamy se tak vůbec nezapisují. `smazatSouhrny` je
-     nepovinné: `migruj()` ho neposílá a police se pak smaže celá (`s.clear()`),
-     protože tam jde vždycky o kompletní jednorázový přesun; `histWrite()` ho
-     posílá vždycky (i jako prázdné pole) a mazání jde adresně přes `s.delete()`,
-     ať se nepřepisují záznamy, které se vůbec nezměnily.
-     Obě police v jedné transakci, jinak by při selhání uprostřed vznikla
-     hra bez kol nebo kola bez hry. */
-  function zapisIDB(db, souhrny, noveDetaily, smazatDetaily, hotovo, smazatSouhrny){
-    var tx;
-    try{ tx = db.transaction([SOUHRNY, DETAILY], "readwrite"); }
-    catch(e){ hotovo(false); return; }
-    var hotovoUz = false;
-    function konec(v){ if(hotovoUz) return; hotovoUz = true; hotovo(v); }
-    tx.oncomplete = function(){ konec(true); };
-    tx.onerror = function(){ konec(false); };
-    tx.onabort = function(){ konec(false); };
-    try{
-      var s = tx.objectStore(SOUHRNY), d = tx.objectStore(DETAILY), i;
-      if(smazatSouhrny){
-        for(i = 0; i < smazatSouhrny.length; i++){ s.delete(smazatSouhrny[i]); }
-      }else{
-        s.clear();
-      }
-      for(i = 0; i < souhrny.length; i++){ s.put(souhrny[i]); }
-      for(i = 0; i < smazatDetaily.length; i++){ d.delete(smazatDetaily[i]); }
-      for(i = 0; i < noveDetaily.length; i++){ d.put(noveDetaily[i]); }
-    }catch(e){
-      try{ tx.abort(); }catch(e2){}
-      konec(false);
-    }
-  }
-
-  /* Migrace. Pořadí je důležité: starý klíč se přejmenuje až po potvrzeném
-     zápisu do IndexedDB, a příznak se nastaví jen tehdy, když se ho podaří
-     uložit. Kdyby se příznak nezapsal a klíč se přesto přejmenoval, aplikace
-     by při příštím startu propadla na localStorage a ukázala prázdnou
-     historii jako by byla úplná. */
-  function migruj(db, hotovo){
-    var stare = readList(HKEY);
-    var souhrny = stare.map(souhrnZ), detaily = stare.map(detailZ);
-    zapisIDB(db, souhrny, detaily, [], function(ok){
-      if(!ok){ hotovo(false); return; }
-      var priznak = false;
-      try{ localStorage.setItem(UKEY, "idb"); priznak = true; }catch(e){}
-      if(!priznak){ hotovo(false); return; }
-      /* pojistka mimo IndexedDB: data zůstanou v localStorage pod jiným
-         jménem aspoň jednu verzi, jen se z nich už nečte */
-      try{
-        var raw = localStorage.getItem(HKEY);
-        if(raw !== null){
-          localStorage.setItem(HZAL, raw);
-          localStorage.removeItem(HKEY);
-        }
-      }catch(e){}
-      HIST = souhrny;
-      hotovo(true);
-    });
-  }
-
-  function ukazNecteme(){
-    var el = document.getElementById("nohist");
-    if(el) el.hidden = !historieNedostupna;
-  }
-
-  function pripravUloziste(hotovo){
-    var chtene = "ls";
-    try{ if(localStorage.getItem(UKEY) === "idb") chtene = "idb"; }catch(e){}
-
-    /* Aplikace nepředstírá: když příznak říká idb a IndexedDB se otevřít
-       nedá, neukáže starou historii z localStorage jako by byla úplná.
-       Ukáže pruh, do historie nezapisuje a počítat se dá dál. */
-    function vzdejTo(){
-      if(chtene === "idb"){
-        rezim = "idb"; idb = null; HIST = [];
-        historieNedostupna = true; ukazNecteme();
-      }else{
-        rezim = "ls"; idb = null; HIST = readList(HKEY);
-      }
-      hotovo();
-    }
-
-    otevriIDB(function(db){
-      if(!db){ vzdejTo(); return; }
-      ctiIDB(db, function(zaznamy){
-        if(zaznamy === null){ vzdejTo(); return; }
-        if(chtene === "idb"){
-          rezim = "idb"; idb = db; HIST = zaznamy;
-          hotovo();
-          return;
-        }
-        migruj(db, function(ok){
-          if(ok){ rezim = "idb"; idb = db; }
-          else { rezim = "ls"; idb = null; HIST = readList(HKEY); }
-          hotovo();
-        });
-      });
-    });
-  }
-
-  function histAll(){ return HIST.slice(); }
 
   /* ---------- filtry a řazení ----------
      Stav drží jen paměť, žádný localStorage: po zavření aplikace se resetuje,
@@ -550,90 +251,7 @@ import {
     return v;
   }
 
-  /* Když se historie nedá načíst, není chyba v místě — hlášky by lhaly. */
-  /* Vrací klíč, ne hotový text: hláška může na tlačítku přežít přepnutí
-     jazyka a přeloží se až tam, kde se vypisuje. */
-  function klicSelhani(zaklad){
-    return historieNedostupna ? "chyba.nedostupna" : zaklad;
-  }
 
-  /* Pravidlo z HANDOVER §4 platí dál: každý zápis má výsledek a volající ho
-     řeší. Asynchronní zápis to mění jen v tom, že výsledek přijde později.
-     V režimu ls se hotovo() volá ještě synchronně — chování zůstává přesně
-     jako dřív. Paměť se mění optimisticky, ať UI reaguje hned; při selhání
-     se vrátí sama a volající dostane false.
-
-     V režimu ls jsou v `list` celé záznamy, v režimu idb souhrny. Volající
-     posílá `zaznamy` — celé hry, které do historie přibývají. Co z historie
-     mizí, se pozná porovnáním id a detail se smaže s nimi. */
-  function histWrite(list, hotovo, zaznamy){
-    hotovo = hotovo || function(){};
-    var novy = list.slice();
-    if(rezim === "ls"){
-      var ok = writeList(HKEY, novy);
-      if(ok) HIST = novy;
-      hotovo(ok);
-      return;
-    }
-    if(!idb){ hotovo(false); return; }   /* pruh o nedostupné historii už visí */
-
-    var je = {}, i;
-    for(i = 0; i < novy.length; i++){ je[novy[i].id] = true; }
-    var smazat = [];
-    for(i = 0; i < HIST.length; i++){
-      if(!je[HIST[i].id]) smazat.push(HIST[i].id);
-    }
-    var detaily = (zaznamy || []).map(detailZ);
-
-    /* Do IndexedDB jde jen to, co se opravdu změnilo — porovnáním reference
-       proti předchozímu HIST. histAll() vrací HIST.slice(), takže nezměněný
-       záznam má v `novy` pořád stejnou referenci a zapisIDB() ho nemusí
-       znovu ukládat; „Nahradit vše" při importu staví pole přes map(), takže
-       tam referenci nesdílí nic a správně se zapíše celé znovu. */
-    var stareById = {};
-    for(i = 0; i < HIST.length; i++){ stareById[HIST[i].id] = HIST[i]; }
-    var zmenene = [];
-    for(i = 0; i < novy.length; i++){
-      if(stareById[novy[i].id] !== novy[i]) zmenene.push(novy[i]);
-    }
-
-    var predtim = HIST;
-    HIST = novy;
-    zapisIDB(idb, zmenene, detaily, smazat, function(ok){
-      if(!ok) HIST = predtim;
-      hotovo(ok);
-    }, smazat);
-  }
-
-  /* Do historie se ukládají celé záznamy; co se z nich stane, řeší úložiště.
-     Volající tak nemusí vědět, jestli jede na localStorage nebo na dvou
-     policích. */
-  function proHistorii(rec){ return rezim === "idb" ? souhrnZ(rec) : rec; }
-
-  /* otisk rozehrané hry pro historii nebo koš; rozehrané kolo se nezapočítává */
-  function snapshot(){
-    var rez = aktRezim();
-    var r = {
-      mode: S.mode, goal: S.goal, roundGoal: S.roundGoal || null,
-      rezim: rez.id,
-      banked: S.banked,
-      turns: S.turns.map(function(tah){ return kopieKola(tah); })
-    };
-    /* Název vlastního režimu se veze se záznamem, ne odkazem do nastavení —
-       stejná úvaha jako u kódu k1500x5. Smazání režimu ani import zálohy na
-       cizí telefon nesmí nechat v historii id, ke kterému neexistuje text. */
-    if(rez.vlastni) r.rezimN = nazevRezimu(rez);
-    return r;
-  }
-  function makeRecord(id){
-    var r = snapshot();
-    r.id = id || newId();
-    r.savedAt = Date.now();
-    return r;
-  }
-  function gameEmpty(){
-    return S.turns.length === 0 && S.rolls.length === 1 && cur().items.length === 0;
-  }
 
   /* Jediné dveře ke změně pravidel: uloží a překreslí obojí — nastavení
      i klávesnici (tu přes render()). Cache rizika se nezahazuje, je klíčovaná
@@ -702,46 +320,6 @@ import {
     });
   }
 
-  /* ---------- štítky odložených položek ----------
-     Položka nese kód, ne text. Kolo se ukládá do historie i do zálohy a text
-     zapsaný při jeho vzniku by v něm zafixoval jazyk natrvalo — po přepnutí
-     by se přeložilo rozhraní, ale dohrané hry ne. Na slova se kód převádí až
-     při vykreslení.
-
-     Kolo drží kódy v poli c: hody odděluje "|", položky ",". Je to kratší než
-     dřívější český popis a triviálně rozebratelné. */
-  /* Samostatná jednička a pětka nesou j a p odjakživa a leží tak v historii;
-     zbylé čtyři hodnoty, které umí bodovat samostatně od zavedení volné
-     bodovací tabulky, dostaly kódy d2–d6. Ta asymetrie je záměrná: přepsat
-     j a p na d1 a d5 by znamenalo sáhnout na uložená data. */
-  var KODY = ["j", "p", "v", "d2", "d3", "d4", "d6",
-              "s15", "s26", "s16", "c3p", "c32", "c33", "c42"];
-  var SAM_KODY = ["", "j", "d2", "d3", "d4", "p", "d6"];
-  /* Dvojice se vejde do dnešní gramatiky „počet × hodnota“ — proto [2-6],
-     ne [3-6] jako dřív. */
-  var NKOD = /^n([2-6])([1-6])$/;
-  /* Jediné místo, kde vzniká kód pro „N kostek téže hodnoty“. Používá ho řada
-     čipů i tlačítko +, takže odložení trojky dá týž kód oběma cestami. */
-  function kodStejnych(count, value){
-    return count === 1 ? SAM_KODY[value] : ("n" + count + value);
-  }
-  /* Vlastní kombinace nese body a počet kostek přímo v kódu, ne odkaz na vzor
-     v nastavení. Kdyby odkazoval, smazání vzoru — nebo import zálohy na cizí
-     telefon — by nechalo v historii viset kód, ke kterému neexistuje text.
-     k1500x5 se přečte vždycky a všude. */
-  var KKOD = /^k(\d{1,6})x([1-6])$/;
-  var HODY_ODD = "|", POLOZKY_ODD = ",";
-  var HODY_TXT = " \u00B7 ", POLOZKY_TXT = " + ";
-
-  /* Záznamy zapsané před zavedením kódů nesou text v poli d. Ten je vždycky
-     český — jiný jazyk aplikace tehdy neuměla — a tabulka je proto zmrazená.
-     Svázat ji s katalogem by znamenalo, že přeformulování českého štítku
-     udělá ze starých dat nečitelná. Že se obě strany nerozešly, hlídá
-     sada 17. */
-  var STARE = { "jednička": "j", "pětka": "p", "vlastní": "v",
-                "postupka 1\u20135": "s15", "postupka 2\u20136": "s26",
-                "postupka 1\u20136": "s16" };
-  var STARE_N = /^([3-6])\u00D7 ([1-6])$/;
 
   /* Neznámý kód se ukáže tak, jak je: cizí záloha ani poškozená data se
      nemají tvářit jako prázdné místo. Do stránky jde přes esc() jako
@@ -767,29 +345,6 @@ import {
       return hod.split(POLOZKY_ODD).map(textKodu).join(POLOZKY_TXT);
     }).join(HODY_TXT);
   }
-  function kodZTextu(s){
-    if(Object.prototype.hasOwnProperty.call(STARE, s)) return STARE[s];
-    var m = STARE_N.exec(s);
-    return m ? ("n" + m[1] + m[2]) : null;
-  }
-  /* Rozbor běží líně při čtení a nic nepřepisuje — stejný vzorec jako dopočet
-     chybějících polí souhrnu, a stejně jako on nepotřebuje bump verze IndexedDB.
-     Gramatika je uzavřená, takže selhání znamená cizí nebo poškozená data;
-     pak se vrací null a volající text ukáže syrový. */
-  function kodyZPopisu(d){
-    if(!d) return "";
-    var hody = String(d).split(HODY_TXT), out = [], i, j, kusy, radek, k;
-    for(i = 0; i < hody.length; i++){
-      kusy = hody[i].split(POLOZKY_TXT); radek = [];
-      for(j = 0; j < kusy.length; j++){
-        k = kodZTextu(kusy[j]);
-        if(k === null) return null;
-        radek.push(k);
-      }
-      out.push(radek.join(POLOZKY_ODD));
-    }
-    return out.join(HODY_ODD);
-  }
   /* Jediné místo, kde se popis kola skládá pro zobrazení. Kód vyhrává; není-li,
      zkusí se rozebrat starý text a teprve pak se ukáže tak, jak je. */
   function popisKola(tah){
@@ -798,26 +353,7 @@ import {
     var c = kodyZPopisu(d);
     return c === null ? d : kodyNaText(c);
   }
-  /* Kolo se všude kopíruje stejně: veze si kódy, a nemá-li je, původní text.
-     Nic se nepřepisuje, takže starý záznam přežije i opakovaný zápis do
-     historie, export i import beze změny. */
-  function kopieKola(tah, strop){
-    var o = { p: naCislo(tah && tah.p, 0), bust: !!(tah && tah.bust) };
-    if(tah && typeof tah.c === "string"){
-      o.c = strop ? tah.c.slice(0, strop) : tah.c;
-    } else {
-      var d = (tah && typeof tah.d === "string") ? tah.d : "";
-      o.d = strop ? d.slice(0, strop) : d;
-    }
-    return o;
-  }
 
-  /* ---------- odvozené ---------- */
-  function cur(){ return S.rolls[S.rolls.length - 1]; }
-  function usedInRoll(r){ return r.items.reduce(function(a,i){ return a + i.d; }, 0); }
-  function left(){ return cur().thrown - usedInRoll(cur()); }
-  function rollPoints(r){ return r.items.reduce(function(a,i){ return a + i.p; }, 0); }
-  function potTotal(){ return S.rolls.reduce(function(a,r){ return a + rollPoints(r); }, 0); }
   /* Prázdný hod se do popisu nedostane — u farklu je poslední hod prázdný
      z definice a slovo se dopisuje až při zobrazení. */
   function turnKody(){
@@ -1265,11 +801,6 @@ import {
 
   /* Název režimu se skládá na jednom místě: preset ho bere z katalogu podle
      id (a přeloží se), vlastní si veze svůj vlastní text. */
-  function nazevRezimu(rez){
-    if(!rez) return t("rezim.neznamy");
-    if(!rez.vlastni) return t("rezim.n." + rez.id);
-    return rez.nazev || t("rezim.beznazvu");
-  }
   /* Podřádek seznamu: čím se ten režim liší, aniž by se musel otevřít. */
   function popisRezimuKratky(rez){
     var kusy = [tn("slovo.kostek", rez.kostek)], p = 0, i;
@@ -3168,111 +2699,6 @@ import {
   }
   function renderStats(){ $("stats").innerHTML = statsHTML(snapshot()); }
 
-  /* ---------- odvozené údaje o jedné hře ----------
-     Každá z nich sáhne nejdřív po předpočítaném čísle ze souhrnu a teprve
-     když ho nemá, projde `turns`. Díky tomu zůstávají STATY, statHodnota(),
-     zebricek() i renderHistList() beze změny a počítají stejně nad souhrny,
-     nad plnými záznamy v propadu na localStorage i nad importovanými daty. */
-  function gKol(g){
-    if(typeof g.kol === "number") return g.kol;
-    return (g.turns || []).length;
-  }
-  function gFarkle(g){
-    if(typeof g.farklu === "number") return g.farklu;
-    var n = 0;
-    (g.turns || []).forEach(function(t){ if(t.bust) n++; });
-    return n;
-  }
-  /* Farkle prvním hodem: kolo skončí farklem a nemá jediný bod (t.p === 0).
-     Jiná kombinace nastat nemůže — kdyby v kole padl druhý hod (hot dice
-     nebo pokračování), musel by před ním ležet aspoň jeden bodující odklad,
-     takže by t.p bylo kladné. Netřeba sahat do rolls[]. Nula je tu platná
-     a ukládá se jako nula (na rozdíl od gZtraceno níž) — je to prostá
-     četnost jako farklu/kol/hodu, ne rekord, kde by nula matla. */
-  function gFarklePrvni(g){
-    if(typeof g.farkluprvni === "number") return g.farkluprvni;
-    var n = 0;
-    (g.turns || []).forEach(function(t){ if(t.bust && t.p === 0) n++; });
-    return n;
-  }
-  /* Do žebříčku smí jen hry, kde k tomu opravdu došlo — nula by se jinak
-     řadila na konec jako řada nul. Samostatná obálka, ne úprava
-     gFarklePrvni: uložený souhrn i celkový součet mají nulu držet dál. */
-  function gFarklePrvniRekord(g){ return gFarklePrvni(g) || null; }
-  /* null je platná hodnota (hra bez jediného bodovaného kola), takže se
-     nedá ptát na pravdivost — jen na to, jestli údaj vůbec je */
-  function gNejlepsiKolo(g){
-    if(g.nejlepsi !== undefined) return g.nejlepsi;
-    var m = null;
-    (g.turns || []).forEach(function(t){ if(!t.bust && (m === null || t.p > m)) m = t.p; });
-    return m;
-  }
-  function gNejhorsiKolo(g){
-    if(g.nejhorsi !== undefined) return g.nejhorsi;
-    var m = null;
-    (g.turns || []).forEach(function(t){ if(!t.bust && t.p > 0 && (m === null || t.p < m)) m = t.p; });
-    return m;
-  }
-  function gSerie(g){
-    if(typeof g.serie === "number") return g.serie;
-    var nej = 0, b = 0;
-    (g.turns || []).forEach(function(t){
-      if(t.bust){ b = 0; } else { b++; if(b > nej) nej = b; }
-    });
-    return nej;
-  }
-  /* Počet hodů se rekonstruuje z popisu kola, protože turns[i] nese jen
-     {p, bust} a k tomu kódy v c (starý záznam text v d). Obojí spojuje hody
-     jedním oddělovačem a prázdné hody vyhazuje —
-     u farklu je poslední hod prázdný z definice, proto se u něj přičítá
-     jednička. Sedí to i na farkle prvním hodem: prázdný popis → jeden hod.
-     Math.max(u, 1) je pojistka pro cizí zálohu s prázdným popisem u zapsaného
-     kola; z aplikace takové kolo vzniknout nemůže. */
-  function hodyVKole(tah){
-    var u;
-    if(typeof tah.c === "string"){ u = tah.c ? tah.c.split(HODY_ODD).length : 0; }
-    else { u = tah.d ? String(tah.d).split(HODY_TXT).length : 0; }
-    return tah.bust ? u + 1 : Math.max(u, 1);
-  }
-  function gNejvicHodu(g){
-    if(g.hodu !== undefined) return g.hodu;
-    var m = null;
-    (g.turns || []).forEach(function(t){
-      var h = hodyVKole(t);
-      if(m === null || h > m) m = h;
-    });
-    return m;
-  }
-  /* Farkle, při kterém na stole nic neleželo, je nula — platná hodnota
-     odlišná od null, která by v žebříčku ležela dole jako řada nul. Do téhle
-     statistiky nepatří, takže nula a null splývají. Test na pravdivost je tu
-     proto záměrný, na rozdíl od ostatních g*: souhrny uložené dřív nesou nulu
-     a i ty se musí překlopit při čtení. */
-  function gZtraceno(g){
-    if(g.ztraceno !== undefined) return g.ztraceno || null;
-    var m = null;
-    (g.turns || []).forEach(function(t){ if(t.bust && t.p > 0 && (m === null || t.p > m)) m = t.p; });
-    return m;
-  }
-  function gPrumer(g){
-    var k = gKol(g);
-    return k ? Math.round((g.banked || 0) / k) : null;
-  }
-  function gKolKCili(g){
-    if(g.kolKCili !== undefined) return g.kolKCili;
-    return (g.mode !== "rounds" && g.goal > 0 && (g.banked || 0) >= g.goal) ? gKol(g) : null;
-  }
-  function gBody(g){ return g.banked || 0; }
-  /* Záznam bez `rezim` je hra z doby, kdy aplikace uměla jedna pravidla —
-     a ta byla KCD2. Dopočítává se při čtení, stejně jako gKol(). */
-  function gRezim(g){ return (typeof g.rezim === "string" && g.rezim) ? g.rezim : VYCHOZI_REZIM; }
-  /* Název režimu pro hru z historie. Preset se přeloží podle id, vlastní veze
-     svůj text s sebou — a když ho nemá (cizí záloha), řekne se to rovnou. */
-  function nazevRezimuZaznamu(g){
-    var id = gRezim(g);
-    if(jePreset(id)) return t("rezim.n." + id);
-    return (typeof g.rezimN === "string" && g.rezimN) ? g.rezimN.slice(0, NAZEV_MAX) : t("rezim.neznamy");
-  }
 
   function cislo(v){ return String(v); }
   function fmtR(v){ return fmt(Math.round(v)); }

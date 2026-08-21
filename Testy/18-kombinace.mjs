@@ -105,8 +105,20 @@ function app(opt){
     async soubor(text){
       const f = new w.File([text], "zaloha.txt", { type: "text/plain" });
       Object.defineProperty($("impfile"), "files", { value: [f], configurable: true });
+      /* FileReader je asynchronní a jak dlouho poběží, se neodhaduje: v jednom
+      procesu běží víc jsdomů naráz a líný výčet rizika v tom vedlejším umí
+      zablokovat smyčku na desítky ms. Pevných 60 ms tuhle sadu shazovalo
+      zhruba v polovině běhů.
+
+      Čeká se proto na výsledek. Obě místa, kam výsledek dorazí, se předtím
+      schovají — jinak by druhý import v téže aplikaci našel panel odemčený
+      po tom prvním, skončil hned a četl text, který ještě nikdo nepřepsal. */
+      $("impbox").hidden = true;
+      $("zalmsg").hidden = true;
       $("impfile").dispatchEvent(new w.Event("change"));
-      await spi(60);
+      for(let i = 0; i < 300 && $("impbox").hidden && $("zalmsg").hidden; i++){
+      await new Promise(r => setTimeout(r, 10));
+      }
     } };
 }
 

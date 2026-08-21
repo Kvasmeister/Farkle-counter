@@ -101,3 +101,30 @@ Jméno tím patří datům, ne zobrazení, a data vznikají v doméně.
 jediná odchylka od pravidla „doména nezná jazyk“ a je zapsaná v hlavičce
 modulu. **Nechat tak** — alternativa (nechat jméno prázdné a doplnit ho
 v UI) je změna chování, ne přesun.
+
+---
+
+## #6 · řez 6 · tři sady čekaly na import pevných 60 ms a jedna z nich to shazovalo
+
+Sada 18 začala padat zhruba v polovině běhů: `import tvar nemění: undefined`.
+Bisekce přes uložené verze `index.html` ukázala, že původní soubor prošel
+osmkrát z osmi, kdežto od **řezu 4** je to loterie.
+
+Nebyla to chyba aplikace. Pomocník `soubor()` posílal soubor do `#impfile`
+a čekal `spi(60)`; `FileReader` je asynchronní a v jednom procesu běží víc
+jsdomů naráz. Když ve vedlejší instanci zrovna dobíhal líný výčet rizika
+(55 986 hodů, desítky ms blokované smyčky), šedesát milisekund nestačilo
+a klik na *Přidat* dopadl do prázdna. Řez 4 jen posunul poměr sil natolik,
+že se latentní závod začal prohrávat.
+
+Ověřeno: se `spi(400)` prošlo šestkrát ze šesti. Magické číslo ale není
+oprava — sady teď čekají na výsledek (`#impbox` nebo `#zalmsg` přestane být
+skrytý), ne na čas.
+
+**Past, na kterou se přitom narazilo:** čekat na „panel je vidět“ nestačí.
+Druhý import v téže aplikaci ho našel odemčený po tom prvním, skončil
+okamžitě a četl text, který ještě nikdo nepřepsal — sada 05 pak hlásila
+pět chyb úplně jinde. Obě místa se proto před odesláním schovají, takže se
+čeká na **změnu**, ne na stav.
+
+Týká se sad 05, 16 a 18. Aplikace se nezměnila.

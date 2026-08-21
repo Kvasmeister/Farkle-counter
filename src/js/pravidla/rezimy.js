@@ -14,6 +14,7 @@
 import { BODY_MAX, KOMBKEY, PRESET_PORADI, VLASTNI_MAX, cistaKombinace } from "./kombinace.js";
 import { POST_PORADI } from "./postupky.js";
 import { NAZEV_MAX, naCislo } from "../spolecne.js";
+import { t } from "../jazyky/jadro.js";
 
 /* ---------- herní režimy ----------
    Režim je celá sada pravidel: počet kostek, tři šestice sazeb (samostatná
@@ -318,4 +319,14 @@ function ulozRezimy(){
 }
 
 
-export { NADP_ZAKLAD, NAD_DRUHY, POCTY_STEJ, PRAH_ZAKLAD, PRESET_REZIMY, PRESET_REZ_PORADI, REZIMY, REZIMY_MAX, REZKEY, SAMOSTATNE_V_RADE, SAM_ZAKLAD, TROJ_ZAKLAD, VYCHOZI_REZIM, aktRezim, cistaSestice, cistyRezim, jePreset, kopieMapy, kopieStej, kostek, mezeBodu, nactiRezimy, nejvyssiStej, novyIdRezimu, odchylkyRezimu, pocetSamostatnych, poctyStej, prahStej, rezimPodleId, sestiZap, seznamRezimu, stejZap, stejnaMapa, stejnaStej, stejnePole, ulozRezimy, venKombinaci, venRezim, zPresetu };
+
+/* Jméno režimu. Sází se v UI, ale taky se MATERIALIZUJE DO ZÁZNAMU
+   (snapshot -> rezimN): smazání režimu ani import zálohy na cizí telefon
+   nesmí nechat v historii id, ke kterému neexistuje text. Proto tady,
+   u režimů, a ne v UI — stejná úvaha jako u jména vlastní kombinace. */
+function nazevRezimu(rez){
+  if(!rez) return t("rezim.neznamy");
+  if(!rez.vlastni) return t("rezim.n." + rez.id);
+  return rez.nazev || t("rezim.beznazvu");
+}
+export { NADP_ZAKLAD, NAD_DRUHY, POCTY_STEJ, PRAH_ZAKLAD, PRESET_REZIMY, PRESET_REZ_PORADI, REZIMY, REZIMY_MAX, REZKEY, SAMOSTATNE_V_RADE, SAM_ZAKLAD, TROJ_ZAKLAD, VYCHOZI_REZIM, aktRezim, cistaSestice, cistyRezim, jePreset, kopieMapy, kopieStej, kostek, mezeBodu, nactiRezimy, nazevRezimu, nejvyssiStej, novyIdRezimu, odchylkyRezimu, pocetSamostatnych, poctyStej, prahStej, rezimPodleId, sestiZap, seznamRezimu, stejZap, stejnaMapa, stejnaStej, stejnePole, ulozRezimy, venKombinaci, venRezim, zPresetu };

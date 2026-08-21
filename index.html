@@ -3086,6 +3086,11 @@
     } catch (e) {
     }
   }
+  function nazevRezimu(rez) {
+    if (!rez) return t("rezim.neznamy");
+    if (!rez.vlastni) return t("rezim.n." + rez.id);
+    return rez.nazev || t("rezim.beznazvu");
+  }
 
   // src/js/pravidla/skore.js
   function kindPoints(value, count, rez) {
@@ -3220,9 +3225,743 @@
     return zakladJakoKcd2(rez) || !!rizikoCache[podpisRezimu(rez)];
   }
 
+  // src/js/stav/kody.js
+  var KODY = [
+    "j",
+    "p",
+    "v",
+    "d2",
+    "d3",
+    "d4",
+    "d6",
+    "s15",
+    "s26",
+    "s16",
+    "c3p",
+    "c32",
+    "c33",
+    "c42"
+  ];
+  var SAM_KODY = ["", "j", "d2", "d3", "d4", "p", "d6"];
+  var NKOD = /^n([2-6])([1-6])$/;
+  function kodStejnych(count, value) {
+    return count === 1 ? SAM_KODY[value] : "n" + count + value;
+  }
+  var KKOD = /^k(\d{1,6})x([1-6])$/;
+  var HODY_ODD = "|";
+  var POLOZKY_ODD = ",";
+  var HODY_TXT = " · ";
+  var POLOZKY_TXT = " + ";
+  var STARE = {
+    "jednička": "j",
+    "pětka": "p",
+    "vlastní": "v",
+    "postupka 1–5": "s15",
+    "postupka 2–6": "s26",
+    "postupka 1–6": "s16"
+  };
+  var STARE_N = /^([3-6])\u00D7 ([1-6])$/;
+  function kodZTextu(s) {
+    if (Object.prototype.hasOwnProperty.call(STARE, s)) return STARE[s];
+    var m = STARE_N.exec(s);
+    return m ? "n" + m[1] + m[2] : null;
+  }
+  function kodyZPopisu(d) {
+    if (!d) return "";
+    var hody = String(d).split(HODY_TXT), out = [], i, j, kusy, radek, k;
+    for (i = 0; i < hody.length; i++) {
+      kusy = hody[i].split(POLOZKY_TXT);
+      radek = [];
+      for (j = 0; j < kusy.length; j++) {
+        k = kodZTextu(kusy[j]);
+        if (k === null) return null;
+        radek.push(k);
+      }
+      out.push(radek.join(POLOZKY_ODD));
+    }
+    return out.join(HODY_ODD);
+  }
+
+  // src/js/stav/uloziste.js
+  var KEY = "farkle-solo-v3";
+  var HKEY = "farkle-hist-v1";
+  var KKEY = "farkle-kos-v1";
+  var KHKEY = "farkle-koshist-v1";
+  var KOS_MAX = 5;
+  var KOSH_MAX = 10;
+  function readList(key) {
+    try {
+      var d = JSON.parse(localStorage.getItem(key));
+      return Array.isArray(d) ? d : [];
+    } catch (e) {
+      return [];
+    }
+  }
+  function writeList(key, list) {
+    try {
+      localStorage.setItem(key, JSON.stringify(list));
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+  function kosZapis(key, list) {
+    if (list && list.length) return writeList(key, list);
+    try {
+      localStorage.removeItem(key);
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+  function kosAll() {
+    return readList(KKEY);
+  }
+  function kosWrite(list) {
+    return kosZapis(KKEY, list);
+  }
+  function kosHistAll() {
+    return readList(KHKEY);
+  }
+  function kosHistWrite(list) {
+    return kosZapis(KHKEY, list);
+  }
+
+  // src/js/stav/stav.js
+  var S = {
+    mode: "points",
+    goal: 4e3,
+    roundGoal: null,
+    banked: 0,
+    turns: [],
+    rolls: [{ thrown: 6, hot: false, items: [] }],
+    archivedId: null,
+    dirty: false,
+    autoUlozeno: false
+  };
+  var neukladame = false;
+  var poUlozeni = [];
+  function naSelhaniUlozeni(fn) {
+    poUlozeni.push(fn);
+  }
+  function oznamUlozeni() {
+    for (var i = 0; i < poUlozeni.length; i++) poUlozeni[i](neukladame);
+  }
+  function save() {
+    try {
+      localStorage.setItem(KEY, JSON.stringify(S));
+      if (neukladame) {
+        neukladame = false;
+        oznamUlozeni();
+      }
+      return true;
+    } catch (e) {
+      if (!neukladame) {
+        neukladame = true;
+        oznamUlozeni();
+      }
+      return false;
+    }
+  }
+  function ozdrav() {
+    S.mode = S.mode === "rounds" ? "rounds" : "points";
+    S.banked = naCislo(S.banked, 0);
+    S.goal = typeof S.goal === "number" && S.goal > 0 ? S.goal : 4e3;
+    if (typeof S.roundGoal !== "number" || S.roundGoal < 1) {
+      S.roundGoal = null;
+    }
+    if (typeof S.archivedId !== "string") {
+      S.archivedId = null;
+    }
+    S.dirty = !!S.dirty;
+    S.autoUlozeno = !!S.autoUlozeno;
+    S.turns = (Array.isArray(S.turns) ? S.turns : []).map(function(tah) {
+      return kopieKola(tah);
+    });
+    S.rolls = (Array.isArray(S.rolls) && S.rolls.length ? S.rolls : [{}]).map(function(r) {
+      var max = kostek(), thrown = naCislo(r && r.thrown, max);
+      return {
+        thrown: thrown >= 1 && thrown <= max ? Math.floor(thrown) : max,
+        hot: !!(r && r.hot),
+        items: (Array.isArray(r && r.items) ? r.items : []).map(function(i) {
+          var o = {
+            p: naCislo(i && i.p, 0),
+            d: Math.max(0, Math.floor(naCislo(i && i.d, 0)))
+          };
+          if (i && typeof i.k === "string") {
+            o.k = i.k;
+            return o;
+          }
+          var kod = i && typeof i.l === "string" ? kodZTextu(i.l) : "v";
+          if (kod === null) {
+            o.l = i.l;
+          } else {
+            o.k = kod;
+          }
+          return o;
+        })
+      };
+    });
+  }
+  function load(cb) {
+    try {
+      var raw = localStorage.getItem(KEY);
+      if (raw) {
+        var d = null, cele = false;
+        try {
+          d = JSON.parse(raw);
+          cele = true;
+        } catch (e) {
+        }
+        if (cele && d && typeof d.banked === "number" && Array.isArray(d.rolls) && d.rolls.length) {
+          S = d;
+        } else {
+          try {
+            localStorage.setItem(KEY + "-vadny", raw);
+          } catch (e) {
+          }
+        }
+      }
+    } catch (e) {
+    }
+    ozdrav();
+    cb();
+  }
+  function kopieKola(tah, strop) {
+    var o = { p: naCislo(tah && tah.p, 0), bust: !!(tah && tah.bust) };
+    if (tah && typeof tah.c === "string") {
+      o.c = strop ? tah.c.slice(0, strop) : tah.c;
+    } else {
+      var d = tah && typeof tah.d === "string" ? tah.d : "";
+      o.d = strop ? d.slice(0, strop) : d;
+    }
+    return o;
+  }
+  function cur() {
+    return S.rolls[S.rolls.length - 1];
+  }
+  function usedInRoll(r) {
+    return r.items.reduce(function(a, i) {
+      return a + i.d;
+    }, 0);
+  }
+  function left() {
+    return cur().thrown - usedInRoll(cur());
+  }
+  function rollPoints(r) {
+    return r.items.reduce(function(a, i) {
+      return a + i.p;
+    }, 0);
+  }
+  function potTotal() {
+    return S.rolls.reduce(function(a, r) {
+      return a + rollPoints(r);
+    }, 0);
+  }
+  function snapshot() {
+    var rez = aktRezim();
+    var r = {
+      mode: S.mode,
+      goal: S.goal,
+      roundGoal: S.roundGoal || null,
+      rezim: rez.id,
+      banked: S.banked,
+      turns: S.turns.map(function(tah) {
+        return kopieKola(tah);
+      })
+    };
+    if (rez.vlastni) r.rezimN = nazevRezimu(rez);
+    return r;
+  }
+  function makeRecord(id) {
+    var r = snapshot();
+    r.id = id || newId();
+    r.savedAt = Date.now();
+    return r;
+  }
+  function gameEmpty() {
+    return S.turns.length === 0 && S.rolls.length === 1 && cur().items.length === 0;
+  }
+
+  // src/js/stav/zaznam.js
+  function gKol(g) {
+    if (typeof g.kol === "number") return g.kol;
+    return (g.turns || []).length;
+  }
+  function gFarkle(g) {
+    if (typeof g.farklu === "number") return g.farklu;
+    var n = 0;
+    (g.turns || []).forEach(function(t2) {
+      if (t2.bust) n++;
+    });
+    return n;
+  }
+  function gFarklePrvni(g) {
+    if (typeof g.farkluprvni === "number") return g.farkluprvni;
+    var n = 0;
+    (g.turns || []).forEach(function(t2) {
+      if (t2.bust && t2.p === 0) n++;
+    });
+    return n;
+  }
+  function gFarklePrvniRekord(g) {
+    return gFarklePrvni(g) || null;
+  }
+  function gNejlepsiKolo(g) {
+    if (g.nejlepsi !== void 0) return g.nejlepsi;
+    var m = null;
+    (g.turns || []).forEach(function(t2) {
+      if (!t2.bust && (m === null || t2.p > m)) m = t2.p;
+    });
+    return m;
+  }
+  function gNejhorsiKolo(g) {
+    if (g.nejhorsi !== void 0) return g.nejhorsi;
+    var m = null;
+    (g.turns || []).forEach(function(t2) {
+      if (!t2.bust && t2.p > 0 && (m === null || t2.p < m)) m = t2.p;
+    });
+    return m;
+  }
+  function gSerie(g) {
+    if (typeof g.serie === "number") return g.serie;
+    var nej = 0, b = 0;
+    (g.turns || []).forEach(function(t2) {
+      if (t2.bust) {
+        b = 0;
+      } else {
+        b++;
+        if (b > nej) nej = b;
+      }
+    });
+    return nej;
+  }
+  function hodyVKole(tah) {
+    var u;
+    if (typeof tah.c === "string") {
+      u = tah.c ? tah.c.split(HODY_ODD).length : 0;
+    } else {
+      u = tah.d ? String(tah.d).split(HODY_TXT).length : 0;
+    }
+    return tah.bust ? u + 1 : Math.max(u, 1);
+  }
+  function gNejvicHodu(g) {
+    if (g.hodu !== void 0) return g.hodu;
+    var m = null;
+    (g.turns || []).forEach(function(t2) {
+      var h = hodyVKole(t2);
+      if (m === null || h > m) m = h;
+    });
+    return m;
+  }
+  function gZtraceno(g) {
+    if (g.ztraceno !== void 0) return g.ztraceno || null;
+    var m = null;
+    (g.turns || []).forEach(function(t2) {
+      if (t2.bust && t2.p > 0 && (m === null || t2.p > m)) m = t2.p;
+    });
+    return m;
+  }
+  function gPrumer(g) {
+    var k = gKol(g);
+    return k ? Math.round((g.banked || 0) / k) : null;
+  }
+  function gKolKCili(g) {
+    if (g.kolKCili !== void 0) return g.kolKCili;
+    return g.mode !== "rounds" && g.goal > 0 && (g.banked || 0) >= g.goal ? gKol(g) : null;
+  }
+  function gBody(g) {
+    return g.banked || 0;
+  }
+  function gRezim(g) {
+    return typeof g.rezim === "string" && g.rezim ? g.rezim : VYCHOZI_REZIM;
+  }
+  function nazevRezimuZaznamu(g) {
+    var id = gRezim(g);
+    if (jePreset(id)) return t("rezim.n." + id);
+    return typeof g.rezimN === "string" && g.rezimN ? g.rezimN.slice(0, NAZEV_MAX) : t("rezim.neznamy");
+  }
+
+  // src/js/stav/historie.js
+  var HIST = [];
+  var UKEY = "farkle-uloziste-v1";
+  var HZAL = HKEY + "-zaloha";
+  var IDB_JMENO = "kostky";
+  var IDB_VERZE = 4;
+  var SOUHRNY = "souhrny";
+  var DETAILY = "detaily";
+  var IDB_STROP = 3e3;
+  var rezim = "ls";
+  var idb = null;
+  var historieNedostupna = false;
+  function souhrnZ(rec) {
+    var kolKCili = gKolKCili(rec);
+    return {
+      id: rec.id,
+      savedAt: rec.savedAt,
+      mode: rec.mode,
+      goal: rec.goal,
+      roundGoal: rec.roundGoal || null,
+      /* Chybějící `rezim` se dopočítá až při čtení (gRezim), takže se kvůli
+         němu nezvedá IDB_VERZE — všechny dřívější hry se hrály podle KCD2. */
+      rezim: gRezim(rec),
+      rezimN: rec.rezimN || null,
+      banked: rec.banked || 0,
+      kol: gKol(rec),
+      farklu: gFarkle(rec),
+      farkluprvni: gFarklePrvni(rec),
+      nejlepsi: gNejlepsiKolo(rec),
+      nejhorsi: gNejhorsiKolo(rec),
+      serie: gSerie(rec),
+      kolKCili,
+      hodu: gNejvicHodu(rec),
+      ztraceno: gZtraceno(rec)
+    };
+  }
+  function detailZ(rec) {
+    return { id: rec.id, turns: (rec.turns || []).map(function(tah) {
+      return kopieKola(tah);
+    }) };
+  }
+  function otevriIDB(hotovo) {
+    var rozhodnuto = false;
+    function konec(v) {
+      if (rozhodnuto) return;
+      rozhodnuto = true;
+      hotovo(v);
+    }
+    var api = null;
+    try {
+      api = window.indexedDB || null;
+    } catch (e) {
+      api = null;
+    }
+    if (!api) {
+      konec(null);
+      return;
+    }
+    var req;
+    try {
+      req = api.open(IDB_JMENO, IDB_VERZE);
+    } catch (e) {
+      konec(null);
+      return;
+    }
+    setTimeout(function() {
+      konec(null);
+    }, IDB_STROP);
+    req.onupgradeneeded = function() {
+      var db = req.result, tx = req.transaction;
+      if (!db.objectStoreNames.contains(SOUHRNY)) db.createObjectStore(SOUHRNY, { keyPath: "id" });
+      if (!db.objectStoreNames.contains(DETAILY)) db.createObjectStore(DETAILY, { keyPath: "id" });
+      if (db.objectStoreNames.contains("hry")) {
+        var kur = tx.objectStore("hry").openCursor();
+        kur.onsuccess = function() {
+          var c = kur.result;
+          if (c) {
+            var rec = c.value;
+            tx.objectStore(SOUHRNY).put(souhrnZ(rec));
+            tx.objectStore(DETAILY).put(detailZ(rec));
+            c.continue();
+            return;
+          }
+          db.deleteObjectStore("hry");
+        };
+        return;
+      }
+      dopoctiHody(tx);
+    };
+    req.onsuccess = function() {
+      konec(req.result);
+    };
+    req.onerror = function() {
+      konec(null);
+    };
+    req.onblocked = function() {
+      konec(null);
+    };
+  }
+  function dopoctiHody(tx) {
+    var mapa = {}, kd = tx.objectStore(DETAILY).openCursor();
+    kd.onsuccess = function() {
+      var c = kd.result;
+      if (c) {
+        var d = c.value;
+        mapa[d.id] = { hodu: gNejvicHodu(d), ztraceno: gZtraceno(d), farkluprvni: gFarklePrvni(d) };
+        c.continue();
+        return;
+      }
+      var ks = tx.objectStore(SOUHRNY).openCursor();
+      ks.onsuccess = function() {
+        var s = ks.result;
+        if (!s) return;
+        var v = s.value;
+        if (v.hodu === void 0 || v.ztraceno === void 0 || v.farkluprvni === void 0) {
+          var m = mapa[v.id];
+          v.hodu = m ? m.hodu : null;
+          v.ztraceno = m ? m.ztraceno : null;
+          v.farkluprvni = m ? m.farkluprvni : null;
+          s.update(v);
+        }
+        s.continue();
+      };
+    };
+  }
+  function ctiIDB(db, hotovo) {
+    var tx;
+    try {
+      tx = db.transaction(SOUHRNY, "readonly");
+    } catch (e) {
+      hotovo(null);
+      return;
+    }
+    var st = tx.objectStore(SOUHRNY), req;
+    try {
+      req = st.getAll ? st.getAll() : null;
+    } catch (e) {
+      hotovo(null);
+      return;
+    }
+    if (req) {
+      req.onsuccess = function() {
+        hotovo(Array.isArray(req.result) ? req.result : []);
+      };
+      req.onerror = function() {
+        hotovo(null);
+      };
+      return;
+    }
+    var out = [], kur = st.openCursor();
+    kur.onsuccess = function() {
+      var c = kur.result;
+      if (c) {
+        out.push(c.value);
+        c.continue();
+      } else {
+        hotovo(out);
+      }
+    };
+    kur.onerror = function() {
+      hotovo(null);
+    };
+  }
+  function nactiDetail(id, hotovo) {
+    if (rezim !== "idb" || !idb) {
+      hotovo(null);
+      return;
+    }
+    var tx;
+    try {
+      tx = idb.transaction(DETAILY, "readonly");
+    } catch (e) {
+      hotovo(null);
+      return;
+    }
+    var req = tx.objectStore(DETAILY).get(id);
+    req.onsuccess = function() {
+      var d = req.result;
+      hotovo(d && Array.isArray(d.turns) ? d.turns : []);
+    };
+    req.onerror = function() {
+      hotovo(null);
+    };
+  }
+  function zapisIDB(db, souhrny, noveDetaily, smazatDetaily, hotovo, smazatSouhrny) {
+    var tx;
+    try {
+      tx = db.transaction([SOUHRNY, DETAILY], "readwrite");
+    } catch (e) {
+      hotovo(false);
+      return;
+    }
+    var hotovoUz = false;
+    function konec(v) {
+      if (hotovoUz) return;
+      hotovoUz = true;
+      hotovo(v);
+    }
+    tx.oncomplete = function() {
+      konec(true);
+    };
+    tx.onerror = function() {
+      konec(false);
+    };
+    tx.onabort = function() {
+      konec(false);
+    };
+    try {
+      var s = tx.objectStore(SOUHRNY), d = tx.objectStore(DETAILY), i;
+      if (smazatSouhrny) {
+        for (i = 0; i < smazatSouhrny.length; i++) {
+          s.delete(smazatSouhrny[i]);
+        }
+      } else {
+        s.clear();
+      }
+      for (i = 0; i < souhrny.length; i++) {
+        s.put(souhrny[i]);
+      }
+      for (i = 0; i < smazatDetaily.length; i++) {
+        d.delete(smazatDetaily[i]);
+      }
+      for (i = 0; i < noveDetaily.length; i++) {
+        d.put(noveDetaily[i]);
+      }
+    } catch (e) {
+      try {
+        tx.abort();
+      } catch (e2) {
+      }
+      konec(false);
+    }
+  }
+  function migruj(db, hotovo) {
+    var stare = readList(HKEY);
+    var souhrny = stare.map(souhrnZ), detaily = stare.map(detailZ);
+    zapisIDB(db, souhrny, detaily, [], function(ok) {
+      if (!ok) {
+        hotovo(false);
+        return;
+      }
+      var priznak = false;
+      try {
+        localStorage.setItem(UKEY, "idb");
+        priznak = true;
+      } catch (e) {
+      }
+      if (!priznak) {
+        hotovo(false);
+        return;
+      }
+      try {
+        var raw = localStorage.getItem(HKEY);
+        if (raw !== null) {
+          localStorage.setItem(HZAL, raw);
+          localStorage.removeItem(HKEY);
+        }
+      } catch (e) {
+      }
+      HIST = souhrny;
+      hotovo(true);
+    });
+  }
+  var poNedostupnosti = [];
+  function naNedostupnouHistorii(fn) {
+    poNedostupnosti.push(fn);
+  }
+  function ukazNecteme() {
+    for (var i = 0; i < poNedostupnosti.length; i++) poNedostupnosti[i](historieNedostupna);
+  }
+  function pripravUloziste(hotovo) {
+    var chtene = "ls";
+    try {
+      if (localStorage.getItem(UKEY) === "idb") chtene = "idb";
+    } catch (e) {
+    }
+    function vzdejTo() {
+      if (chtene === "idb") {
+        rezim = "idb";
+        idb = null;
+        HIST = [];
+        historieNedostupna = true;
+        ukazNecteme();
+      } else {
+        rezim = "ls";
+        idb = null;
+        HIST = readList(HKEY);
+      }
+      hotovo();
+    }
+    otevriIDB(function(db) {
+      if (!db) {
+        vzdejTo();
+        return;
+      }
+      ctiIDB(db, function(zaznamy) {
+        if (zaznamy === null) {
+          vzdejTo();
+          return;
+        }
+        if (chtene === "idb") {
+          rezim = "idb";
+          idb = db;
+          HIST = zaznamy;
+          hotovo();
+          return;
+        }
+        migruj(db, function(ok) {
+          if (ok) {
+            rezim = "idb";
+            idb = db;
+          } else {
+            rezim = "ls";
+            idb = null;
+            HIST = readList(HKEY);
+          }
+          hotovo();
+        });
+      });
+    });
+  }
+  function histAll() {
+    return HIST.slice();
+  }
+  function klicSelhani(zaklad) {
+    return historieNedostupna ? "chyba.nedostupna" : zaklad;
+  }
+  function histWrite(list, hotovo, zaznamy) {
+    hotovo = hotovo || function() {
+    };
+    var novy = list.slice();
+    if (rezim === "ls") {
+      var ok = writeList(HKEY, novy);
+      if (ok) HIST = novy;
+      hotovo(ok);
+      return;
+    }
+    if (!idb) {
+      hotovo(false);
+      return;
+    }
+    var je = {}, i;
+    for (i = 0; i < novy.length; i++) {
+      je[novy[i].id] = true;
+    }
+    var smazat = [];
+    for (i = 0; i < HIST.length; i++) {
+      if (!je[HIST[i].id]) smazat.push(HIST[i].id);
+    }
+    var detaily = (zaznamy || []).map(detailZ);
+    var stareById = {};
+    for (i = 0; i < HIST.length; i++) {
+      stareById[HIST[i].id] = HIST[i];
+    }
+    var zmenene = [];
+    for (i = 0; i < novy.length; i++) {
+      if (stareById[novy[i].id] !== novy[i]) zmenene.push(novy[i]);
+    }
+    var predtim = HIST;
+    HIST = novy;
+    zapisIDB(idb, zmenene, detaily, smazat, function(ok2) {
+      if (!ok2) HIST = predtim;
+      hotovo(ok2);
+    }, smazat);
+  }
+  function proHistorii(rec) {
+    return rezim === "idb" ? souhrnZ(rec) : rec;
+  }
+
   // src/js/app.js
   (function() {
     "use strict";
+    naSelhaniUlozeni(function(nejde) {
+      var el = document.getElementById("nosave");
+      if (el) el.hidden = !nejde;
+    });
+    naNedostupnouHistorii(function(nejde) {
+      var el = document.getElementById("nohist");
+      if (el) el.hidden = !nejde;
+    });
     sberCestinu();
     nastavJazyk(zjistiJazyk(), false);
     try {
@@ -3241,463 +3980,10 @@
       };
     } catch (e) {
     }
-    var S = {
-      mode: "points",
-      goal: 4e3,
-      roundGoal: null,
-      banked: 0,
-      turns: [],
-      rolls: [{ thrown: 6, hot: false, items: [] }],
-      archivedId: null,
-      dirty: false,
-      autoUlozeno: false
-    };
-    var KEY = "farkle-solo-v3";
-    var HKEY = "farkle-hist-v1";
-    var KKEY = "farkle-kos-v1";
-    var KHKEY = "farkle-koshist-v1";
-    var KOS_MAX = 5;
-    var KOSH_MAX = 10;
-    var neukladame = false;
-    function save() {
-      try {
-        localStorage.setItem(KEY, JSON.stringify(S));
-        if (neukladame) {
-          neukladame = false;
-          ukazNeukladame();
-        }
-        return true;
-      } catch (e) {
-        if (!neukladame) {
-          neukladame = true;
-          ukazNeukladame();
-        }
-        return false;
-      }
-    }
     function ukazNeukladame() {
       var el = document.getElementById("nosave");
       if (!el) return;
       el.hidden = !neukladame;
-    }
-    function ozdrav() {
-      S.mode = S.mode === "rounds" ? "rounds" : "points";
-      S.banked = naCislo(S.banked, 0);
-      S.goal = typeof S.goal === "number" && S.goal > 0 ? S.goal : 4e3;
-      if (typeof S.roundGoal !== "number" || S.roundGoal < 1) {
-        S.roundGoal = null;
-      }
-      if (typeof S.archivedId !== "string") {
-        S.archivedId = null;
-      }
-      S.dirty = !!S.dirty;
-      S.autoUlozeno = !!S.autoUlozeno;
-      S.turns = (Array.isArray(S.turns) ? S.turns : []).map(function(tah) {
-        return kopieKola(tah);
-      });
-      S.rolls = (Array.isArray(S.rolls) && S.rolls.length ? S.rolls : [{}]).map(function(r) {
-        var max = kostek(), thrown = naCislo(r && r.thrown, max);
-        return {
-          thrown: thrown >= 1 && thrown <= max ? Math.floor(thrown) : max,
-          hot: !!(r && r.hot),
-          items: (Array.isArray(r && r.items) ? r.items : []).map(function(i) {
-            var o = {
-              p: naCislo(i && i.p, 0),
-              d: Math.max(0, Math.floor(naCislo(i && i.d, 0)))
-            };
-            if (i && typeof i.k === "string") {
-              o.k = i.k;
-              return o;
-            }
-            var kod = i && typeof i.l === "string" ? kodZTextu(i.l) : "v";
-            if (kod === null) {
-              o.l = i.l;
-            } else {
-              o.k = kod;
-            }
-            return o;
-          })
-        };
-      });
-    }
-    function load(cb) {
-      try {
-        var raw = localStorage.getItem(KEY);
-        if (raw) {
-          var d = null, cele = false;
-          try {
-            d = JSON.parse(raw);
-            cele = true;
-          } catch (e) {
-          }
-          if (cele && d && typeof d.banked === "number" && Array.isArray(d.rolls) && d.rolls.length) {
-            S = d;
-          } else {
-            try {
-              localStorage.setItem(KEY + "-vadny", raw);
-            } catch (e) {
-            }
-          }
-        }
-      } catch (e) {
-      }
-      ozdrav();
-      cb();
-    }
-    function readList(key) {
-      try {
-        var d = JSON.parse(localStorage.getItem(key));
-        return Array.isArray(d) ? d : [];
-      } catch (e) {
-        return [];
-      }
-    }
-    function writeList(key, list) {
-      try {
-        localStorage.setItem(key, JSON.stringify(list));
-        return true;
-      } catch (e) {
-        return false;
-      }
-    }
-    function kosZapis(key, list) {
-      if (list && list.length) return writeList(key, list);
-      try {
-        localStorage.removeItem(key);
-        return true;
-      } catch (e) {
-        return false;
-      }
-    }
-    function kosAll() {
-      return readList(KKEY);
-    }
-    function kosWrite(list) {
-      return kosZapis(KKEY, list);
-    }
-    function kosHistAll() {
-      return readList(KHKEY);
-    }
-    function kosHistWrite(list) {
-      return kosZapis(KHKEY, list);
-    }
-    var HIST = [];
-    var UKEY = "farkle-uloziste-v1";
-    var HZAL = HKEY + "-zaloha";
-    var IDB_JMENO = "kostky", IDB_VERZE = 4;
-    var SOUHRNY = "souhrny", DETAILY = "detaily";
-    var IDB_STROP = 3e3;
-    var rezim = "ls";
-    var idb = null;
-    var historieNedostupna = false;
-    function souhrnZ(rec) {
-      var kolKCili = gKolKCili(rec);
-      return {
-        id: rec.id,
-        savedAt: rec.savedAt,
-        mode: rec.mode,
-        goal: rec.goal,
-        roundGoal: rec.roundGoal || null,
-        /* Chybějící `rezim` se dopočítá až při čtení (gRezim), takže se kvůli
-           němu nezvedá IDB_VERZE — všechny dřívější hry se hrály podle KCD2. */
-        rezim: gRezim(rec),
-        rezimN: rec.rezimN || null,
-        banked: rec.banked || 0,
-        kol: gKol(rec),
-        farklu: gFarkle(rec),
-        farkluprvni: gFarklePrvni(rec),
-        nejlepsi: gNejlepsiKolo(rec),
-        nejhorsi: gNejhorsiKolo(rec),
-        serie: gSerie(rec),
-        kolKCili,
-        hodu: gNejvicHodu(rec),
-        ztraceno: gZtraceno(rec)
-      };
-    }
-    function detailZ(rec) {
-      return { id: rec.id, turns: (rec.turns || []).map(function(tah) {
-        return kopieKola(tah);
-      }) };
-    }
-    function otevriIDB(hotovo) {
-      var rozhodnuto = false;
-      function konec(v) {
-        if (rozhodnuto) return;
-        rozhodnuto = true;
-        hotovo(v);
-      }
-      var api = null;
-      try {
-        api = window.indexedDB || null;
-      } catch (e) {
-        api = null;
-      }
-      if (!api) {
-        konec(null);
-        return;
-      }
-      var req;
-      try {
-        req = api.open(IDB_JMENO, IDB_VERZE);
-      } catch (e) {
-        konec(null);
-        return;
-      }
-      setTimeout(function() {
-        konec(null);
-      }, IDB_STROP);
-      req.onupgradeneeded = function() {
-        var db = req.result, tx = req.transaction;
-        if (!db.objectStoreNames.contains(SOUHRNY)) db.createObjectStore(SOUHRNY, { keyPath: "id" });
-        if (!db.objectStoreNames.contains(DETAILY)) db.createObjectStore(DETAILY, { keyPath: "id" });
-        if (db.objectStoreNames.contains("hry")) {
-          var kur = tx.objectStore("hry").openCursor();
-          kur.onsuccess = function() {
-            var c = kur.result;
-            if (c) {
-              var rec = c.value;
-              tx.objectStore(SOUHRNY).put(souhrnZ(rec));
-              tx.objectStore(DETAILY).put(detailZ(rec));
-              c.continue();
-              return;
-            }
-            db.deleteObjectStore("hry");
-          };
-          return;
-        }
-        dopoctiHody(tx);
-      };
-      req.onsuccess = function() {
-        konec(req.result);
-      };
-      req.onerror = function() {
-        konec(null);
-      };
-      req.onblocked = function() {
-        konec(null);
-      };
-    }
-    function dopoctiHody(tx) {
-      var mapa = {}, kd = tx.objectStore(DETAILY).openCursor();
-      kd.onsuccess = function() {
-        var c = kd.result;
-        if (c) {
-          var d = c.value;
-          mapa[d.id] = { hodu: gNejvicHodu(d), ztraceno: gZtraceno(d), farkluprvni: gFarklePrvni(d) };
-          c.continue();
-          return;
-        }
-        var ks = tx.objectStore(SOUHRNY).openCursor();
-        ks.onsuccess = function() {
-          var s = ks.result;
-          if (!s) return;
-          var v = s.value;
-          if (v.hodu === void 0 || v.ztraceno === void 0 || v.farkluprvni === void 0) {
-            var m = mapa[v.id];
-            v.hodu = m ? m.hodu : null;
-            v.ztraceno = m ? m.ztraceno : null;
-            v.farkluprvni = m ? m.farkluprvni : null;
-            s.update(v);
-          }
-          s.continue();
-        };
-      };
-    }
-    function ctiIDB(db, hotovo) {
-      var tx;
-      try {
-        tx = db.transaction(SOUHRNY, "readonly");
-      } catch (e) {
-        hotovo(null);
-        return;
-      }
-      var st = tx.objectStore(SOUHRNY), req;
-      try {
-        req = st.getAll ? st.getAll() : null;
-      } catch (e) {
-        hotovo(null);
-        return;
-      }
-      if (req) {
-        req.onsuccess = function() {
-          hotovo(Array.isArray(req.result) ? req.result : []);
-        };
-        req.onerror = function() {
-          hotovo(null);
-        };
-        return;
-      }
-      var out = [], kur = st.openCursor();
-      kur.onsuccess = function() {
-        var c = kur.result;
-        if (c) {
-          out.push(c.value);
-          c.continue();
-        } else {
-          hotovo(out);
-        }
-      };
-      kur.onerror = function() {
-        hotovo(null);
-      };
-    }
-    function nactiDetail(id, hotovo) {
-      if (rezim !== "idb" || !idb) {
-        hotovo(null);
-        return;
-      }
-      var tx;
-      try {
-        tx = idb.transaction(DETAILY, "readonly");
-      } catch (e) {
-        hotovo(null);
-        return;
-      }
-      var req = tx.objectStore(DETAILY).get(id);
-      req.onsuccess = function() {
-        var d = req.result;
-        hotovo(d && Array.isArray(d.turns) ? d.turns : []);
-      };
-      req.onerror = function() {
-        hotovo(null);
-      };
-    }
-    function zapisIDB(db, souhrny, noveDetaily, smazatDetaily, hotovo, smazatSouhrny) {
-      var tx;
-      try {
-        tx = db.transaction([SOUHRNY, DETAILY], "readwrite");
-      } catch (e) {
-        hotovo(false);
-        return;
-      }
-      var hotovoUz = false;
-      function konec(v) {
-        if (hotovoUz) return;
-        hotovoUz = true;
-        hotovo(v);
-      }
-      tx.oncomplete = function() {
-        konec(true);
-      };
-      tx.onerror = function() {
-        konec(false);
-      };
-      tx.onabort = function() {
-        konec(false);
-      };
-      try {
-        var s = tx.objectStore(SOUHRNY), d = tx.objectStore(DETAILY), i;
-        if (smazatSouhrny) {
-          for (i = 0; i < smazatSouhrny.length; i++) {
-            s.delete(smazatSouhrny[i]);
-          }
-        } else {
-          s.clear();
-        }
-        for (i = 0; i < souhrny.length; i++) {
-          s.put(souhrny[i]);
-        }
-        for (i = 0; i < smazatDetaily.length; i++) {
-          d.delete(smazatDetaily[i]);
-        }
-        for (i = 0; i < noveDetaily.length; i++) {
-          d.put(noveDetaily[i]);
-        }
-      } catch (e) {
-        try {
-          tx.abort();
-        } catch (e2) {
-        }
-        konec(false);
-      }
-    }
-    function migruj(db, hotovo) {
-      var stare = readList(HKEY);
-      var souhrny = stare.map(souhrnZ), detaily = stare.map(detailZ);
-      zapisIDB(db, souhrny, detaily, [], function(ok) {
-        if (!ok) {
-          hotovo(false);
-          return;
-        }
-        var priznak = false;
-        try {
-          localStorage.setItem(UKEY, "idb");
-          priznak = true;
-        } catch (e) {
-        }
-        if (!priznak) {
-          hotovo(false);
-          return;
-        }
-        try {
-          var raw = localStorage.getItem(HKEY);
-          if (raw !== null) {
-            localStorage.setItem(HZAL, raw);
-            localStorage.removeItem(HKEY);
-          }
-        } catch (e) {
-        }
-        HIST = souhrny;
-        hotovo(true);
-      });
-    }
-    function ukazNecteme() {
-      var el = document.getElementById("nohist");
-      if (el) el.hidden = !historieNedostupna;
-    }
-    function pripravUloziste(hotovo) {
-      var chtene = "ls";
-      try {
-        if (localStorage.getItem(UKEY) === "idb") chtene = "idb";
-      } catch (e) {
-      }
-      function vzdejTo() {
-        if (chtene === "idb") {
-          rezim = "idb";
-          idb = null;
-          HIST = [];
-          historieNedostupna = true;
-          ukazNecteme();
-        } else {
-          rezim = "ls";
-          idb = null;
-          HIST = readList(HKEY);
-        }
-        hotovo();
-      }
-      otevriIDB(function(db) {
-        if (!db) {
-          vzdejTo();
-          return;
-        }
-        ctiIDB(db, function(zaznamy) {
-          if (zaznamy === null) {
-            vzdejTo();
-            return;
-          }
-          if (chtene === "idb") {
-            rezim = "idb";
-            idb = db;
-            HIST = zaznamy;
-            hotovo();
-            return;
-          }
-          migruj(db, function(ok) {
-            if (ok) {
-              rezim = "idb";
-              idb = db;
-            } else {
-              rezim = "ls";
-              idb = null;
-              HIST = readList(HKEY);
-            }
-            hotovo();
-          });
-        });
-      });
-    }
-    function histAll() {
-      return HIST.slice();
     }
     var FILTR = { od: null, do: null, typ: null, hodnota: null };
     var RAZENI = { podle: "datum", smer: "desc" };
@@ -3767,74 +4053,6 @@
       });
       return v;
     }
-    function klicSelhani(zaklad) {
-      return historieNedostupna ? "chyba.nedostupna" : zaklad;
-    }
-    function histWrite(list, hotovo, zaznamy) {
-      hotovo = hotovo || function() {
-      };
-      var novy = list.slice();
-      if (rezim === "ls") {
-        var ok = writeList(HKEY, novy);
-        if (ok) HIST = novy;
-        hotovo(ok);
-        return;
-      }
-      if (!idb) {
-        hotovo(false);
-        return;
-      }
-      var je = {}, i;
-      for (i = 0; i < novy.length; i++) {
-        je[novy[i].id] = true;
-      }
-      var smazat = [];
-      for (i = 0; i < HIST.length; i++) {
-        if (!je[HIST[i].id]) smazat.push(HIST[i].id);
-      }
-      var detaily = (zaznamy || []).map(detailZ);
-      var stareById = {};
-      for (i = 0; i < HIST.length; i++) {
-        stareById[HIST[i].id] = HIST[i];
-      }
-      var zmenene = [];
-      for (i = 0; i < novy.length; i++) {
-        if (stareById[novy[i].id] !== novy[i]) zmenene.push(novy[i]);
-      }
-      var predtim = HIST;
-      HIST = novy;
-      zapisIDB(idb, zmenene, detaily, smazat, function(ok2) {
-        if (!ok2) HIST = predtim;
-        hotovo(ok2);
-      }, smazat);
-    }
-    function proHistorii(rec) {
-      return rezim === "idb" ? souhrnZ(rec) : rec;
-    }
-    function snapshot() {
-      var rez = aktRezim();
-      var r = {
-        mode: S.mode,
-        goal: S.goal,
-        roundGoal: S.roundGoal || null,
-        rezim: rez.id,
-        banked: S.banked,
-        turns: S.turns.map(function(tah) {
-          return kopieKola(tah);
-        })
-      };
-      if (rez.vlastni) r.rezimN = nazevRezimu(rez);
-      return r;
-    }
-    function makeRecord(id) {
-      var r = snapshot();
-      r.id = id || newId();
-      r.savedAt = Date.now();
-      return r;
-    }
-    function gameEmpty() {
-      return S.turns.length === 0 && S.rolls.length === 1 && cur().items.length === 0;
-    }
     function zmenaRezimu() {
       ulozRezimy();
       renderRezimy();
@@ -3892,39 +4110,6 @@
         return c === "&" ? "&amp;" : c === "<" ? "&lt;" : c === ">" ? "&gt;" : "&quot;";
       });
     }
-    var KODY = [
-      "j",
-      "p",
-      "v",
-      "d2",
-      "d3",
-      "d4",
-      "d6",
-      "s15",
-      "s26",
-      "s16",
-      "c3p",
-      "c32",
-      "c33",
-      "c42"
-    ];
-    var SAM_KODY = ["", "j", "d2", "d3", "d4", "p", "d6"];
-    var NKOD = /^n([2-6])([1-6])$/;
-    function kodStejnych(count, value) {
-      return count === 1 ? SAM_KODY[value] : "n" + count + value;
-    }
-    var KKOD = /^k(\d{1,6})x([1-6])$/;
-    var HODY_ODD = "|", POLOZKY_ODD = ",";
-    var HODY_TXT = " · ", POLOZKY_TXT = " + ";
-    var STARE = {
-      "jednička": "j",
-      "pětka": "p",
-      "vlastní": "v",
-      "postupka 1–5": "s15",
-      "postupka 2–6": "s26",
-      "postupka 1–6": "s16"
-    };
-    var STARE_N = /^([3-6])\u00D7 ([1-6])$/;
     function textKodu(k) {
       var m = NKOD.exec(k);
       if (m) return t("stitek.n", { p: m[1], h: m[2] });
@@ -3942,62 +4127,11 @@
         return hod.split(POLOZKY_ODD).map(textKodu).join(POLOZKY_TXT);
       }).join(HODY_TXT);
     }
-    function kodZTextu(s) {
-      if (Object.prototype.hasOwnProperty.call(STARE, s)) return STARE[s];
-      var m = STARE_N.exec(s);
-      return m ? "n" + m[1] + m[2] : null;
-    }
-    function kodyZPopisu(d) {
-      if (!d) return "";
-      var hody = String(d).split(HODY_TXT), out = [], i, j, kusy, radek, k;
-      for (i = 0; i < hody.length; i++) {
-        kusy = hody[i].split(POLOZKY_TXT);
-        radek = [];
-        for (j = 0; j < kusy.length; j++) {
-          k = kodZTextu(kusy[j]);
-          if (k === null) return null;
-          radek.push(k);
-        }
-        out.push(radek.join(POLOZKY_ODD));
-      }
-      return out.join(HODY_ODD);
-    }
     function popisKola(tah) {
       if (tah && typeof tah.c === "string") return kodyNaText(tah.c);
       var d = tah && typeof tah.d === "string" ? tah.d : "";
       var c = kodyZPopisu(d);
       return c === null ? d : kodyNaText(c);
-    }
-    function kopieKola(tah, strop) {
-      var o = { p: naCislo(tah && tah.p, 0), bust: !!(tah && tah.bust) };
-      if (tah && typeof tah.c === "string") {
-        o.c = strop ? tah.c.slice(0, strop) : tah.c;
-      } else {
-        var d = tah && typeof tah.d === "string" ? tah.d : "";
-        o.d = strop ? d.slice(0, strop) : d;
-      }
-      return o;
-    }
-    function cur() {
-      return S.rolls[S.rolls.length - 1];
-    }
-    function usedInRoll(r) {
-      return r.items.reduce(function(a, i) {
-        return a + i.d;
-      }, 0);
-    }
-    function left() {
-      return cur().thrown - usedInRoll(cur());
-    }
-    function rollPoints(r) {
-      return r.items.reduce(function(a, i) {
-        return a + i.p;
-      }, 0);
-    }
-    function potTotal() {
-      return S.rolls.reduce(function(a, r) {
-        return a + rollPoints(r);
-      }, 0);
     }
     function turnKody() {
       var out = [], i, j, r, radek;
@@ -4439,11 +4573,6 @@
     var rezEdit = null, kombEdit = null;
     function editRezim() {
       return rezEdit ? rezimPodleId(rezEdit) : null;
-    }
-    function nazevRezimu(rez) {
-      if (!rez) return t("rezim.neznamy");
-      if (!rez.vlastni) return t("rezim.n." + rez.id);
-      return rez.nazev || t("rezim.beznazvu");
     }
     function popisRezimuKratky(rez) {
       var kusy = [tn("slovo.kostek", rez.kostek)], p = 0, i;
@@ -6405,103 +6534,6 @@
     }
     function renderStats() {
       $("stats").innerHTML = statsHTML(snapshot());
-    }
-    function gKol(g) {
-      if (typeof g.kol === "number") return g.kol;
-      return (g.turns || []).length;
-    }
-    function gFarkle(g) {
-      if (typeof g.farklu === "number") return g.farklu;
-      var n = 0;
-      (g.turns || []).forEach(function(t2) {
-        if (t2.bust) n++;
-      });
-      return n;
-    }
-    function gFarklePrvni(g) {
-      if (typeof g.farkluprvni === "number") return g.farkluprvni;
-      var n = 0;
-      (g.turns || []).forEach(function(t2) {
-        if (t2.bust && t2.p === 0) n++;
-      });
-      return n;
-    }
-    function gFarklePrvniRekord(g) {
-      return gFarklePrvni(g) || null;
-    }
-    function gNejlepsiKolo(g) {
-      if (g.nejlepsi !== void 0) return g.nejlepsi;
-      var m = null;
-      (g.turns || []).forEach(function(t2) {
-        if (!t2.bust && (m === null || t2.p > m)) m = t2.p;
-      });
-      return m;
-    }
-    function gNejhorsiKolo(g) {
-      if (g.nejhorsi !== void 0) return g.nejhorsi;
-      var m = null;
-      (g.turns || []).forEach(function(t2) {
-        if (!t2.bust && t2.p > 0 && (m === null || t2.p < m)) m = t2.p;
-      });
-      return m;
-    }
-    function gSerie(g) {
-      if (typeof g.serie === "number") return g.serie;
-      var nej = 0, b = 0;
-      (g.turns || []).forEach(function(t2) {
-        if (t2.bust) {
-          b = 0;
-        } else {
-          b++;
-          if (b > nej) nej = b;
-        }
-      });
-      return nej;
-    }
-    function hodyVKole(tah) {
-      var u;
-      if (typeof tah.c === "string") {
-        u = tah.c ? tah.c.split(HODY_ODD).length : 0;
-      } else {
-        u = tah.d ? String(tah.d).split(HODY_TXT).length : 0;
-      }
-      return tah.bust ? u + 1 : Math.max(u, 1);
-    }
-    function gNejvicHodu(g) {
-      if (g.hodu !== void 0) return g.hodu;
-      var m = null;
-      (g.turns || []).forEach(function(t2) {
-        var h = hodyVKole(t2);
-        if (m === null || h > m) m = h;
-      });
-      return m;
-    }
-    function gZtraceno(g) {
-      if (g.ztraceno !== void 0) return g.ztraceno || null;
-      var m = null;
-      (g.turns || []).forEach(function(t2) {
-        if (t2.bust && t2.p > 0 && (m === null || t2.p > m)) m = t2.p;
-      });
-      return m;
-    }
-    function gPrumer(g) {
-      var k = gKol(g);
-      return k ? Math.round((g.banked || 0) / k) : null;
-    }
-    function gKolKCili(g) {
-      if (g.kolKCili !== void 0) return g.kolKCili;
-      return g.mode !== "rounds" && g.goal > 0 && (g.banked || 0) >= g.goal ? gKol(g) : null;
-    }
-    function gBody(g) {
-      return g.banked || 0;
-    }
-    function gRezim(g) {
-      return typeof g.rezim === "string" && g.rezim ? g.rezim : VYCHOZI_REZIM;
-    }
-    function nazevRezimuZaznamu(g) {
-      var id = gRezim(g);
-      if (jePreset(id)) return t("rezim.n." + id);
-      return typeof g.rezimN === "string" && g.rezimN ? g.rezimN.slice(0, NAZEV_MAX) : t("rezim.neznamy");
     }
     function cislo(v) {
       return String(v);
