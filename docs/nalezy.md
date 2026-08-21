@@ -46,3 +46,58 @@ přišel o většinu české dokumentace, kterou dřív vezl s sebou.
 **Nevadí to**, a je to spíš zisk: výstup je artefakt, zdroj je místo, kde se
 čte, a soubor se zmenšil z 601 kB na 539 kB. Stojí ale za zapsání, kdyby
 někdo příště hledal komentář v nasazeném souboru a nenašel ho.
+
+---
+
+## #3 · řez 5 · esbuild si jména vybírá sám — test nesmí hledat v sestaveném souboru
+
+Po vytažení pravidel přejmenoval esbuild import `t` na `t2`, protože se
+jméno střetlo s lokální proměnnou v `app.js`. Strážní kontrola v sadě 16
+hledala v `index.html` vzor `t("…")` a našla **10 klíčů místo 181** —
+zbytek byl `t2("…")`. `tn` přejmenované nebylo, takže to nevypadalo jako
+systémová chyba, ale jako by se katalog scvrknul.
+
+Zajímavé je pokračování: jakmile `t` naimportoval i modul `kombinace.js`,
+esbuild se rozhodl jinak a jméno zůstalo `t`. **Volba jména závisí na tom,
+kdo všechno modul importuje** — tedy na věci, která se každým řezem mění.
+
+Sada 16 proto čte `src/js/**/*.js`, ne `index.html`. Ve zdroji se jména
+nemění. Řezání katalogu podle popisků modulů (`// src/js/jazyky/cs.js`)
+zůstalo, ty esbuild sází vždycky.
+
+**Poučení pro zbytek refaktoru:** co se ptá na *kód*, ať čte zdroj; co se
+ptá na *chování*, ať čte sestavený soubor. Sada 15 se ptá na CSS pravidlo
+`[hidden]{display:none!important}` — to se vkládá doslova, takže je v pořádku.
+
+---
+
+## #4 · řez 5 · esbuild nehlásí neznámé identifikátory
+
+`cistaKombinace()` volá `t()` kvůli výchozímu jménu „Kombinace N“. Při
+přesunu do `pravidla/kombinace.js` se import nedoplnil — a esbuild to
+**nepovažoval za chybu**: co nezná, bere jako globál prohlížeče. Aplikace
+se přeložila, naběhla a spadla teprve při načítání vlastních kombinací.
+
+Osmnáct sad se rozsypalo naráz a v hromadě výpisů nebylo poznat, co se
+vlastně stalo. Proto přibyla sada `00-start.mjs`: naběhne aplikace vůbec,
+stojí sondy, vykreslilo se skóre. Doběhne za dvě vteřiny a pouští se první.
+
+Zkoušel jsem k tomu i statickou kontrolu volných proměnných nad zdrojem,
+ale bez skutečného parseru to nejde: uvozovka uvnitř regulárního výrazu
+(`/[&<>"]/g` v `esc()`) rozhodí každé naivní vyprazdňování řetězců
+a kontrola pak hlásí stovky nesmyslů. Buď parser (acorn), nebo nic —
+zatím to hlídá kouřová zkouška.
+
+---
+
+## #5 · řez 5 · jméno vlastní kombinace potřebuje jazyk uvnitř domény
+
+`cistaKombinace()` je jinak čistá, ale výchozí jméno „Kombinace N“ se
+podle CLAUDE.md **materializuje při vzniku** — kdyby se dopočítávalo
+z pořadí až při vykreslení, smazání sourozence by ostatní přejmenovalo.
+Jméno tím patří datům, ne zobrazení, a data vznikají v doméně.
+
+`pravidla/kombinace.js` proto importuje `t()` z `jazyky/jadro.js`. Je to
+jediná odchylka od pravidla „doména nezná jazyk“ a je zapsaná v hlavičce
+modulu. **Nechat tak** — alternativa (nechat jméno prázdné a doplnit ho
+v UI) je změna chování, ne přesun.

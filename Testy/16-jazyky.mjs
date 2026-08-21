@@ -2,6 +2,15 @@ import { JSDOM, VirtualConsole } from "jsdom";
 import fs from "fs";
 
 const html = fs.readFileSync(new URL("../index.html", import.meta.url), "utf8");
+
+/* Zdrojové moduly slepené dohromady — pro kontroly, které se ptají na kód,
+   ne na chování. Ve zdroji se jména nepřejmenovávají, ve výstupu ano. */
+function zdrojeJs(dir){
+  return fs.readdirSync(dir, { withFileTypes: true }).flatMap(e =>
+    e.isDirectory() ? zdrojeJs(new URL(e.name + "/", dir))
+    : e.name.endsWith(".js") ? [fs.readFileSync(new URL(e.name, dir), "utf8")] : []);
+}
+const zdrojJs = zdrojeJs(new URL("../src/js/", import.meta.url)).join("\n");
 let fails = 0;
 const ok = (c, m) => { if (!c) { fails++; console.log("  CHYBA:", m); } else console.log("  ok:", m); };
 
@@ -460,10 +469,14 @@ console.log("N2) strážní kontrola klíčů volaných z JS");
 
   /* Každý klíč, se kterým se v JS volá t() nebo tn(), musí po sběru
      v češtině existovat — jinak by se v rozhraní objevil holý klíč. */
+  /* Čte se ZDROJ, ne složený index.html. Esbuild si jména vybírá sám:
+     jakmile se t() ocitlo v modulu a v app.js zároveň existovala lokální
+     proměnná t, přejmenoval import na t2 — a hledání "t(" našlo deset klíčů
+     místo sto osmdesáti. Ve zdroji se jména nemění. */
   const volane = new Set();
   let m;
   const re = /\b(?:t|tn)\(\s*"([^"]+)"/g;
-  while((m = re.exec(html))) volane.add(m[1]);
+  while((m = re.exec(zdrojJs))) volane.add(m[1]);
   ok(volane.size > 60, "volaných klíčů je přes šedesát: " + volane.size);
   /* Klíč skládaný za běhu se v kódu objeví jako předpona ("zal.info." +
      zdroj) — pak stačí, když katalog má aspoň jeden klíč, který jí začíná. */

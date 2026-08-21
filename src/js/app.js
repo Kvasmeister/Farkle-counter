@@ -1,10 +1,73 @@
 /* Zbytek aplikace — zatím pořád jeden uzávěr.
 
-   Řez 4 z něj vytáhl jen jazyky; další řezy odkrajují postupně.
-   Importy stojí nad IIFE, protože v ES modulu musí být na nejvyšší úrovni. */
+   Řezy 4 a 5 z něj vytáhly jazyky a celou doménu pravidel; další
+   odkrajují stav, text a UI. Importy stojí nad IIFE, protože v ES modulu
+   musí být na nejvyšší úrovni. */
 import { t, tn, kat, naJazyk, nastavJazyk, sberCestinu, zjistiJazyk,
          jazyk, JAZYKY, NAZVY, VYCHOZI, I18N } from "./jazyky/jadro.js";
 import { RUCNI } from "./jazyky/cs.js";
+import { NAZEV_MAX, naCislo, newId } from "./spolecne.js";
+import { POST_PORADI, STRAIGHTS } from "./pravidla/postupky.js";
+import {
+  BODY_MAX,
+  PRESETY,
+  PRESET_PORADI,
+  VLASTNI_MAX,
+  VZORU_MAX,
+  cistyTvar,
+  kombVRezimu,
+  kombZap,
+  kombinaceZap,
+  pocetKombinaci,
+  pocetKostekVzoru,
+  poctyKostekKombinace,
+  rozbalPocty,
+  sazba,
+  sediKombinace,
+  sediVzor,
+  zapisKombinace,
+  zapisVzoru
+} from "./pravidla/kombinace.js";
+import { kindPoints } from "./pravidla/skore.js";
+import {
+  NAD_DRUHY,
+  POCTY_STEJ,
+  PRAH_ZAKLAD,
+  PRESET_REZIMY,
+  PRESET_REZ_PORADI,
+  REZIMY,
+  REZIMY_MAX,
+  SAMOSTATNE_V_RADE,
+  SAM_ZAKLAD,
+  TROJ_ZAKLAD,
+  VYCHOZI_REZIM,
+  aktRezim,
+  cistyRezim,
+  jePreset,
+  kostek,
+  nactiRezimy,
+  nejvyssiStej,
+  novyIdRezimu,
+  odchylkyRezimu,
+  pocetSamostatnych,
+  poctyStej,
+  prahStej,
+  rezimPodleId,
+  sestiZap,
+  stejZap,
+  ulozRezimy,
+  venRezim,
+  zPresetu
+} from "./pravidla/rezimy.js";
+import {
+  RIZIKO,
+  RIZIKO_2P,
+  RIZIKO_3P,
+  naRizikoHotovo,
+  poctyZHodu,
+  rizikoHotovo,
+  tabulkaRizika
+} from "./pravidla/riziko.js";
 
 (function(){
   "use strict";
@@ -58,8 +121,6 @@ import { RUCNI } from "./jazyky/cs.js";
     if(!el) return;
     el.hidden = !neukladame;
   }
-  /* pozor: níže v souboru je jiná cislo() pro formátování statistik */
-  function naCislo(x, nahrada){ return (typeof x === "number" && isFinite(x)) ? x : nahrada; }
 
   /* Uložený stav se nekontroluje jen povrchně: chybějící turns nebo items
      dřív shodily render() a aplikace zůstala bez ovládání, ze kterého se
@@ -549,9 +610,6 @@ import { RUCNI } from "./jazyky/cs.js";
      policích. */
   function proHistorii(rec){ return rezim === "idb" ? souhrnZ(rec) : rec; }
 
-  function newId(){
-    return "h" + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
-  }
   /* otisk rozehrané hry pro historii nebo koš; rozehrané kolo se nezapočítává */
   function snapshot(){
     var rez = aktRezim();
@@ -577,698 +635,6 @@ import { RUCNI } from "./jazyky/cs.js";
     return S.turns.length === 0 && S.rolls.length === 1 && cur().items.length === 0;
   }
 
-  /* ---------- bodování ----------
-     Bodovací tabulka není konstanta — řídí ji herní režim (CLAUDE.md část 14).
-     Každá funkce tady proto bere pravidla; když je nedostane, vezme si
-     aktivní režim sama, aby volající, kterých se to netýká, zůstali beze změny. */
-  function kindPoints(value, count, rez){
-    rez = rez || aktRezim();
-    /* Samostatná kostka má vlastní šestici, počty 2–6 leží v řídké mapě `stej`.
-       Přítomnost klíče znamená „ten počet boduje“, nula uvnitř šestice mluví
-       jen o jedné hodnotě — žádný zvláštní příznak vedle sazby, tedy ani stav,
-       který si může protiřečit. */
-    if(count === 1) return rez.sam[value] || 0;
-    if(rez.stej[count]) return rez.stej[count][value] || 0;
-    /* Nad nejvyšším nastaveným počtem se extrapoluje pravidlem `nad`; pod
-       prahem a v mezerách tabulky se neboduje. */
-    var m = nejvyssiStej(rez);
-    if(m === null || count < m) return 0;
-    /* tři pravidla, která se v praxi hrají: KCD2 zdvojnásobuje každou kostkou
-       navíc, klasika násobí nejvyšší nastavenou skupinu, domácí varianta dává
-       pevné body bez ohledu na hodnotu. Pevné body platí i tam, kde sama
-       skupina neboduje, a to je správně. */
-    if(rez.nad === "pevne") return rez.nadP[count] || 0;
-    var base = rez.stej[m][value] || 0;
-    if(rez.nad === "nasobek") return base * (count - m + 1);  /* o jednu víc: ×2, ×3, ×4 */
-    return base * Math.pow(2, count - m);                     /* x2: ×2, ×4, ×8 */
-  }
-  /* Postupka nese jen tvar a kód štítku; body leží v režimu, protože každá
-     verze hry je má jinak a v klasické Farkle pětikostkové postupky vůbec
-     nebodují. Kódy s15/s26/s16 se nemění, aby historie četla dál. */
-  var STRAIGHTS = { "15":{d:5,k:"s15",v:[1,2,3,4,5]},
-                    "26":{d:5,k:"s26",v:[2,3,4,5,6]},
-                    "16":{d:6,k:"s16",v:[1,2,3,4,5,6]} };
-  var POST_PORADI = ["15", "26", "16"];
-  function maPostupku(c, s){
-    for(var i = 0; i < s.v.length; i++){ if(!c[s.v[i]]) return false; }
-    return true;
-  }
-
-  /* ---------- kombinace navíc ----------
-     Pevný inventář čtyř položek, který se nikdy nerozroste. Logických
-     kombinací kostek totiž není mnoho; krom toho, co aplikace umí dnes, se
-     jich reálně hraje právě těchhle pár. Editor vlastních vzorů zůstává
-     jako úniková cesta, ne jako hlavní vchod.
-
-     `d` je počet kostek, `def` výchozí sazba, `k` kód štítku a `je()`
-     predikát nad polem počtů výskytů. Predikát používá **jen výpočet
-     rizika**, klávesnice ne: sazba i počet kostek jsou pevné, takže
-     tlačítko hodnoty kostek vůbec znát nemusí. Cena za to je, že čtveřice
-     šestek a čtveřice jedniček platí stejně — a že „čtveřice a dvojice“ je
-     při čtyřech jedničkách past (1 500 proti 2 000 za samotnou čtveřici).
-     Proto je sazba editovatelná a čip svoje body ukazuje. */
-  function poctuAspon(c, n){
-    var k = 0, v;
-    for(v = 1; v <= 6; v++){ if(c[v] >= n) k++; }
-    return k;
-  }
-  /* hodnota s aspoň `a` kostkami a k ní **jiná** hodnota s aspoň `b` */
-  function dvojiceRuznych(c, a, b){
-    var v, w;
-    for(v = 1; v <= 6; v++){
-      if(c[v] < a) continue;
-      for(w = 1; w <= 6; w++){ if(w !== v && c[w] >= b) return true; }
-    }
-    return false;
-  }
-  var PRESETY = {
-    "2p": { d:4, def: 250, k:"c2p", zapis:"2+2",   je: function(c){ return poctuAspon(c, 2) >= 2; } },
-    "3p": { d:6, def: 500, k:"c3p", zapis:"2+2+2", je: function(c){ return poctuAspon(c, 2) >= 3; } },
-    "32": { d:5, def:1200, k:"c32", zapis:"3+2",   je: function(c){ return dvojiceRuznych(c, 3, 2); } },
-    "33": { d:6, def:2000, k:"c33", zapis:"3+3",   je: function(c){ return poctuAspon(c, 3) >= 2; } },
-    "42": { d:6, def:1500, k:"c42", zapis:"4+2",   je: function(c){ return dvojiceRuznych(c, 4, 2); } }
-  };
-  var PRESET_PORADI = ["2p", "3p", "32", "33", "42"];
-  var KOMBKEY = "farkle-kombinace-v1";   /* starý klíč, čte se jen při migraci */
-  var VLASTNI_MAX = 8;         /* strop vlastních kombinací v jednom režimu */
-  var VZORU_MAX = 6;           /* strop vzorů v jedné kombinaci */
-  var PISMENA = ["A", "B", "C", "D", "E", "F"];
-  var BODY_MAX = 999999;       /* šest číslic — víc se do kódu k…x… nevejde */
-
-  /* Přítomnost klíče v `p` je zapnutí. Žádný zvláštní boolean vedle sazby,
-     tedy ani žádný stav, který si může protiřečit. Kombinace i sazby patří
-     režimu, ne aplikaci — každý režim si drží svoje. */
-  function kombZap(rez, k){ return Object.prototype.hasOwnProperty.call(rez.p, k); }
-  function sazba(rez, k){ return kombZap(rez, k) ? rez.p[k] : PRESETY[k].def; }
-  /* Kombinace na šest kostek nemá v pětikostkovém režimu co dělat: nikdy by
-     nešla odložit a v seznamu by jen mátla. */
-  function kombVRezimu(rez, k){ return PRESETY[k].d <= rez.kostek; }
-
-  /* Setříděné počty výskytů: vzor 1,1,1+5,5 má tvar [3,2]. U „libovolných
-     hodnot“ se porovnává právě tenhle tvar, ne konkrétní hodnoty. */
-  function tvarZPoctu(pocty){
-    var out = [], v;
-    for(v = 1; v <= 6; v++){ if(pocty[v]) out.push(pocty[v]); }
-    out.sort(function(a, b){ return b - a; });
-    return out;
-  }
-  /* Vzor z cizí zálohy ani z poškozeného úložiště nesmí projít dál nezkontrolovaný.
-     Vrací očištěnou kopii, nebo null.
-
-     Vzor má dvě části: `v` jsou kostky s konkrétní hodnotou, `t` velikosti
-     skupin „libovolná, ale stejná hodnota“ (písmena A–F v editoru). Dřív
-     platil na celý vzor jeden příznak `any`; vzor uložený s ním se přečte
-     tak, že se z jeho hodnot stanou samá písmena — tvar i počet kostek
-     vyjdou stejně, takže se nemění ani kód štítku. */
-  function cistyTvar(x){
-    if(!x || typeof x !== "object") return null;
-    var hodnoty = Array.isArray(x.v) ? x.v : [], pocty = [0,0,0,0,0,0,0], i, h, n = 0;
-    var skupiny = Array.isArray(x.t) ? x.t : [], tvar = [], s;
-    for(i = 0; i < hodnoty.length && n < 6; i++){
-      h = Math.floor(naCislo(hodnoty[i], 0));
-      if(h < 1 || h > 6) continue;
-      pocty[h]++; n++;
-    }
-    if(x.any){
-      /* starý zápis: rozhodoval jen tvar, tedy samá písmena */
-      tvar = tvarZPoctu(pocty);
-      pocty = [0,0,0,0,0,0,0];
-    } else {
-      for(i = 0; i < skupiny.length && n < 6; i++){
-        s = Math.floor(naCislo(skupiny[i], 0));
-        if(s < 1 || s > 6 - n) continue;
-        tvar.push(s); n += s;
-      }
-      tvar.sort(function(a, b){ return b - a; });
-    }
-    if(n < 2) return null;
-    return { v: rozbalPocty(pocty), t: tvar, pocty: pocty, tvar: tvar };
-  }
-  /* Vlastní kombinace: jméno, body a jeden až šest vzorů, ze kterých stačí
-     sednout kterýkoli — „dvojice a dvě dvojky **nebo** dvojice a tři trojky“
-     je jedna kombinace za jedny body.
-
-     Starší zápis nesl vzor rovnou v kombinaci a jméno neměl vůbec; přečte se
-     jako kombinace o jednom vzoru s výchozím jménem, protože generátor
-     slovních názvů zmizel. */
-  function cistaKombinace(x, poradi){
-    if(!x || typeof x !== "object") return null;
-    var body = Math.floor(naCislo(x.b, 0)), vzory = [], i, vz;
-    if(!(body > 0) || body > BODY_MAX) return null;
-    if(Array.isArray(x.vz)){
-      for(i = 0; i < x.vz.length && vzory.length < VZORU_MAX; i++){
-        vz = cistyTvar(x.vz[i]);
-        if(vz) vzory.push(vz);
-      }
-    } else {
-      vz = cistyTvar(x);
-      if(vz) vzory.push(vz);
-    }
-    if(!vzory.length) return null;
-    /* Chybějící `z` znamená zapnuto: kombinace uložené dřív, než přepínač
-       existoval, se po aktualizaci nesmějí samy vypnout. */
-    return { id: (typeof x.id === "string" && x.id) ? x.id.slice(0, 40) : newId(),
-             n: (typeof x.n === "string" && x.n) ? x.n.slice(0, NAZEV_MAX)
-                                                 : t("komb.vychozin", { n: poradi || 1 }),
-             b: body, z: (x.z === undefined) ? true : !!x.z, vz: vzory };
-  }
-  /* Kostky vzoru dohromady: konkrétní i ty ve skupinách. */
-  function pocetKostekVzoru(vz){
-    var n = vz.v.length, i;
-    for(i = 0; i < vz.tvar.length; i++) n += vz.tvar[i];
-    return n;
-  }
-  function rozbalPocty(pocty){
-    var out = [], v, i;
-    for(v = 1; v <= 6; v++){ for(i = 0; i < pocty[v]; i++) out.push(v); }
-    return out;
-  }
-  /* Zápis vzoru: skupiny jako písmena, konkrétní hodnoty jako čísla —
-     A,A+2,2 je „dvě libovolné stejné a dvě dvojky“. Skupiny stojí první
-     a jdou od největší, hodnoty za nimi vzestupně; uvnitř skupiny odděluje
-     kostky čárka, skupiny mezi sebou "+".
-
-     Je to jazykově neutrální, takže se nepřekládá a v nastavení, v pravidlech
-     i v editoru vypadá stejně. Slovní generátor jmen („dvě dvojice a 6“)
-     zmizel s tím, že kombinace mají vlastní jméno. */
-  function zapisVzoru(vz){
-    var out = [], v, i, j, kus;
-    for(i = 0; i < vz.tvar.length; i++){
-      kus = [];
-      for(j = 0; j < vz.tvar[i]; j++) kus.push(PISMENA[i] || "?");
-      out.push(kus.join(","));
-    }
-    for(v = 1; v <= 6; v++){
-      if(!vz.pocty[v]) continue;
-      kus = [];
-      for(i = 0; i < vz.pocty[v]; i++) kus.push(v);
-      out.push(kus.join(","));
-    }
-    return out.join("+");
-  }
-  /* Zápis celé kombinace: vzory oddělené lomítkem, tedy „nebo“. */
-  function zapisKombinace(k){
-    return k.vz.map(zapisVzoru).join(" / ");
-  }
-  /* Odlišné počty kostek zapnutých vzorů, vzestupně a jen ty, které se do
-     režimu vejdou. Podle nich se řídí čip v klávesnici i podřádek v nastavení:
-     kombinace o vzorech na čtyři a na pět kostek se dá odložit dvěma způsoby
-     a klávesnice se musí zeptat, kterým. */
-  function poctyKostekKombinace(k, max){
-    var out = [], i, n;
-    for(i = 0; i < k.vz.length; i++){
-      n = pocetKostekVzoru(k.vz[i]);
-      if(n <= max && out.indexOf(n) < 0) out.push(n);
-    }
-    out.sort(function(a, b){ return a - b; });
-    return out;
-  }
-  /* Sedne kombinace do hodu? Stačí kterýkoli z jejích vzorů. */
-  function sediKombinace(k, c){
-    for(var i = 0; i < k.vz.length; i++){ if(sediVzor(k.vz[i], c)) return true; }
-    return false;
-  }
-  /* Vlastní kombinace má vlastní příznak `z`, kdežto preset se zapíná
-     přítomností klíče v `p`. Je to jediné místo, kde se oba modely liší,
-     a nejde to jinak: u kombinace musí být vypnutí a smazání dvě různé věci. */
-  function kombinaceZap(rez){
-    return rez.v.filter(function(k){
-      return k.z && poctyKostekKombinace(k, rez.kostek).length > 0;
-    });
-  }
-  function pocetKombinaci(rez){
-    var n = kombinaceZap(rez).length, i;
-    for(i = 0; i < PRESET_PORADI.length; i++){
-      if(kombZap(rez, PRESET_PORADI[i]) && kombVRezimu(rez, PRESET_PORADI[i])) n++;
-    }
-    return n;
-  }
-
-  /* ---------- herní režimy ----------
-     Režim je celá sada pravidel: počet kostek, tři šestice sazeb (samostatná
-     kostka, dvojice, trojice), pravidlo pro čtyři a víc stejných, postupky,
-     kombinace navíc a vlastní vzory. Tři přednastavené vychází z
-     `docs/farkle-pravidla-verze.md`, vlastních jde přidat dvacet.
-
-     `post` a `p` jsou řídké mapy: přítomnost klíče znamená „boduje“. Stejná
-     úvaha jako u kombinací navíc — žádný boolean vedle sazby, tedy ani stav,
-     který si může protiřečit.
-
-     V paměti je každý režim úplný, sparse je až zápis (viz ulozRezimy).
-     Jeden objekt na režim, ne skládaná kopie při každém volání: editor
-     v nastavení do něj zapisuje přímo a druhá, zastaralá kopie by nesměla
-     vzniknout. */
-  var REZKEY = "farkle-rezimy-v1";
-  var REZIMY_MAX = 20;         /* strop vlastních režimů */
-  /* Kolik samostatně bodujících hodnot se ještě vejde do vlastní řady čipů,
-     aniž by se čipy zmenšily. Nad to se řada schová a zadává se přes 1×
-     ve Stejných hodnotách. */
-  var SAMOSTATNE_V_RADE = 3;
-  var NAZEV_MAX = 40;          /* strop délky názvu vlastního režimu */
-  var NAD_DRUHY = ["x2", "nasobek", "pevne"];
-  var VYCHOZI_REZIM = "kcd2";
-  var TROJ_ZAKLAD = [0, 1000, 200, 300, 400, 500, 600];
-  var SAM_ZAKLAD  = [0, 100, 0, 0, 0, 50, 0];   /* jednička a pětka */
-  /* Pevné body za počty nad prahem. Index je rovnou počet kostek, ne pořadí
-     v trojici jako dřív — práh se dnes dá posunout, takže na čtyřce začínat
-     nemusí. */
-  var NADP_ZAKLAD = [0, 0, 0, 1000, 1000, 2000, 3000];
-  var POCTY_STEJ  = [2, 3, 4, 5, 6];   /* počty, které můžou mít vlastní šestici */
-  var PRAH_ZAKLAD = 3;                 /* od kolika stejných se boduje ve výchozím stavu */
-  /* Boduje v té šestici aspoň jedna hodnota? Prázdná šestice je totéž co
-     vypnutý počet, takže se nikde nedrží zvlášť. */
-  function sestiZap(pole){
-    for(var v = 1; v <= 6; v++){ if(pole && pole[v] > 0) return true; }
-    return false;
-  }
-  /* Počty stejných čísel, které v režimu bodují, odspoda. */
-  function poctyStej(rez){
-    var out = [], i, n;
-    for(i = 0; i < POCTY_STEJ.length; i++){
-      n = POCTY_STEJ[i];
-      /* Počet vyšší, než kolika kostkami se hází, nikdy nepadne — v tabulce
-         zůstat může (režim se dá přepnout zpátky na šest), ale bodování ani
-         extrapolace nad prahem o něm vědět nesmí. */
-      if(n <= rez.kostek && rez.stej[n]) out.push(n);
-    }
-    return out;
-  }
-  function stejZap(rez, n){ return !!rez.stej[n]; }
-  /* Práh je nejnižší zapnutý počet, `nejvyssiStej` ten, nad kterým se
-     extrapoluje pravidlem `nad`. Prázdná tabulka vrací null. */
-  function prahStej(rez){ var p = poctyStej(rez); return p.length ? p[0] : null; }
-  function nejvyssiStej(rez){ var p = poctyStej(rez); return p.length ? p[p.length - 1] : null; }
-  /* Šestice sazeb z cizích dat: očištěná kopie, nebo null, když v ní nic
-     neboduje. */
-  function cistaSestice(x){
-    var pole = [0,0,0,0,0,0,0], v;
-    if(!Array.isArray(x)) return null;
-    for(v = 1; v <= 6; v++){ if(x[v] !== undefined) pole[v] = mezeBodu(x[v]); }
-    return sestiZap(pole) ? pole : null;
-  }
-  function kopieStej(m){
-    var out = {}, i, n;
-    for(i = 0; i < POCTY_STEJ.length; i++){
-      n = POCTY_STEJ[i];
-      if(m[n]) out[n] = m[n].slice();
-    }
-    return out;
-  }
-  function stejnaStej(a, b){
-    var i, n;
-    for(i = 0; i < POCTY_STEJ.length; i++){
-      n = POCTY_STEJ[i];
-      if(!a[n] !== !b[n]) return false;
-      if(a[n] && !stejnePole(a[n], b[n])) return false;
-    }
-    return true;
-  }
-  /* Kolik samostatných hodnot boduje — podle toho se řídí řada čipů. */
-  function pocetSamostatnych(rez){
-    var n = 0, v;
-    for(v = 1; v <= 6; v++){ if(rez.sam[v] > 0) n++; }
-    return n;
-  }
-
-  /* Dvě čísla zdrojový dokument u pětikostkové verze neurčuje a dosazují se:
-     sazba pětikostkové postupky (500 / 750 jako u KCD2) a pravidlo pro čtyři
-     a pět stejných (násobek jako u klasiky). Obojí je editovatelné. */
-  var PRESET_REZIMY = {
-    "kcd2":    { kostek:6, sam:SAM_ZAKLAD, stej:{ 3:TROJ_ZAKLAD }, nad:"x2",
-                 nadP:NADP_ZAKLAD, post:{ "15":500, "26":750, "16":1500 }, p:{}, v:[] },
-    "klasika": { kostek:6, sam:SAM_ZAKLAD, stej:{ 3:TROJ_ZAKLAD }, nad:"nasobek",
-                 nadP:NADP_ZAKLAD, post:{ "16":1000 }, p:{ "3p":750 }, v:[] },
-    "pet":     { kostek:5, sam:SAM_ZAKLAD, stej:{ 3:TROJ_ZAKLAD }, nad:"nasobek",
-                 nadP:NADP_ZAKLAD, post:{ "15":500, "26":750 }, p:{}, v:[] }
-  };
-  var PRESET_REZ_PORADI = ["kcd2", "klasika", "pet"];
-
-  var REZIMY = { akt: VYCHOZI_REZIM, sez: [] };
-
-  function kopieMapy(m){
-    var out = {}, k;
-    for(k in m){ if(Object.prototype.hasOwnProperty.call(m, k)) out[k] = m[k]; }
-    return out;
-  }
-  function stejnaMapa(a, b){
-    var k;
-    for(k in a){ if(Object.prototype.hasOwnProperty.call(a, k) && a[k] !== b[k]) return false; }
-    for(k in b){ if(Object.prototype.hasOwnProperty.call(b, k) && a[k] !== b[k]) return false; }
-    return true;
-  }
-  function stejnePole(a, b){
-    if(a.length !== b.length) return false;
-    for(var i = 0; i < a.length; i++){ if(a[i] !== b[i]) return false; }
-    return true;
-  }
-  /* Čerstvý režim z presetu. Pole a mapy se kopírují, aby úprava jednoho
-     režimu nepřepsala výchozí tabulku ani sourozence. */
-  function zPresetu(id){
-    var d = PRESET_REZIMY[id];
-    return { id: id, nazev: null, vlastni: false,
-             kostek: d.kostek,
-             sam: d.sam.slice(), stej: kopieStej(d.stej), rozs: false,
-             nad: d.nad, nadP: d.nadP.slice(),
-             post: kopieMapy(d.post), p: kopieMapy(d.p), v: [] };
-  }
-  function rezimPodleId(id){
-    for(var i = 0; i < REZIMY.sez.length; i++){ if(REZIMY.sez[i].id === id) return REZIMY.sez[i]; }
-    return null;
-  }
-  /* Aktivní režim se nikdy nevrací jako null: neznámé id (smazaný vlastní
-     režim, cizí záloha) spadne na výchozí. */
-  function aktRezim(){ return rezimPodleId(REZIMY.akt) || rezimPodleId(VYCHOZI_REZIM); }
-  function kostek(){ return aktRezim().kostek; }
-  function seznamRezimu(){ return REZIMY.sez.slice(); }
-  function jePreset(id){ return Object.prototype.hasOwnProperty.call(PRESET_REZIMY, id); }
-
-  /* Cizí záloha ani poškozené úložiště nesmí projít dál nezkontrolované.
-     `zaklad` je preset, ze kterého se vychází u přednastaveného režimu;
-     u vlastního je to výchozí KCD2, aby chybějící pole měla čím být. */
-  function cistyRezim(x, id, zaklad){
-    var rez = zPresetu(zaklad || VYCHOZI_REZIM), v, b, k, i, pole;
-    rez.id = id;
-    rez.vlastni = !jePreset(id);
-    if(!x || typeof x !== "object") return rez;
-    if(typeof x.nazev === "string") rez.nazev = x.nazev.slice(0, NAZEV_MAX);
-    b = Math.floor(naCislo(x.kostek, 0));
-    if(b >= 2 && b <= 6) rez.kostek = b;
-    /* Dokud tabulka měla jen jedničku a pětku, ukládaly se pod jed/pet.
-       Čte se to dál, aby se režim uložený tehdejší verzí nerozbil. */
-    if(x.sam === undefined && (x.jed !== undefined || x.pet !== undefined)){
-      pole = rez.sam.slice();
-      if(x.jed !== undefined) pole[1] = mezeBodu(x.jed);
-      if(x.pet !== undefined) pole[5] = mezeBodu(x.pet);
-      rez.sam = pole;
-    }
-    if(Array.isArray(x.sam)){
-      pole = rez.sam.slice();
-      for(v = 1; v <= 6; v++){ if(x.sam[v] !== undefined) pole[v] = mezeBodu(x.sam[v]); }
-      rez.sam = pole;
-    }
-    /* Počty stejných čísel drží dnes řídká mapa `stej`; dřív to byla dvě pevná
-       pole `dvoj` a `troj`. Čte se obojí, aby režim uložený starší verzí platil
-       dál — prázdná šestice znamenala vypnuto tehdy i teď. */
-    if(x.stej && typeof x.stej === "object"){
-      rez.stej = {};
-      for(i = 0; i < POCTY_STEJ.length; i++){
-        pole = cistaSestice(x.stej[POCTY_STEJ[i]]);
-        if(pole) rez.stej[POCTY_STEJ[i]] = pole;
-      }
-    } else if(x.dvoj !== undefined || x.troj !== undefined){
-      /* Starý zápis nesl dvě pevná pole a v odchylkách presetu stálo jen to,
-         co se lišilo — nedotčené pole se proto nesmí vzít jako vypnuté.
-         Výslovná šestice samých nul vypnutí znamená. */
-      if(x.dvoj !== undefined){
-        pole = cistaSestice(x.dvoj);
-        if(pole) rez.stej[2] = pole; else delete rez.stej[2];
-      }
-      if(x.troj !== undefined){
-        pole = cistaSestice(x.troj);
-        if(pole) rez.stej[3] = pole; else delete rez.stej[3];
-      }
-    }
-    if(NAD_DRUHY.indexOf(x.nad) >= 0) rez.nad = x.nad;
-    if(Array.isArray(x.nadP)){
-      pole = rez.nadP.slice();
-      if(x.nadP.length === 3){
-        /* starý zápis: tři čísla pro počty 4–6, práh byl vždycky trojka */
-        for(i = 0; i < 3; i++){ if(x.nadP[i] !== undefined) pole[i + 4] = mezeBodu(x.nadP[i]); }
-        pole[3] = pole[4];
-      } else {
-        for(i = 3; i <= 6; i++){ if(x.nadP[i] !== undefined) pole[i] = mezeBodu(x.nadP[i]); }
-      }
-      rez.nadP = pole;
-    }
-    if(x.post && typeof x.post === "object"){
-      rez.post = {};
-      for(i = 0; i < POST_PORADI.length; i++){
-        k = POST_PORADI[i];
-        if(x.post[k] === undefined) continue;
-        b = mezeBodu(x.post[k]);
-        if(b > 0) rez.post[k] = b;
-      }
-    }
-    if(x.p && typeof x.p === "object"){
-      rez.p = {};
-      for(i = 0; i < PRESET_PORADI.length; i++){
-        k = PRESET_PORADI[i];
-        if(x.p[k] === undefined) continue;
-        b = mezeBodu(x.p[k]);
-        if(b > 0) rez.p[k] = b;
-      }
-    }
-    if(Array.isArray(x.v)){
-      for(i = 0; i < x.v.length && rez.v.length < VLASTNI_MAX; i++){
-        var vz = cistaKombinace(x.v[i], rez.v.length + 1);
-        if(vz) rez.v.push(vz);
-      }
-    }
-    /* Rozšířený rozpad je jen pohled, ale víc než jeden zapnutý počet ho
-       vynutí, ať je uloženo cokoli: základní pohled umí ukázat jediný. */
-    rez.rozs = !!x.rozs || poctyStej(rez).length > 1;
-    return rez;
-  }
-  function mezeBodu(x){
-    var b = Math.floor(naCislo(typeof x === "string" ? parseInt(x, 10) : x, 0));
-    if(!(b > 0)) return 0;
-    return Math.min(b, BODY_MAX);
-  }
-
-  function nactiRezimy(){
-    var raw = null, o = null, i, id;
-    try{ raw = localStorage.getItem(REZKEY); }catch(e){}
-    if(raw){ try{ o = JSON.parse(raw); }catch(e){ o = null; } }
-    if(!o || typeof o !== "object") o = null;
-    /* Migrace: kombinace navíc byly dosud jedny pro celou aplikaci a hrálo se
-       s nimi podle KCD2 — stanou se tedy odchylkou toho režimu. Starý klíč se
-       nemaže, stejný záchranný idiom jako u farkle-hist-v1-zaloha. */
-    if(!o){
-      var stare = null;
-      try{ stare = localStorage.getItem(KOMBKEY); }catch(e){}
-      if(stare){
-        try{ var so = JSON.parse(stare); }catch(e){ so = null; }
-        if(so && typeof so === "object") o = { akt: VYCHOZI_REZIM, p: { kcd2: { p: so.p, v: so.v } }, v: [] };
-      }
-    }
-    REZIMY.sez = [];
-    for(i = 0; i < PRESET_REZ_PORADI.length; i++){
-      id = PRESET_REZ_PORADI[i];
-      REZIMY.sez.push(cistyRezim(o && o.p ? o.p[id] : null, id, id));
-    }
-    if(o && Array.isArray(o.v)){
-      for(i = 0; i < o.v.length && REZIMY.sez.length < PRESET_REZ_PORADI.length + REZIMY_MAX; i++){
-        var x = o.v[i];
-        if(!x || typeof x !== "object") continue;
-        id = (typeof x.id === "string" && x.id && !jePreset(x.id)) ? x.id.slice(0, 40) : novyIdRezimu();
-        if(rezimPodleId(id)) continue;
-        REZIMY.sez.push(cistyRezim(x, id, VYCHOZI_REZIM));
-      }
-    }
-    REZIMY.akt = (o && typeof o.akt === "string" && rezimPodleId(o.akt)) ? o.akt : VYCHOZI_REZIM;
-  }
-  function novyIdRezimu(){
-    return "r" + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
-  }
-  /* U presetu se ukládají jen odchylky od výchozích hodnot. Kdyby se ukládal
-     celý, pozdější oprava výchozí tabulky by nedorazila k nikomu, kdo se
-     režimu jednou dotkl. Vlastní režim není proti čemu diffovat. */
-  function venKombinaci(k){
-    return { id: k.id, n: k.n, b: k.b, z: k.z,
-             vz: k.vz.map(function(vz){ return { v: vz.v, t: vz.tvar }; }) };
-  }
-  function odchylkyRezimu(rez){
-    var d = PRESET_REZIMY[rez.id], out = {}, prazdno = true;
-    function dej(klic, hodnota){ out[klic] = hodnota; prazdno = false; }
-    if(rez.kostek !== d.kostek) dej("kostek", rez.kostek);
-    if(!stejnePole(rez.sam, d.sam)) dej("sam", rez.sam.slice());
-    if(!stejnaStej(rez.stej, d.stej)) dej("stej", kopieStej(rez.stej));
-    if(rez.rozs) dej("rozs", true);
-    if(rez.nad !== d.nad) dej("nad", rez.nad);
-    if(!stejnePole(rez.nadP, d.nadP)) dej("nadP", rez.nadP.slice());
-    if(!stejnaMapa(rez.post, d.post)) dej("post", kopieMapy(rez.post));
-    if(!stejnaMapa(rez.p, d.p)) dej("p", kopieMapy(rez.p));
-    if(rez.v.length) dej("v", rez.v.map(venKombinaci));
-    return prazdno ? null : out;
-  }
-  function venRezim(rez){
-    return { id: rez.id, nazev: rez.nazev, kostek: rez.kostek,
-             sam: rez.sam.slice(), stej: kopieStej(rez.stej), rozs: rez.rozs,
-             nad: rez.nad, nadP: rez.nadP.slice(),
-             post: kopieMapy(rez.post), p: kopieMapy(rez.p), v: rez.v.map(venKombinaci) };
-  }
-  function ulozRezimy(){
-    var ven = { akt: REZIMY.akt, p: {}, v: [] }, o;
-    REZIMY.sez.forEach(function(rez){
-      if(rez.vlastni){ ven.v.push(venRezim(rez)); return; }
-      o = odchylkyRezimu(rez);
-      if(o) ven.p[rez.id] = o;
-    });
-    try{ localStorage.setItem(REZKEY, JSON.stringify(ven)); }catch(e){}
-  }
-
-  /* ---------- riziko farklu ----------
-     Změřeno vyčerpávajícím výčtem 6^n, ne opsáno odjinud. Tři z pěti
-     přednastavených kombinací riziko nemění vůbec — trojice+dvojice, dvě
-     trojice i čtveřice+dvojice obsahují trojici, která už dnes boduje, takže
-     hod, který je splňuje, nikdy nebyl farkle. Mění ho tři dvojice (a to jen
-     na šesti kostkách) a dvě dvojice, které trojici uvnitř nemají a srazí
-     riziko už od čtyř kostek. Bez vlastních kombinací má tabulka proto tři
-     podoby a při startu se nepočítá nic.
-
-     Konstanty platí pro **výchozí základ KCD2** — jednička, pětka i všech
-     šest trojic bodují a nic jiného z počtů. Ten základ mají všechny tři
-     přednastavené režimy, takže se pro ně nic nepočítá; teprve upravený režim
-     nebo vlastní kombinace pošle na výčet. Počet kostek režimu na tabulku
-     nemá vliv: riziko se ptá, kolika kostkami se hází teď, ne kolik jich má
-     hra celkem.
-
-     Že se konstanty po jakékoli změně pravidel tiše nerozejdou se
-     skutečností, hlídá strážní test sady 19 — ten si všechny tři sady pokaždé
-     odvodí výčtem znovu. */
-  var RIZIKO    = [66.7, 44.4, 27.8, 15.7, 7.7, 3.1];
-  var RIZIKO_3P = [66.7, 44.4, 27.8, 15.7, 7.7, 2.3];
-  /* Dvě dvojice jsou jediná přednastavená kombinace bez trojice uvnitř, takže
-     jako jediná mění riziko od čtyř kostek výš — na šesti kostkách ho srazí
-     na nulu: hod bez jedničky, bez pětky, bez trojice a bez dvou dvojic
-     ze šesti kostek neexistuje. Tři dvojice dvě dvojice obsahují, takže
-     zapnuté obojí dá tutéž tabulku. */
-  var RIZIKO_2P = [66.7, 44.4, 27.8, 13, 3.1, 0];
-  /* Cache i běžící výpočty klíčované podpisem pravidel: přepnutí režimu tam
-     a zpátky tak nespustí výčet podruhé. */
-  var rizikoCache = {}, rizikoBezi = {};
-
-  function poctyZHodu(hod){
-    var c = [0,0,0,0,0,0,0], i;
-    for(i = 0; i < hod.length; i++) c[hod[i]]++;
-    return c;
-  }
-  /* Boduje hod podle pravidel režimu? Postupky se sem dopsat musely: dřív je
-     pokrývala jednička a pětka, ale režim je může mít obě na nule. */
-  function bodujeZaklad(c, rez){
-    var v, n, i, k;
-    for(v = 1; v <= 6; v++){
-      if(!c[v]) continue;
-      if(rez.sam[v] > 0) return true;
-      /* Ptát se rovnou kindPoints() je jediná cesta, jak pokrýt i extrapolaci
-         nad prahem — pevné body platí i tam, kde sama skupina neboduje. */
-      for(n = 2; n <= c[v]; n++){ if(kindPoints(v, n, rez) > 0) return true; }
-    }
-    for(i = 0; i < POST_PORADI.length; i++){
-      k = POST_PORADI[i];
-      if(rez.post[k] > 0 && maPostupku(c, STRAIGHTS[k])) return true;
-    }
-    return false;
-  }
-  /* Sedí vzor do hodu? Nejdřív konkrétní hodnoty — test podmnožiny
-     multimnožiny. Pak skupiny: každá bere jinou hodnotu, a jinou i než ty,
-     které vzor žádá číslem, takže se jedna kostka nezapočítá dvakrát.
-     Zbylé počty se porovnají hladově po největších, což je pro tenhle tvar
-     úlohy správně. Obojí zvlášť jsou krajní případy téhož výpočtu. */
-  function sediVzor(vz, c){
-    var v, i, zbytek = [];
-    for(v = 1; v <= 6; v++){ if(vz.pocty[v] && c[v] < vz.pocty[v]) return false; }
-    if(!vz.tvar.length) return true;
-    for(v = 1; v <= 6; v++){ if(!vz.pocty[v] && c[v]) zbytek.push(c[v]); }
-    if(zbytek.length < vz.tvar.length) return false;
-    zbytek.sort(function(a, b){ return b - a; });
-    for(i = 0; i < vz.tvar.length; i++){ if(zbytek[i] < vz.tvar[i]) return false; }
-    return true;
-  }
-  function bodujeSKombinacemi(c, rez, komb){
-    var i, k;
-    if(bodujeZaklad(c, rez)) return true;
-    for(i = 0; i < PRESET_PORADI.length; i++){
-      k = PRESET_PORADI[i];
-      if(kombZap(rez, k) && kombVRezimu(rez, k) && PRESETY[k].je(c)) return true;
-    }
-    for(i = 0; i < komb.length; i++){ if(sediKombinace(komb[i], c)) return true; }
-    return false;
-  }
-  /* 6^1 + … + 6^6 = 55 986 hodů, v JS jednotky až nízké desítky ms; na pěti
-     kostkách 9 330. Pouští se líně a jen tehdy, když se pravidla liší od
-     základu KCD2. Seznam vzorů se předává dovnitř, aby se filtr nedělal
-     desetitisíckrát znovu. */
-  function spocitejRiziko(rez){
-    var out = [], komb = kombinaceZap(rez), n, celkem, farkle, i, j, x, hod;
-    for(n = 1; n <= rez.kostek; n++){
-      celkem = Math.pow(6, n); farkle = 0; hod = new Array(n);
-      for(i = 0; i < celkem; i++){
-        x = i;
-        for(j = 0; j < n; j++){ hod[j] = (x % 6) + 1; x = Math.floor(x / 6); }
-        if(!bodujeSKombinacemi(poctyZHodu(hod), rez, komb)) farkle++;
-      }
-      out.push(Math.round(farkle / celkem * 1000) / 10);
-    }
-    return out;
-  }
-  /* Riziko nezajímají sazby, jen co vůbec boduje — podpis proto nese
-     přítomnost, ne čísla. Bez toho by přepsání jedné sazby zahodilo cache. */
-  function podpisRezimu(rez){
-    var v, i, n, s = rez.kostek + "|";
-    for(v = 1; v <= 6; v++) s += rez.sam[v] > 0 ? "1" : "0";
-    s += "-";
-    for(i = 0; i < POCTY_STEJ.length; i++){
-      n = POCTY_STEJ[i];
-      if(!rez.stej[n]){ s += "-"; continue; }
-      for(v = 1; v <= 6; v++) s += rez.stej[n][v] > 0 ? "1" : "0";
-      s += ".";
-    }
-    /* Pravidlo nad prahem patří do podpisu: u pevných bodů rozhoduje o tom,
-       jestli vyšší počty vůbec bodují. */
-    s += "|" + rez.nad + (rez.nad === "pevne"
-      ? rez.nadP.map(function(x){ return x > 0 ? "1" : "0"; }).join("") : "");
-    s += "|" + POST_PORADI.map(function(k){ return rez.post[k] > 0 ? "1" : "0"; }).join("");
-    s += "|" + PRESET_PORADI.map(function(k){
-      return (kombZap(rez, k) && kombVRezimu(rez, k)) ? "1" : "0"; }).join("");
-    s += "|" + kombinaceZap(rez).map(function(k){
-      return k.vz.map(function(vz){
-        return "h" + vz.v.join("") + "t" + vz.tvar.join(""); }).join(","); }).join(";");
-    return s;
-  }
-  /* Základ KCD: samostatně boduje **právě** jednička a pětka, bodují právě
-     trojice (a nic jiného z počtů) a není zapnutá žádná vlastní kombinace.
-     Pak platí konstanty — postupky ani tři z pěti přednastavených kombinací
-     riziko nemění, protože každá z nich nese jedničku, pětku nebo trojici. */
-  function zakladJakoKcd2(rez){
-    var v, p = poctyStej(rez);
-    if(p.length !== 1 || p[0] !== 3) return false;
-    for(v = 1; v <= 6; v++){
-      if((rez.sam[v] > 0) !== (v === 1 || v === 5)) return false;
-      if(!(rez.stej[3][v] > 0)) return false;
-    }
-    return kombinaceZap(rez).length === 0;
-  }
-  function tabulkaRizika(rez){
-    rez = rez || aktRezim();
-    var dve = kombZap(rez, "2p") && kombVRezimu(rez, "2p");
-    var tri = kombZap(rez, "3p") && kombVRezimu(rez, "3p");
-    var hotova = dve ? RIZIKO_2P : (tri ? RIZIKO_3P : RIZIKO);
-    if(zakladJakoKcd2(rez)) return hotova;
-    var podpis = podpisRezimu(rez);
-    if(rizikoCache[podpis]) return rizikoCache[podpis];
-    /* Než výčet doběhne, platí konstanty jako horní odhad — kombinace navíc
-       riziko jen snižují. */
-    if(!rizikoBezi[podpis]){
-      rizikoBezi[podpis] = true;
-      setTimeout(function(){
-        rizikoBezi[podpis] = false;
-        rizikoCache[podpis] = spocitejRiziko(rez);
-        render();
-        /* Pás v nastavení má vlastní dveře k překreslení: renderRezimy() by
-           uprostřed psaní do pole sebralo kurzor. */
-        var e = editRezim();
-        if(e) renderRezPruh(e);
-      }, 0);
-    }
-    return hotova;
-  }
-  /* Platí to, co tabulkaRizika() vrací, nebo je to zatím jen horní odhad?
-     Pás v nastavení to musí umět rozeznat — u přepsané tabulky je konstanta
-     lež, ne odhad blízko pravdy. */
-  function rizikoHotovo(rez){
-    return zakladJakoKcd2(rez) || !!rizikoCache[podpisRezimu(rez)];
-  }
   /* Jediné dveře ke změně pravidel: uloží a překreslí obojí — nastavení
      i klávesnici (tu přes render()). Cache rizika se nezahazuje, je klíčovaná
      podpisem. */
@@ -1279,6 +645,16 @@ import { RUCNI } from "./jazyky/cs.js";
     render();
   }
   nactiRezimy();
+
+  /* Líný výčet rizika doběhne až po setTimeout a pak se musí překreslit.
+     Pravidla ale render() znát nesmí, tak jen ohlásí dopočet a poslouchá se
+     odsud. Pás v nastavení má vlastní dveře: renderRezimy() by uprostřed
+     psaní do pole sazby sebralo kurzor. */
+  naRizikoHotovo(function(){
+    render();
+    var e = editRezim();
+    if(e) renderRezPruh(e);
+  });
 
   /* Sonda pro testy, stejně jako window.__i18n: strážní test sady 19 si musí
      obě konstantní tabulky rizika pokaždé odvodit výčtem z týchž pravidel,
