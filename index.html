@@ -3951,6 +3951,109 @@
     return rezim === "idb" ? souhrnZ(rec) : rec;
   }
 
+  // src/js/text/format.js
+  function dt(ms) {
+    return kat("datumCas")(new Date(ms));
+  }
+  function dtDen(ms) {
+    return kat("datum")(new Date(ms));
+  }
+  function popisTypuHry(rec) {
+    return rec.mode === "rounds" ? rec.roundGoal ? t("typhry.nakolalimit", { n: rec.roundGoal }) : t("typhry.nakola") : t("typhry.dobodu", { b: fmt(rec.goal || 0) });
+  }
+  function popisHry(rec) {
+    var kol = gKol(rec);
+    return dt(rec.savedAt) + " · " + nazevRezimuZaznamu(rec) + " · " + popisTypuHry(rec) + " · " + tn("slovo.kolo", kol);
+  }
+  function fmt(n) {
+    return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, kat("sep"));
+  }
+  function esc(s) {
+    return String(s == null ? "" : s).replace(/[&<>"]/g, function(c) {
+      return c === "&" ? "&amp;" : c === "<" ? "&lt;" : c === ">" ? "&gt;" : "&quot;";
+    });
+  }
+  function cislo(v) {
+    return String(v);
+  }
+  function fmtR(v) {
+    return fmt(Math.round(v));
+  }
+  function desetina(v) {
+    return (Math.round(v * 10) / 10).toString().replace(".", kat("des"));
+  }
+
+  // src/js/text/stitky.js
+  function textKodu(k) {
+    var m = NKOD.exec(k);
+    if (m) return t("stitek.n", { p: m[1], h: m[2] });
+    m = KKOD.exec(k);
+    if (m) return t("stitek.k", { b: fmt(Number(m[1])), d: tn("pocitadlo.kostzkr", Number(m[2])) });
+    return KODY.indexOf(k) >= 0 ? t("stitek." + k) : String(k);
+  }
+  function stitek(it) {
+    if (it && typeof it.k === "string") return textKodu(it.k);
+    return it && typeof it.l === "string" ? it.l : t("stitek.v");
+  }
+  function kodyNaText(c) {
+    if (!c) return "";
+    return String(c).split(HODY_ODD).map(function(hod) {
+      return hod.split(POLOZKY_ODD).map(textKodu).join(POLOZKY_TXT);
+    }).join(HODY_TXT);
+  }
+  function popisKola(tah) {
+    if (tah && typeof tah.c === "string") return kodyNaText(tah.c);
+    var d = tah && typeof tah.d === "string" ? tah.d : "";
+    var c = kodyZPopisu(d);
+    return c === null ? d : kodyNaText(c);
+  }
+
+  // src/js/ui/prvky.js
+  var $ = function(id) {
+    return document.getElementById(id);
+  };
+  var elScore = $("score");
+  var elTotal = $("total");
+  var elRest = $("rest");
+  var elRestLabel = $("restlabel");
+  var elPot = $("pot");
+  var elTurnLabel = $("turnlabel");
+  var elRollLine = $("rollline");
+  var elFix = $("fix");
+  var elRollOn = $("rollon");
+  var elBank = $("bank");
+  var elBust = $("bust");
+  var elBustRiz = $("bustriz");
+  var elUndo = $("undo");
+  var elLock = $("lock");
+  var elRows = $("rows");
+  var elEmpty = $("empty");
+  var elArch = $("arch");
+  var elKosList = $("koslist");
+  var elKosHistList = $("koshistlist");
+  var elTally = $("tally");
+  var elTallyCap = $("tallycap");
+  var elModeSel = $("modesel");
+  var elGoalSel = $("goalsel");
+  var elGoalNum = $("goalnum");
+  var elRoundSel = $("roundsel");
+  var elRoundNum = $("roundnum");
+  var elPips = $("pips");
+  var elCounts = $("counts");
+  var elAddKind = $("addkind");
+  var elMnum = $("mnum");
+  var elMkost = $("mkost");
+  var elMToggle = $("mtoggle");
+  var elManual = $("manualwrap");
+  var elStrRow = $("strrow");
+  var elStrCap = $("strcap");
+  var elVlastniRow = $("vlastnirow");
+  var elSingleRow = $("singlerow");
+  var elSingleCap = $("singlecap");
+  var elDataSingle = Array.prototype.slice.call(document.querySelectorAll("[data-single]"));
+  var elDataStr = Array.prototype.slice.call(document.querySelectorAll("[data-str]"));
+  var elDataKombi = Array.prototype.slice.call(document.querySelectorAll("[data-kombi]"));
+
   // src/js/app.js
   (function() {
     "use strict";
@@ -4089,50 +4192,6 @@
       };
     } catch (e) {
     }
-    function dt(ms) {
-      return kat("datumCas")(new Date(ms));
-    }
-    function dtDen(ms) {
-      return kat("datum")(new Date(ms));
-    }
-    function popisTypuHry(rec) {
-      return rec.mode === "rounds" ? rec.roundGoal ? t("typhry.nakolalimit", { n: rec.roundGoal }) : t("typhry.nakola") : t("typhry.dobodu", { b: fmt(rec.goal || 0) });
-    }
-    function popisHry(rec) {
-      var kol = gKol(rec);
-      return dt(rec.savedAt) + " · " + nazevRezimuZaznamu(rec) + " · " + popisTypuHry(rec) + " · " + tn("slovo.kolo", kol);
-    }
-    function fmt(n) {
-      return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, kat("sep"));
-    }
-    function esc(s) {
-      return String(s == null ? "" : s).replace(/[&<>"]/g, function(c) {
-        return c === "&" ? "&amp;" : c === "<" ? "&lt;" : c === ">" ? "&gt;" : "&quot;";
-      });
-    }
-    function textKodu(k) {
-      var m = NKOD.exec(k);
-      if (m) return t("stitek.n", { p: m[1], h: m[2] });
-      m = KKOD.exec(k);
-      if (m) return t("stitek.k", { b: fmt(Number(m[1])), d: tn("pocitadlo.kostzkr", Number(m[2])) });
-      return KODY.indexOf(k) >= 0 ? t("stitek." + k) : String(k);
-    }
-    function stitek(it) {
-      if (it && typeof it.k === "string") return textKodu(it.k);
-      return it && typeof it.l === "string" ? it.l : t("stitek.v");
-    }
-    function kodyNaText(c) {
-      if (!c) return "";
-      return String(c).split(HODY_ODD).map(function(hod) {
-        return hod.split(POLOZKY_ODD).map(textKodu).join(POLOZKY_TXT);
-      }).join(HODY_TXT);
-    }
-    function popisKola(tah) {
-      if (tah && typeof tah.c === "string") return kodyNaText(tah.c);
-      var d = tah && typeof tah.d === "string" ? tah.d : "";
-      var c = kodyZPopisu(d);
-      return c === null ? d : kodyNaText(c);
-    }
     function turnKody() {
       var out = [], i, j, r, radek;
       for (i = 0; i < S.rolls.length; i++) {
@@ -4160,11 +4219,6 @@
       }
       S.turns.push(tah);
     }
-    var $ = function(id) {
-      return document.getElementById(id);
-    };
-    var elScore = $("score"), elTotal = $("total"), elRest = $("rest"), elRestLabel = $("restlabel"), elPot = $("pot"), elTurnLabel = $("turnlabel"), elRollLine = $("rollline"), elFix = $("fix"), elRollOn = $("rollon"), elBank = $("bank"), elBust = $("bust"), elBustRiz = $("bustriz"), elUndo = $("undo"), elLock = $("lock"), elRows = $("rows"), elEmpty = $("empty"), elArch = $("arch"), elKosList = $("koslist"), elKosHistList = $("koshistlist"), elTally = $("tally"), elTallyCap = $("tallycap"), elModeSel = $("modesel"), elGoalSel = $("goalsel"), elGoalNum = $("goalnum"), elRoundSel = $("roundsel"), elRoundNum = $("roundnum"), elPips = $("pips"), elCounts = $("counts"), elAddKind = $("addkind"), elMnum = $("mnum"), elMkost = $("mkost"), elMToggle = $("mtoggle"), elManual = $("manualwrap"), elStrRow = $("strrow"), elStrCap = $("strcap"), elVlastniRow = $("vlastnirow"), elSingleRow = $("singlerow"), elSingleCap = $("singlecap");
-    var elDataSingle = Array.prototype.slice.call(document.querySelectorAll("[data-single]")), elDataStr = Array.prototype.slice.call(document.querySelectorAll("[data-str]")), elDataKombi = Array.prototype.slice.call(document.querySelectorAll("[data-kombi]"));
     var selValue = null, selCount = 3, manualDice = 1;
     [1, 2, 3, 4, 5, 6].forEach(function(v) {
       var b = document.createElement("button");
@@ -6534,15 +6588,6 @@
     }
     function renderStats() {
       $("stats").innerHTML = statsHTML(snapshot());
-    }
-    function cislo(v) {
-      return String(v);
-    }
-    function fmtR(v) {
-      return fmt(Math.round(v));
-    }
-    function desetina(v) {
-      return (Math.round(v * 10) / 10).toString().replace(".", kat("des"));
     }
     var STATY = [
       { n: "stat.n.pocet", a: "pocet", f: cislo },

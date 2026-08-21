@@ -138,6 +138,57 @@ import {
   gZtraceno,
   nazevRezimuZaznamu
 } from "./stav/zaznam.js";
+import {
+  cislo,
+  desetina,
+  dt,
+  dtDen,
+  esc,
+  fmt,
+  fmtR,
+  popisHry,
+  popisTypuHry
+} from "./text/format.js";
+import { popisKola, stitek, textKodu } from "./text/stitky.js";
+import { $, elDataSingle, elRest, elRestLabel, elScore, elTotal } from "./ui/prvky.js";
+import {
+  elAddKind,
+  elArch,
+  elBank,
+  elBust,
+  elBustRiz,
+  elCounts,
+  elDataKombi,
+  elDataStr,
+  elEmpty,
+  elFix,
+  elGoalNum,
+  elGoalSel,
+  elKosHistList,
+  elKosList,
+  elLock,
+  elMToggle,
+  elManual,
+  elMkost,
+  elMnum,
+  elModeSel,
+  elPips,
+  elPot,
+  elRollLine,
+  elRollOn,
+  elRoundNum,
+  elRoundSel,
+  elRows,
+  elSingleCap,
+  elSingleRow,
+  elStrCap,
+  elStrRow,
+  elTally,
+  elTallyCap,
+  elTurnLabel,
+  elUndo,
+  elVlastniRow
+} from "./ui/prvky.js";
 
 (function(){
   "use strict";
@@ -288,72 +339,6 @@ import {
                           poctyZHodu: poctyZHodu, zapisVzoru: zapisVzoru,
                           tabulka: function(rez){ return tabulkaRizika(rez); } };
   }catch(e){}
-  /* Vlastní formát místo toLocale*: na různých zařízeních by se lišil
-     a font má omezenou sadu znaků. */
-  function dt(ms){ return kat("datumCas")(new Date(ms)); }
-  /* pro údaje, které nepatří jedné hře, ale celému dni */
-  function dtDen(ms){ return kat("datum")(new Date(ms)); }
-  /* Jediné místo, kde se skládá text typu hry (do bodů / na kola). Používá ho
-     popis hry v Zápisu kol, řádek historie, podřádek statistiky i řádek
-     žebříčku — dřív se stejný výraz psal dvakrát zvlášť.
-
-     Pozor na slovo: **typ hry** je do bodů / na kola, **herní režim** je sada
-     pravidel (část 14 CLAUDE.md). Dokud se to jmenovalo obojí „režim“, byla
-     to stejná past jako kdysi „tah“. Pole v datech se dál jmenuje `mode`,
-     protože leží v historii i v zálohách. */
-  function popisTypuHry(rec){
-    return rec.mode === "rounds"
-      ? (rec.roundGoal ? t("typhry.nakolalimit", { n: rec.roundGoal }) : t("typhry.nakola"))
-      : t("typhry.dobodu", { b: fmt(rec.goal || 0) });
-  }
-  function popisHry(rec){
-    var kol = gKol(rec);
-    return dt(rec.savedAt) + " \u00B7 " + nazevRezimuZaznamu(rec) +
-           " \u00B7 " + popisTypuHry(rec) + " \u00B7 " + tn("slovo.kolo", kol);
-  }
-  function fmt(n){ return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, kat("sep")); }
-  /* Popisy kol a názvy položek můžou pocházet z cizí zálohy nebo z poškozeného
-     uložení; všude, kde jdou do innerHTML, musí projít tudy. */
-  function esc(s){
-    return String(s == null ? "" : s).replace(/[&<>"]/g, function(c){
-      return c === "&" ? "&amp;" : c === "<" ? "&lt;" : c === ">" ? "&gt;" : "&quot;";
-    });
-  }
-
-
-  /* Neznámý kód se ukáže tak, jak je: cizí záloha ani poškozená data se
-     nemají tvářit jako prázdné místo. Do stránky jde přes esc() jako
-     všechno ostatní. */
-  function textKodu(k){
-    var m = NKOD.exec(k);
-    if(m) return t("stitek.n", { p: m[1], h: m[2] });
-    m = KKOD.exec(k);
-    /* Body jsou v it.p, ne v kódu — pozdější změna sazby v nastavení tedy
-       historii nepřepíše. V kódu jsou proto, aby se štítek přečetl i tam,
-       kde se položka rozpadla na samotný popis. */
-    if(m) return t("stitek.k", { b: fmt(Number(m[1])), d: tn("pocitadlo.kostzkr", Number(m[2])) });
-    return KODY.indexOf(k) >= 0 ? t("stitek." + k) : String(k);
-  }
-  function stitek(it){
-    if(it && typeof it.k === "string") return textKodu(it.k);
-    /* rozehraná hra uložená starší verzí, jejíž text se rozebrat nepodařilo */
-    return (it && typeof it.l === "string") ? it.l : t("stitek.v");
-  }
-  function kodyNaText(c){
-    if(!c) return "";
-    return String(c).split(HODY_ODD).map(function(hod){
-      return hod.split(POLOZKY_ODD).map(textKodu).join(POLOZKY_TXT);
-    }).join(HODY_TXT);
-  }
-  /* Jediné místo, kde se popis kola skládá pro zobrazení. Kód vyhrává; není-li,
-     zkusí se rozebrat starý text a teprve pak se ukáže tak, jak je. */
-  function popisKola(tah){
-    if(tah && typeof tah.c === "string") return kodyNaText(tah.c);
-    var d = (tah && typeof tah.d === "string") ? tah.d : "";
-    var c = kodyZPopisu(d);
-    return c === null ? d : kodyNaText(c);
-  }
-
   /* Prázdný hod se do popisu nedostane — u farklu je poslední hod prázdný
      z definice a slovo se dopisuje až při zobrazení. */
   function turnKody(){
@@ -382,24 +367,6 @@ import {
     S.turns.push(tah);
   }
 
-  /* ---------- prvky ---------- */
-  var $ = function(id){ return document.getElementById(id); };
-  var elScore=$("score"), elTotal=$("total"), elRest=$("rest"), elRestLabel=$("restlabel"),
-      elPot=$("pot"), elTurnLabel=$("turnlabel"),
-      elRollLine=$("rollline"), elFix=$("fix"),
-      elRollOn=$("rollon"), elBank=$("bank"), elBust=$("bust"), elBustRiz=$("bustriz"),
-      elUndo=$("undo"), elLock=$("lock"),
-      elRows=$("rows"), elEmpty=$("empty"), elArch=$("arch"), elKosList=$("koslist"), elKosHistList=$("koshistlist"),
-      elTally=$("tally"), elTallyCap=$("tallycap"),
-      elModeSel=$("modesel"), elGoalSel=$("goalsel"), elGoalNum=$("goalnum"),
-      elRoundSel=$("roundsel"), elRoundNum=$("roundnum"),
-      elPips=$("pips"), elCounts=$("counts"), elAddKind=$("addkind"),
-      elMnum=$("mnum"), elMkost=$("mkost"), elMToggle=$("mtoggle"), elManual=$("manualwrap"),
-      elStrRow=$("strrow"), elStrCap=$("strcap"), elVlastniRow=$("vlastnirow"),
-      elSingleRow=$("singlerow"), elSingleCap=$("singlecap");
-  var elDataSingle = Array.prototype.slice.call(document.querySelectorAll("[data-single]")),
-      elDataStr    = Array.prototype.slice.call(document.querySelectorAll("[data-str]")),
-      elDataKombi  = Array.prototype.slice.call(document.querySelectorAll("[data-kombi]"));
 
   var selValue = null, selCount = 3, manualDice = 1;
 
@@ -2700,9 +2667,6 @@ import {
   function renderStats(){ $("stats").innerHTML = statsHTML(snapshot()); }
 
 
-  function cislo(v){ return String(v); }
-  function fmtR(v){ return fmt(Math.round(v)); }
-  function desetina(v){ return (Math.round(v * 10) / 10).toString().replace(".", kat("des")); }
 
   /* ---------- sledované statistiky ----------
      s: omezení na režim, m: hodnota jedné hry, a: způsob shrnutí,
