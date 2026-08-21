@@ -43,8 +43,8 @@ Všech 19 jsdom sad staví DOM z řetězce (`new JSDOM(html, …)` bez
 `resources: "usable"`). Takový jsdom **nenačte `<script src>`** a
 **`<script type="module">` neumí vůbec**. Servírovat aplikaci jako víc
 souborů by stálo celou testovací síť — 1 461 kontrol. Zdroj je proto
-modulární a výstup zůstává jeden soubor: pro testy, pro `SOUBORY` v `sw.js`
-i pro nahrávání přes GitHub web UI se nemění nic.
+modulární a výstup zůstává jeden soubor — pro testy i pro `SOUBORY`
+v `sw.js` se tím nemění nic.
 
 ### Značky v `src/`
 
@@ -89,9 +89,10 @@ src/
     ui/                 18 modulů, viz níž
 ```
 
-Nasazuje se **kořen repa**, žádné podsložky: `index.html`,
-`manifest.webmanifest`, `sw.js`, pět obrázků. `src/`, `Testy/` a `docs/`
-v nasazeném repu nejsou.
+**Servíruje se kořen repa:** `index.html`, `manifest.webmanifest`, `sw.js`
+a pět obrázků. `src/`, `Testy/`, `docs/` a `nastroje/` jsou v repu taky —
+GitHub je tím i zálohou zdroje a historie — jen je nikdo nenačítá.
+`node_modules/` v repu není.
 
 ### Vrstvy a jediné pravidlo
 
