@@ -1,17 +1,20 @@
 {
-  "name": "farkle-audit",
+  "name": "kostky",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "description": "Farkle počítadlo — zdroj v src/, nasazuje se složený index.html",
+  "private": true,
   "type": "commonjs",
+  "scripts": {
+    "build": "node build.mjs",
+    "kontrola": "node build.mjs --kontrola",
+    "test": "node build.mjs --kontrola && node Testy/vse.mjs",
+    "test:rychle": "node Testy/vse.mjs"
+  },
   "dependencies": {
     "fake-indexeddb": "^6.2.5",
     "jsdom": "^30.0.1"
+  },
+  "devDependencies": {
+    "esbuild": "^0.25.0"
   }
 }
