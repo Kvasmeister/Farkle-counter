@@ -24,6 +24,7 @@
       <li data-i18n-html="navod.kolo.li1"><b>Házet dál</b> — otevře nový hod a v popisku ukazuje, kolika kostkami. Po odložení všech šesti nabídne horké kostky a hází se znovu všemi.</li>
       <li data-i18n-html="navod.kolo.li2"><b>Zapsat</b> — převede body ze stolu do skóre a otevře nové kolo.</li>
       <li data-i18n-html="navod.kolo.li3"><b>Farkle</b> — body na stole propadnou a v zápise zůstane kolo s nulou.</li>
+      <li data-i18n-html="navod.kolo.li4"><b>Riziko</b> — číslo přímo v tlačítku Farkle (třeba „Farkle 3,1 %“) ukazuje pravděpodobnost, že další hod nedá nic bodujícího. Přepočítá se po každém hodu podle toho, kolik kostek zbývá.</li>
     </ul>
 
     <h3 data-i18n="navod.klavesnice.h">Klávesnice</h3>
@@ -40,15 +41,16 @@
 
     <h3 data-i18n="navod.rezimy.h">Herní režimy</h3>
     <p data-i18n-html="navod.rezimy.p1">Farkle se hraje v několika verzích a každá boduje jinak. <b>Herní režim</b> v nastavení drží celou tabulku: kolika kostkami se hází, kolik platí jednička, pětka a jednotlivé trojice, co dělá čtvrtá a další stejná kostka, které postupky bodují a jaké kombinace navíc jsou zapnuté. Přednastavené jsou tři — <i>KCD</i>, <i>Klasické kostky</i> a <i>Pět kostek</i>; vlastních jde přidat dvacet a každý se dá předělat celý.</p>
-    <p data-i18n-html="navod.rezimy.p2">Tlačítko <b>Pravidla</b> u režimu ukáže jeho tabulku, <b>Upravit</b> otevře jeho nastavení a <b>Zvolit režim</b> ho postaví do hry. Kombinace navíc i vlastní vzory patří vždycky jednomu režimu, ne aplikaci — přepnutím režimu se tedy vymění i ony.</p>
-    <p data-i18n-html="navod.rezimy.p3">Přepnout režim jde jen tehdy, když není co rozehrané: kolo zapsané podle jedněch pravidel a další podle jiných by dalo skóre, které nic neznamená. Rozehranou hru proto nejdřív dohraj a začni <b>Novou hrou</b>. Každá hra si režim odnese do historie a statistika <i>Nejhranější režim</i> počítá, čeho je nejvíc.</p>
+    <p data-i18n-html="navod.rezimy.p2">Tlačítko <b>Pravidla</b> u režimu ukáže jeho tabulku, <b>Upravit</b> otevře jeho nastavení a <b>Zvolit režim</b> ho postaví do hry. Kombinace navíc i vlastní vzory patří vždycky jednomu režimu, ne aplikaci — přepnutím režimu se tedy vymění i ony. Při úpravě režimu je dole vidět pás rizika farklu pro každý počet zbývajících kostek — pomůže poznat, jestli upravená pravidla dávají smysl.</p>
+    <p data-i18n-html="navod.rezimy.p3">Přepnout režim jde jen tehdy, když není nic rozehrané: kolo zapsané podle jedněch pravidel a další podle jiných by dalo skóre, které nic neznamená. Rozehranou hru proto nejdřív dohraj a začni <b>Novou hrou</b>. Každá hra si režim odnese do historie a statistika <i>Nejhranější režim</i> počítá, čeho je nejvíc.</p>
+    <p data-i18n-html="navod.rezimy.p4">Jednotlivé režimy jde poslat i mimo zálohu: tlačítko <b>Sdílet vybrané</b> pošle vybrané režimy jako text (uložit do souboru nebo zkopírovat do schránky), tlačítko <b>Importovat</b> takový text načte zpátky ze souboru nebo ze schránky. Sdílený režim se vždycky založí jako nový vlastní režim — pokud je s existujícím totožný, import ho přeskočí; pokud se jen jmenuje stejně, přejmenuje ho.</p>
 
     <h3 data-i18n="navod.stranky.h">Tři stránky</h3>
     <p data-i18n="navod.stranky.p">Záložky nahoře a swipenutí do stran přepínají mezi:</p>
     <ul>
       <li data-i18n-html="navod.stranky.li1"><b>Počítadlo</b> — skóre a hraní.</li>
       <li data-i18n-html="navod.stranky.li2"><b>Zápis kol</b> — čtyři statistiky a tabulka kol, Nová hra a Zapsat do historie.</li>
-      <li data-i18n-html="navod.stranky.li3"><b>Statistiky</b> — přepínač mezi rekordy a seznamem dohraných her. Rekord se rozklikne na žebříček, hra na svůj detail.</li>
+      <li data-i18n-html="navod.stranky.li3"><b>Statistiky</b> — přepínač mezi rekordy a seznamem dohraných her. Rekord se rozklikne na žebříček, hra na svůj detail. V seznamu her jde navíc filtrovat podle data (a podle typu hry, pokud jsou v historii oba) a měnit řazení; tlačítko <b>Reset</b> vrátí filtry i řazení do výchozího stavu.</li>
     </ul>
 
     <h3 data-i18n="navod.historie.h">Historie</h3>
@@ -61,9 +63,12 @@
     <p data-i18n-html="navod.kos.p2">Když hra ještě není v historii, <b>Nová hra</b> se po potvrzení zeptá ještě jednou a nabídne ji rovnou uložit.</p>
 
     <h3 data-i18n="navod.zaloha.h">Záloha</h3>
-    <p data-i18n-html="navod.zaloha.p">Data jsou uložená jen v tomto prohlížeči. <b>Export do souboru</b> vytvoří textový soubor s přehledem her, jehož poslední řádek nese data pro import — bez něj se soubor načíst nedá. <b>Zkopírovat do schránky</b> dává stejný obsah bez stahování. <b>Import ze souboru</b> i <b>Import ze schránky</b> nabídnou volbu mezi přidáním nových her a nahrazením celé historie.</p>
+    <p data-i18n-html="navod.zaloha.p1">Data jsou uložená jen v tomto prohlížeči. <b>Export do souboru</b> vytvoří textový soubor s přehledem her, jehož poslední řádek nese data pro import — bez něj se soubor načíst nedá. <b>Zkopírovat do schránky</b> dává stejný obsah bez stahování. <b>Import ze souboru</b> i <b>Import ze schránky</b> nabídnou volbu mezi přidáním nových her a nahrazením celé historie.</p>
+    <p data-i18n-html="navod.zaloha.p2"><b>Kompletní záloha</b> zálohuje historii i všechny herní režimy najednou, jedním souborem. <b>Záloha herních režimů</b> zálohuje jen režimy, bez historie. Obě fungují stejně jako záloha historie — soubor nebo schránka, přidat nebo <b>Nahradit vše</b> — ale nahradit režimy jde jen tehdy, když není rozehraná hra, protože ta pravidla čte za běhu. Poslat jen pár vybraných režimů jinam jde samostatně — popsáno výše u Herních režimů.</p>
+    <p data-i18n-html="navod.zaloha.p3">Dole v nastavení je vidět <b>Zabrané místo</b>: kolik dat aplikace na zařízení zabírá. Po rozkliknutí (<b>Detail</b>) zvlášť za historii, rozehranou hru, oba koše a zbylá nastavení, i celkem za celou adresu — tam se počítá i to, co s Farklem nesouvisí. Číslo se počítá jen na vyžádání, ne pořád.</p>
 
     <h3 data-i18n="navod.drobnosti.h">Drobnosti</h3>
+    <p data-i18n-html="navod.drobnosti.p0"><b>Jazyk</b> nahoře v nastavení přepíná rozhraní mezi češtinou a angličtinou, hned bez restartu aplikace.</p>
     <p data-i18n-html="navod.drobnosti.p">Ikona vpravo nahoře přepíná světlý a tmavý vzhled. <b>Celá obrazovka</b> v nastavení schová lišty prohlížeče; na iPhonu chybí, Safari to neumí. <b>Nezhasínat displej</b> tamtéž drží obrazovku rozsvícenou, dokud se hraje; po třech minutách bez doteku se pustí a telefon zhasne jako obvykle. Aplikace běží offline a dá se přidat na plochu.</p>
   </div>
     </div>

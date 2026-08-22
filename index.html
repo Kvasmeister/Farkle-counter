@@ -1112,6 +1112,7 @@
       <li data-i18n-html="navod.kolo.li1"><b>Házet dál</b> — otevře nový hod a v popisku ukazuje, kolika kostkami. Po odložení všech šesti nabídne horké kostky a hází se znovu všemi.</li>
       <li data-i18n-html="navod.kolo.li2"><b>Zapsat</b> — převede body ze stolu do skóre a otevře nové kolo.</li>
       <li data-i18n-html="navod.kolo.li3"><b>Farkle</b> — body na stole propadnou a v zápise zůstane kolo s nulou.</li>
+      <li data-i18n-html="navod.kolo.li4"><b>Riziko</b> — číslo přímo v tlačítku Farkle (třeba „Farkle 3,1 %“) ukazuje pravděpodobnost, že další hod nedá nic bodujícího. Přepočítá se po každém hodu podle toho, kolik kostek zbývá.</li>
     </ul>
 
     <h3 data-i18n="navod.klavesnice.h">Klávesnice</h3>
@@ -1128,15 +1129,16 @@
 
     <h3 data-i18n="navod.rezimy.h">Herní režimy</h3>
     <p data-i18n-html="navod.rezimy.p1">Farkle se hraje v několika verzích a každá boduje jinak. <b>Herní režim</b> v nastavení drží celou tabulku: kolika kostkami se hází, kolik platí jednička, pětka a jednotlivé trojice, co dělá čtvrtá a další stejná kostka, které postupky bodují a jaké kombinace navíc jsou zapnuté. Přednastavené jsou tři — <i>KCD</i>, <i>Klasické kostky</i> a <i>Pět kostek</i>; vlastních jde přidat dvacet a každý se dá předělat celý.</p>
-    <p data-i18n-html="navod.rezimy.p2">Tlačítko <b>Pravidla</b> u režimu ukáže jeho tabulku, <b>Upravit</b> otevře jeho nastavení a <b>Zvolit režim</b> ho postaví do hry. Kombinace navíc i vlastní vzory patří vždycky jednomu režimu, ne aplikaci — přepnutím režimu se tedy vymění i ony.</p>
-    <p data-i18n-html="navod.rezimy.p3">Přepnout režim jde jen tehdy, když není co rozehrané: kolo zapsané podle jedněch pravidel a další podle jiných by dalo skóre, které nic neznamená. Rozehranou hru proto nejdřív dohraj a začni <b>Novou hrou</b>. Každá hra si režim odnese do historie a statistika <i>Nejhranější režim</i> počítá, čeho je nejvíc.</p>
+    <p data-i18n-html="navod.rezimy.p2">Tlačítko <b>Pravidla</b> u režimu ukáže jeho tabulku, <b>Upravit</b> otevře jeho nastavení a <b>Zvolit režim</b> ho postaví do hry. Kombinace navíc i vlastní vzory patří vždycky jednomu režimu, ne aplikaci — přepnutím režimu se tedy vymění i ony. Při úpravě režimu je dole vidět pás rizika farklu pro každý počet zbývajících kostek — pomůže poznat, jestli upravená pravidla dávají smysl.</p>
+    <p data-i18n-html="navod.rezimy.p3">Přepnout režim jde jen tehdy, když není nic rozehrané: kolo zapsané podle jedněch pravidel a další podle jiných by dalo skóre, které nic neznamená. Rozehranou hru proto nejdřív dohraj a začni <b>Novou hrou</b>. Každá hra si režim odnese do historie a statistika <i>Nejhranější režim</i> počítá, čeho je nejvíc.</p>
+    <p data-i18n-html="navod.rezimy.p4">Jednotlivé režimy jde poslat i mimo zálohu: tlačítko <b>Sdílet vybrané</b> pošle vybrané režimy jako text (uložit do souboru nebo zkopírovat do schránky), tlačítko <b>Importovat</b> takový text načte zpátky ze souboru nebo ze schránky. Sdílený režim se vždycky založí jako nový vlastní režim — pokud je s existujícím totožný, import ho přeskočí; pokud se jen jmenuje stejně, přejmenuje ho.</p>
 
     <h3 data-i18n="navod.stranky.h">Tři stránky</h3>
     <p data-i18n="navod.stranky.p">Záložky nahoře a swipenutí do stran přepínají mezi:</p>
     <ul>
       <li data-i18n-html="navod.stranky.li1"><b>Počítadlo</b> — skóre a hraní.</li>
       <li data-i18n-html="navod.stranky.li2"><b>Zápis kol</b> — čtyři statistiky a tabulka kol, Nová hra a Zapsat do historie.</li>
-      <li data-i18n-html="navod.stranky.li3"><b>Statistiky</b> — přepínač mezi rekordy a seznamem dohraných her. Rekord se rozklikne na žebříček, hra na svůj detail.</li>
+      <li data-i18n-html="navod.stranky.li3"><b>Statistiky</b> — přepínač mezi rekordy a seznamem dohraných her. Rekord se rozklikne na žebříček, hra na svůj detail. V seznamu her jde navíc filtrovat podle data (a podle typu hry, pokud jsou v historii oba) a měnit řazení; tlačítko <b>Reset</b> vrátí filtry i řazení do výchozího stavu.</li>
     </ul>
 
     <h3 data-i18n="navod.historie.h">Historie</h3>
@@ -1149,9 +1151,12 @@
     <p data-i18n-html="navod.kos.p2">Když hra ještě není v historii, <b>Nová hra</b> se po potvrzení zeptá ještě jednou a nabídne ji rovnou uložit.</p>
 
     <h3 data-i18n="navod.zaloha.h">Záloha</h3>
-    <p data-i18n-html="navod.zaloha.p">Data jsou uložená jen v tomto prohlížeči. <b>Export do souboru</b> vytvoří textový soubor s přehledem her, jehož poslední řádek nese data pro import — bez něj se soubor načíst nedá. <b>Zkopírovat do schránky</b> dává stejný obsah bez stahování. <b>Import ze souboru</b> i <b>Import ze schránky</b> nabídnou volbu mezi přidáním nových her a nahrazením celé historie.</p>
+    <p data-i18n-html="navod.zaloha.p1">Data jsou uložená jen v tomto prohlížeči. <b>Export do souboru</b> vytvoří textový soubor s přehledem her, jehož poslední řádek nese data pro import — bez něj se soubor načíst nedá. <b>Zkopírovat do schránky</b> dává stejný obsah bez stahování. <b>Import ze souboru</b> i <b>Import ze schránky</b> nabídnou volbu mezi přidáním nových her a nahrazením celé historie.</p>
+    <p data-i18n-html="navod.zaloha.p2"><b>Kompletní záloha</b> zálohuje historii i všechny herní režimy najednou, jedním souborem. <b>Záloha herních režimů</b> zálohuje jen režimy, bez historie. Obě fungují stejně jako záloha historie — soubor nebo schránka, přidat nebo <b>Nahradit vše</b> — ale nahradit režimy jde jen tehdy, když není rozehraná hra, protože ta pravidla čte za běhu. Poslat jen pár vybraných režimů jinam jde samostatně — popsáno výše u Herních režimů.</p>
+    <p data-i18n-html="navod.zaloha.p3">Dole v nastavení je vidět <b>Zabrané místo</b>: kolik dat aplikace na zařízení zabírá. Po rozkliknutí (<b>Detail</b>) zvlášť za historii, rozehranou hru, oba koše a zbylá nastavení, i celkem za celou adresu — tam se počítá i to, co s Farklem nesouvisí. Číslo se počítá jen na vyžádání, ne pořád.</p>
 
     <h3 data-i18n="navod.drobnosti.h">Drobnosti</h3>
+    <p data-i18n-html="navod.drobnosti.p0"><b>Jazyk</b> nahoře v nastavení přepíná rozhraní mezi češtinou a angličtinou, hned bez restartu aplikace.</p>
     <p data-i18n-html="navod.drobnosti.p">Ikona vpravo nahoře přepíná světlý a tmavý vzhled. <b>Celá obrazovka</b> v nastavení schová lišty prohlížeče; na iPhonu chybí, Safari to neumí. <b>Nezhasínat displej</b> tamtéž drží obrazovku rozsvícenou, dokud se hraje; po třech minutách bez doteku se pustí a telefon zhasne jako obvykle. Aplikace běží offline a dá se přidat na plochu.</p>
   </div>
     </div>
@@ -2201,6 +2206,7 @@
     "navod.kolo.li1": "<b>Keep rolling</b> — opens a new roll and its label says how many dice with. Once all six are set aside, it offers hot dice and you roll all six again.",
     "navod.kolo.li2": "<b>Bank</b> — moves the points from the table into the score and opens a new turn.",
     "navod.kolo.li3": "<b>Farkle</b> — the points on the table are lost and the log keeps a turn worth zero.",
+    "navod.kolo.li4": "<b>Risk</b> — the number shown right on the Farkle button (e.g. “Farkle 3.1%”) is the chance that the next roll scores nothing. It’s recalculated after every roll, based on how many dice are left.",
     "navod.klavesnice.h": "Keypad",
     "navod.klavesnice.p": "<b>single 1</b> and <b>single 5</b> add one die at a time. <b>Matching values</b> take the count in the first row and the value in the second; the button on the right shows the result and adds it. <b>Straights</b> are three fixed combinations. <b>manual</b> opens a field for points and arrows for the number of dice.",
     "navod.klavesnice.pozn": "Combinations that don’t fit into the remaining dice are greyed out.",
@@ -2212,13 +2218,14 @@
     "navod.hra.p": "The dice icon opens the panel with the mode and the target, even in the middle of a game. <b>To points</b> plays to 2,000 up to 10,000 or to a number of your own, and the second row of the score shows how much is left. The turn that crosses the target counts in full; once it is banked, the game is over. <b>By turns</b> only counts turns; an optional limit locks the game after the last one, without a limit the game never ends by itself.",
     "navod.rezimy.h": "Game modes",
     "navod.rezimy.p1": "Farkle is played in several versions and each one scores differently. The <b>game mode</b> in the settings holds the whole table: how many dice you roll, what a single 1, a single 5 and each three of a kind are worth, what the fourth and further matching dice do, which straights score and which extra combinations are on. Three come ready-made — <i>KCD</i>, <i>Classic farkle</i> and <i>Five dice</i>; you can add twenty of your own and rebuild any of them completely.",
-    "navod.rezimy.p2": "<b>Rules</b> next to a mode shows its table, <b>Edit</b> opens its settings and <b>Use this mode</b> puts it into play. Extra combinations and custom patterns always belong to one mode, not to the app — switching modes swaps them too.",
+    "navod.rezimy.p2": "<b>Rules</b> next to a mode shows its table, <b>Edit</b> opens its settings and <b>Use this mode</b> puts it into play. Extra combinations and custom patterns always belong to one mode, not to the app — switching modes swaps them too. While editing a mode, a bust-risk band for every remaining-dice count is shown at the bottom — it helps judge whether the edited rules make sense.",
     "navod.rezimy.p3": "The mode can only be switched with nothing in progress: one turn scored under one set of rules and the next under another would add up to nothing meaningful. So finish the game in progress and start a <b>New game</b>. Every game carries its mode into the history, and the <i>Most played mode</i> statistic counts which one wins.",
+    "navod.rezimy.p4": "Individual modes can also be sent outside a backup: <b>Share selected</b> sends the chosen modes as text (save to a file or copy it to the clipboard), <b>Import</b> reads such text back from a file or the clipboard. A shared mode is always created as a new custom mode — if it’s identical to an existing one, the import skips it; if only the name collides, it renames it.",
     "navod.stranky.h": "Three pages",
     "navod.stranky.p": "The tabs at the top and a swipe sideways switch between:",
     "navod.stranky.li1": "<b>Counter</b> — the score and the playing.",
     "navod.stranky.li2": "<b>Turn log</b> — four figures and the table of turns, New game and Save to history.",
-    "navod.stranky.li3": "<b>Statistics</b> — a switch between the records and the list of finished games. A record opens into a leaderboard, a game into its detail.",
+    "navod.stranky.li3": "<b>Statistics</b> — a switch between the records and the list of finished games. A record opens into a leaderboard, a game into its detail. The game list can also be filtered by date (and by game type, if history has more than one) and sorted; <b>Reset</b> returns filters and sorting to their defaults.",
     "navod.historie.h": "History",
     "navod.historie.p1": "The statistics come only from games in history; a game you don’t save leaves no mark on the records.",
     "navod.historie.p2": "<b>Save to history</b> asks for a second tap only when there are unbanked points on the table. Once saved it turns into <b>Saved to history</b>, and after more play into <b>Update in history</b>, which overwrites the same record instead of starting a new one. If that game gets deleted from history in the meantime, the button offers <b>Restore to history</b> — it brings the same record back from the trash, so a game is never written down twice.",
@@ -2227,8 +2234,11 @@
     "navod.kos.p1": "<b>New game</b> puts the deleted game into the settings, into <i>Deleted games in progress</i> — the last five are kept. <b>Delete from history</b> puts the game into <i>Games deleted from history</i>, where ten of them stay. In both sections the <i>Restore</i> button brings a game back; <i>Delete permanently</i> throws it away for good once confirmed.",
     "navod.kos.p2": "When a game isn’t in history yet, <b>New game</b> asks once more after the confirmation and offers to save it right away.",
     "navod.zaloha.h": "Backup",
-    "navod.zaloha.p": "The data lives only in this browser. <b>Export to file</b> makes a text file with an overview of the games whose last line carries the data for the import — without it the file can’t be read back. <b>Copy to clipboard</b> gives the same content without downloading. Both <b>Import from file</b> and <b>Import from clipboard</b> offer a choice between adding the new games and replacing the whole history.",
+    "navod.zaloha.p1": "The data lives only in this browser. <b>Export to file</b> makes a text file with an overview of the games whose last line carries the data for the import — without it the file can’t be read back. <b>Copy to clipboard</b> gives the same content without downloading. Both <b>Import from file</b> and <b>Import from clipboard</b> offer a choice between adding the new games and replacing the whole history.",
+    "navod.zaloha.p2": "<b>Complete backup</b> backs up history and all game modes together, in one file. <b>Game modes backup</b> backs up just the modes, without history. Both work like the history backup — file or clipboard, add or <b>Replace all</b> — but replacing modes only works when no game is in progress, since the active game reads rules from them live. Sending just a few chosen modes elsewhere is separate — described above under Game modes.",
+    "navod.zaloha.p3": "Settings also show <b>Space used</b> at the bottom: how much data the app takes up on the device. Expanding it (<b>Detail</b>) breaks it down into history, the in-progress game, both trash bins, and remaining settings, plus a total for the whole address — which also counts anything unrelated to Farkle. The number is computed only on request, not continuously.",
     "navod.drobnosti.h": "Odds and ends",
+    "navod.drobnosti.p0": "<b>Language</b>, at the top of settings, switches the interface between Czech and English instantly, without restarting the app.",
     "navod.drobnosti.p": "The icon in the top right switches the light and dark look. <b>Full screen</b> in the settings hides the browser bars; on an iPhone it isn’t there, Safari can’t do it. <b>Keep screen on</b> in the same place holds the screen lit while the game runs; after three minutes without a touch it lets go and the phone goes dark as usual. The app works offline and can be added to the home screen.",
     /* nastavení */
     "nast.nadpis": "Settings",
