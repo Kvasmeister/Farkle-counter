@@ -4,14 +4,36 @@
 
    Sdílet a Importovat jsou dvě tlačítka v patičce okna (#rezakcpruh,
    viz okno-nastaveni.html a nastaveni.css u .rizpruh pro důvod, proč
-   patička, ne sticky prvek uvnitř .modalbody). Výběr, které režimy jít
-   sdílet, se neděje v samostatném seznamu — přímo v hlavním #rezrows:
-   zapniVyberRezimu() přepne rezRadek() na jedno výběrové tlačítko na
-   řádek (viz ui/nastaveni-rezimy.js), lišta dole se zároveň přepne na
-   Uložit/Kopírovat/Zrušit. Dokončení i zrušení výběru vrátí obojí zpátky.
+   patička, ne sticky prvek uvnitř .modalbody). Lišta má tři vzájemně
+   skrývané řádky (#rezakcnormal/#rezakcvyber/#rezakcimpvolba) — který je
+   vidět, řídí `prekresliBar()` podle dvou příznaků: `vyberRezimuZap`
+   (vlastní nastaveni-rezimy.js, viz níž) a `impVolbaZap` (vlastní tenhle
+   modul, protože import se seznamu vůbec netýká). Obě akce se vzájemně
+   vylučují — otevření jedné zavře druhou.
+
+   Výběr, které režimy jít sdílet, se neděje v samostatném seznamu — přímo
+   v hlavním #rezrows: zapniVyberRezimu() přepne rezRadek() na jedno
+   výběrové tlačítko na řádek (viz ui/nastaveni-rezimy.js). Dokončení
+   i zrušení výběru vrátí řádky i lištu zpátky.
+
+   Volba u importu (Vybrat soubor / Vložit text) sedí v liště stejně jako
+   Uložit/Kopírovat u sdílení. Vkládací pole (#rezimppastedock) je ale
+   textarea, která do úzké lišty nesedí — dokuje se jako vlastní prvek
+   pružného sloupce hned nad lištou, přes celou šířku okna, ze stejného
+   důvodu jako lišta a pás rizika (sticky v .modalbody nedosáhne na
+   skutečnou hranu okna). Náhled výsledků importu (#rezimppreview) zůstává
+   v seznamu beze změny — má být vidět víc řádků a scrolluje se s ním.
+
+   Hlášky (úspěch i chyby) jdou přes toast() z ui/autoulozeni.js — obecný
+   zavíratelný popup appky — místo řádkové zprávy vedle tlačítka, která by
+   viděla jen do zavření celého okna nastavení. Dvě čistě informační
+   hlášky (úspěšné stažení, úspěšný import) jsou pryč úplně — zbytek
+   (chyby, prázdný výběr, „nic k importu") popup dostal.
 
    Závisí na: pravidla/rezimy, spolecne, text/format, ui/zaloha (stavební
-              bloky), ui/nastaveni-rezimy — renderRezimy (obnova seznamu po
+              bloky, datumCasProNazev — čas navíc jen tady, ostatní exporty
+              zůstávají u obyčejného datumProNazev), ui/autoulozeni (toast),
+              ui/nastaveni-rezimy — renderRezimy (obnova seznamu po
               importu) a čtveřice vyberRezimuZap/vybraneRezimy/
               zapniVyberRezimu/vypniVyberRezimu, která tvoří stav výběru.
               Ten stav bydlí v nastaveni-rezimy.js, ne tady: ten modul kreslí
@@ -46,6 +68,7 @@ import {
 } from "../pravidla/rezimy.js";
 import { NAZEV_MAX, newId } from "../spolecne.js";
 import { dt, dtDen } from "../text/format.js";
+import { toast } from "./autoulozeni.js";
 import {
   renderRezimy,
   vybraneRezimy,
@@ -54,35 +77,28 @@ import {
   vypniVyberRezimu
 } from "./nastaveni-rezimy.js";
 import { $ } from "./prvky.js";
-import { datumProNazev, doSchranky, stahni } from "./zaloha.js";
+import { datumCasProNazev, doSchranky, stahni } from "./zaloha.js";
 
 var ZNACKA_SDIL = "#SDILENIREZIMU:";
 
-var elAkcNormal = $("rezakcnormal"), elAkcVyber = $("rezakcvyber"), elAkcMsg = $("rezakczprava");
-var elImpBox = $("rezimpbox"), elImpFile = $("rezimpfile");
-var elImpPasteBox = $("rezimppastebox"), elImpPasteArea = $("rezimppastearea");
-var elImpPreview = $("rezimppreview"), elImpPreviewRows = $("rezimppreviewrows"), elImpMsg = $("rezimpzprava");
+var elAkcNormal = $("rezakcnormal"), elAkcVyber = $("rezakcvyber"), elAkcImpVolba = $("rezakcimpvolba");
+var elPasteDock = $("rezimppastedock"), elImpPasteArea = $("rezimppastearea");
+var elImpFile = $("rezimpfile");
+var elImpPreview = $("rezimppreview"), elImpPreviewRows = $("rezimppreviewrows");
 
+/* Je otevřená volba Vybrat soubor/Vložit text. Na rozdíl od
+   vyberRezimuZap se seznamu netýká, žije proto jen tady. */
+var impVolbaZap = false;
 var nacteneKandidati = null;
 
-function zalMsgSdil(text, spatne){
-  elAkcMsg.hidden = !text;
-  elAkcMsg.textContent = text || "";
-  elAkcMsg.classList.toggle("bad", !!spatne);
-}
-function zalMsgImp(text, spatne){
-  elImpMsg.hidden = !text;
-  elImpMsg.textContent = text || "";
-  elImpMsg.classList.toggle("bad", !!spatne);
-}
-
 /* ---------- Sdílet ---------- */
-/* Který ze dvou řádků lišty je vidět. Import a výběr ke sdílení se
-   vzájemně vylučují (viz posluchače níž), takže tahle dvojice nikdy
-   nepotřebuje třetí, „oba schované" stav mimo renderSdileniRezimu(). */
+/* Který ze tří řádků lišty je vidět. Sdílení a import se vzájemně
+   vylučují (viz posluchače níž), takže tahle trojice nikdy nepotřebuje
+   „všechny schované" stav mimo renderSdileniRezimu(). */
 function prekresliBar(){
-  elAkcNormal.hidden = vyberRezimuZap;
+  elAkcNormal.hidden = vyberRezimuZap || impVolbaZap;
   elAkcVyber.hidden = !vyberRezimuZap;
+  elAkcImpVolba.hidden = !impVolbaZap;
 }
 function sestavVyber(){
   return REZIMY.sez.filter(function(rez){ return vybraneRezimy[rez.id]; });
@@ -148,38 +164,37 @@ function renderNahled(vysledky){
 }
 function zpracujText(text, zdroj){
   var i = String(text || "").lastIndexOf(ZNACKA_SDIL);
-  if(i < 0){ zalMsgImp(t("zal.nerozumim." + zdroj), true); return; }
+  if(i < 0){ toast(t("zal.nerozumim." + zdroj), true); return; }
   var radek = text.slice(i + ZNACKA_SDIL.length).split("\n")[0].trim();
   var d;
   try{ d = JSON.parse(radek); }catch(e){ d = null; }
-  if(!Array.isArray(d) || !d.length){ zalMsgImp(t("zal.prazdno." + zdroj), true); return; }
+  if(!Array.isArray(d) || !d.length){ toast(t("zal.prazdno." + zdroj), true); return; }
   nacteneKandidati = zpracujKandidaty(d);
   renderNahled(nacteneKandidati);
   zavriImpVlozeni();
+  /* Volba (soubor/schránka) skončila úspěchem, lišta se vrací do normálu —
+     dál rozhoduje náhled se svými vlastními Importovat vybrané/Zrušit. */
+  impVolbaZap = false; prekresliBar();
   elImpPreview.hidden = false;
-  zalMsgImp("");
 }
 function zavriImpVlozeni(){
-  elImpPasteBox.hidden = true;
+  elPasteDock.hidden = true;
   elImpPasteArea.value = "";
 }
 function zavriImpNahled(){
   elImpPreview.hidden = true;
   nacteneKandidati = null;
 }
-function zavriImp(){
-  elImpBox.hidden = true;
+function zavriImpVolba(){
+  impVolbaZap = false;
   zavriImpVlozeni();
   zavriImpNahled();
-  $("rezakcimp").classList.remove("on");
 }
 
 function renderSdileniRezimu(){
   if(vyberRezimuZap) vypniVyberRezimu();
-  zalMsgSdil("");
+  zavriImpVolba();
   prekresliBar();
-  zalMsgImp("");
-  zavriImp();
 }
 
 /* Vedlejší efekty. Volá je hlavni.js na místě, kde je vidět celé pořadí startu. */
@@ -187,49 +202,42 @@ export function initSdileniRezimu(){
   prekresliBar();
 
   $("rezakcsdil").addEventListener("click", function(){
-    zavriImp();   // vzájemné vyloučení — obě akce sdílejí dvou-/tříslotovou lištu
+    zavriImpVolba();   // vzájemné vyloučení — obě akce sdílejí lištu
     zapniVyberRezimu();
-    zalMsgSdil("");
     prekresliBar();
   });
   $("rezakczrusit").addEventListener("click", function(){
     vypniVyberRezimu();
-    zalMsgSdil("");
     prekresliBar();
   });
   $("rezakcstahni").addEventListener("click", function(){
     var sez = sestavVyber();
-    if(!sez.length){ zalMsgSdil(t("rezim.sdil.vyber"), true); return; }
+    if(!sez.length){ toast(t("rezim.sdil.vyber"), true); return; }
     var text = exportTextSdileni(sez);
-    var ok = stahni("farkle-rezimy-sdileni-" + datumProNazev() + ".txt", text);
-    zalMsgSdil(t(ok ? "zal.ukladase" : "zal.stazenineslo"), !ok);
-    if(ok){ vypniVyberRezimu(); prekresliBar(); }
+    var ok = stahni("farkle-rezimy-sdileni-" + datumCasProNazev() + ".txt", text);
+    if(!ok){ toast(t("zal.stazenineslo"), true); return; }
+    vypniVyberRezimu(); prekresliBar();
   });
   $("rezakckopie").addEventListener("click", function(){
     var sez = sestavVyber();
-    if(!sez.length){ zalMsgSdil(t("rezim.sdil.vyber"), true); return; }
+    if(!sez.length){ toast(t("rezim.sdil.vyber"), true); return; }
     var text = exportTextSdileni(sez);
     doSchranky(text, function(ok){
-      zalMsgSdil(t(ok ? "zal.veschrance" : "zal.schrankaneslo"), !ok);
+      toast(t(ok ? "zal.veschrance" : "zal.schrankaneslo"), !ok);
       if(ok){ vypniVyberRezimu(); prekresliBar(); }
     });
   });
 
-  /* Přepínač jako #reznadinfo v nastaveni-rezimy.js: druhé kliknutí zavře,
-     co první otevřelo. Dřív tenhle knoflík jen otevíral a zavřít šlo jen
-     vnitřním tlačítkem Zrušit. */
   $("rezakcimp").addEventListener("click", function(){
-    if(elImpBox.hidden){
-      if(vyberRezimuZap){ vypniVyberRezimu(); prekresliBar(); }   // vzájemné vyloučení
-      zalMsgImp("");
-      elImpBox.hidden = false;
-      $("rezakcimp").classList.add("on");
-    } else {
-      zavriImp();
-    }
+    if(vyberRezimuZap) vypniVyberRezimu();   // vzájemné vyloučení
+    impVolbaZap = true;
+    prekresliBar();
   });
-  $("rezimpfilebtn").addEventListener("click", function(){
-    zalMsgImp("");
+  $("rezimpvolbazrusit").addEventListener("click", function(){
+    zavriImpVolba();
+    prekresliBar();
+  });
+  $("rezimpsoubor").addEventListener("click", function(){
     elImpFile.value = "";
     elImpFile.click();
   });
@@ -238,24 +246,20 @@ export function initSdileniRezimu(){
     if(!f) return;
     var fr = new FileReader();
     fr.onload = function(){ zpracujText(fr.result, "soubor"); };
-    fr.onerror = function(){ zalMsgImp(t("zal.souborneslo"), true); };
+    fr.onerror = function(){ toast(t("zal.souborneslo"), true); };
     fr.readAsText(f, "utf-8");
   });
-  $("rezimppastebtn").addEventListener("click", function(){
-    zalMsgImp("");
-    elImpPasteBox.hidden = false;
+  $("rezimptext").addEventListener("click", function(){
+    elPasteDock.hidden = false;
     elImpPasteArea.focus();
   });
-  $("rezimppastecancel").addEventListener("click", function(){
-    zavriImpVlozeni();
-    zalMsgImp("");
-  });
+  $("rezimppastecancel").addEventListener("click", zavriImpVlozeni);
   $("rezimppasteload").addEventListener("click", function(){
     var text = elImpPasteArea.value;
-    if(!text.trim()){ zalMsgImp(t("zal.poleprazdne"), true); return; }
+    if(!text.trim()){ toast(t("zal.poleprazdne"), true); return; }
     zpracujText(text, "text");
   });
-  $("rezimpzrusit").addEventListener("click", zavriImp);
+  $("rezimpzrusit").addEventListener("click", zavriImpNahled);
   $("rezimppotvrdit").addEventListener("click", function(){
     if(!nacteneKandidati) return;
     var pridano = 0;
@@ -263,9 +267,9 @@ export function initSdileniRezimu(){
       if(v.prijme){ REZIMY.sez.push(v.rez); pridano++; }
     });
     if(pridano) ulozRezimy();
-    zavriImp();
+    zavriImpNahled();
     renderRezimy();
-    zalMsgImp(pridano ? tn("rezim.pridano", pridano) : t("rezim.imp.nic"), !pridano);
+    if(!pridano) toast(t("rezim.imp.nic"), true);
   });
 }
 

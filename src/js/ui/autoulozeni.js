@@ -10,7 +10,12 @@
 
    Okénko sedí na švu mezi hlavičkou a kartami. Šev se posouvá, když je
    rozbalené nastavení hry, takže top dopočítává umistiToast() při každém
-   zobrazení; bez layoutu (jsdom) měření tiše propadne. */
+   zobrazení; bez layoutu (jsdom) měření tiše propadne.
+
+   toast()/schovejToast() jsou obecné — druhý volající je
+   ui/sdileni-rezimu.js, který přes ně hlásí i chyby (druhý parametr
+   `spatne` přepne popup na červenou variantu, stejně jako `.msg.bad`
+   u řádkových hlášek jinde v appce). */
 import { locked } from "../akce.js";
 import { t } from "../jazyky/jadro.js";
 import { S, gameEmpty, save } from "../stav/stav.js";
@@ -45,10 +50,11 @@ function umistiToast(el){
   if(b <= 0) return;
   el.style.top = Math.round((a + b) / 2) + "px";
 }
-function toast(text){
+function toast(text, spatne){
   var el = $("toast");
   if(!el) return;
   $("toasttext").textContent = text;
+  el.classList.toggle("bad", !!spatne);
   el.hidden = false;
   umistiToast(el);
   clearTimeout(toastTimer);

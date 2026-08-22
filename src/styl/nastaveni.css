@@ -72,7 +72,17 @@
   .rezakcrada{display:flex;gap:8px}
   .rezakcrada[hidden]{display:none}
   .rezakcrada button{flex:1 1 0;min-height:46px;font-size:13px;padding:6px 4px}
-  #rezakczprava{margin-top:8px}
+  /* Vkládací pole pro import se dokuje nad lištu, ne do scrollujícího
+     seznamu — patří do stejného pružného sloupce, celou šířkou okna.
+     Textarea přebírá vzhled #pastearea (archiv.css); dřív žádný neměla. */
+  #rezimppastedock{flex:0 0 auto;padding:8px 13px;background:var(--slate);border-top:1px solid var(--edge)}
+  #rezimppastedock[hidden]{display:none}
+  #rezimppastearea{
+    display:block;width:100%;box-sizing:border-box;min-height:86px;resize:vertical;
+    background:var(--field);border:1px solid var(--edge);border-radius:var(--r);
+    color:var(--bone);font-family:inherit;font-size:16px;line-height:1.35;padding:8px 10px;
+  }
+  #rezimppastearea:focus{outline:none;border-color:var(--brass)}
   /* Pás s rizikem farklu je patička okna nastavení: třetí prvek pružného
      sloupce .modalbox za .modalhead a .modalbody. Sticky uvnitř těla se pod
      jeho spodní padding nedostane a pod pásem prosvítal obsah. */

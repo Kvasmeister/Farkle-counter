@@ -78,6 +78,7 @@
     color:var(--bone);font-size:13.5px;line-height:1.3;
   }
   .toast[hidden]{display:none}
+  .toast.bad{border-color:var(--oxblood);color:var(--danger)}
   .toastx{
     flex:0 0 auto;background:transparent;border:none;color:var(--dim);
     font-size:18px;line-height:1;min-width:30px;min-height:30px;padding:0;

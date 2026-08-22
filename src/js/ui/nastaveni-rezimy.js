@@ -361,10 +361,12 @@ function renderRezSeznam(){
   var strop = REZIMY.sez.length >= PRESET_REZ_PORADI.length + REZIMY_MAX;
   var zpr = $("rezstrop");
   zpr.textContent = strop ? t("rezim.strop", { n: REZIMY_MAX }) : "";
-  zpr.hidden = !strop;
+  zpr.hidden = !strop || vyberRezimuZap;
   /* Přidat nový režim uprostřed výběru ke sdílení by odvedlo na detail bez
-     seznamu, na který se dá výběrová lišta dole uplatnit. */
-  $("reznovy").disabled = strop || vyberRezimuZap;
+     seznamu, na který se dá výběrová lišta dole uplatnit — celý řádek se
+     proto v tomhle stavu schová, ne jen zamkne tlačítko. */
+  $("reznovyrow").hidden = vyberRezimuZap;
+  $("reznovy").disabled = strop;
 }
 /* ---------- detail jednoho režimu ---------- */
 /* Detail režimu má šest sekcí a každá svůj nadpis s linkou: samostatné

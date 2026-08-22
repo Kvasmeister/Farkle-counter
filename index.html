@@ -600,6 +600,7 @@
     color:var(--bone);font-size:13.5px;line-height:1.3;
   }
   .toast[hidden]{display:none}
+  .toast.bad{border-color:var(--oxblood);color:var(--danger)}
   .toastx{
     flex:0 0 auto;background:transparent;border:none;color:var(--dim);
     font-size:18px;line-height:1;min-width:30px;min-height:30px;padding:0;
@@ -685,7 +686,17 @@
   .rezakcrada{display:flex;gap:8px}
   .rezakcrada[hidden]{display:none}
   .rezakcrada button{flex:1 1 0;min-height:46px;font-size:13px;padding:6px 4px}
-  #rezakczprava{margin-top:8px}
+  /* Vkládací pole pro import se dokuje nad lištu, ne do scrollujícího
+     seznamu — patří do stejného pružného sloupce, celou šířkou okna.
+     Textarea přebírá vzhled #pastearea (archiv.css); dřív žádný neměla. */
+  #rezimppastedock{flex:0 0 auto;padding:8px 13px;background:var(--slate);border-top:1px solid var(--edge)}
+  #rezimppastedock[hidden]{display:none}
+  #rezimppastearea{
+    display:block;width:100%;box-sizing:border-box;min-height:86px;resize:vertical;
+    background:var(--field);border:1px solid var(--edge);border-radius:var(--r);
+    color:var(--bone);font-family:inherit;font-size:16px;line-height:1.35;padding:8px 10px;
+  }
+  #rezimppastearea:focus{outline:none;border-color:var(--brass)}
   /* Pás s rizikem farklu je patička okna nastavení: třetí prvek pružného
      sloupce .modalbox za .modalhead a .modalbody. Sticky uvnitř těla se pod
      jeho spodní padding nedostane a pod pásem prosvítal obsah. */
@@ -1234,7 +1245,7 @@
           <div class="cap" data-i18n="rezim.nadpis">Herní režim</div>
           <div class="msg" id="rezzamek" hidden></div>
           <div id="rezrows"></div>
-          <div class="setrow">
+          <div class="setrow" id="reznovyrow">
             <div class="t">
               <b data-i18n="rezim.novy.n">Vlastní režim</b>
               <span data-i18n="rezim.novy.p">Postaví se od pravidel KCD a dá se předělat celý.</span>
@@ -1246,34 +1257,17 @@
           <!-- Sdílení jednotlivých režimů: samostatný mechanismus od Zálohy
                herních režimů na kartě Zálohy — tady se posílá jen výběr,
                ne všechno. Vlastní modul (ui/sdileni-rezimu.js), aby zůstal
-               nastaveni-rezimy.js dál jen o editaci jednoho režimu. Spouštěč
-               obou akcí je teď dole v #rezakcpruh, ne tady — výběr ke
-               sdílení běží přímo v #rezrows. -->
-          <div id="rezimpbox" hidden>
-            <div class="setrow">
-              <div class="t"><b data-i18n="nast.impf.n">Import ze souboru</b><span data-i18n="nast.impf.p">Načte zálohu a nabídne přidání nebo nahrazení.</span></div>
-              <button class="ghost" id="rezimpfilebtn" type="button" data-i18n="nast.impf.btn">Vybrat soubor</button>
-            </div>
-            <div class="setrow">
-              <div class="t"><b data-i18n="nast.imps.n">Import ze schránky</b><span data-i18n="nast.imps.p">Vlož text zálohy do pole a načti ho.</span></div>
-              <button class="ghost" id="rezimppastebtn" type="button" data-i18n="nast.imps.btn">Vložit text</button>
-            </div>
-            <div id="rezimppastebox" hidden>
-              <textarea id="rezimppastearea" data-i18n-ph="nast.vlozit.ph" placeholder="Sem vlož zkopírovanou zálohu"></textarea>
-              <div class="improw">
-                <button class="ghost" id="rezimppasteload" type="button" data-i18n="nast.nacist">Načíst</button>
-                <button class="ghost" id="rezimppastecancel" type="button" data-i18n="spol.zrusit">Zrušit</button>
-              </div>
-            </div>
-            <div id="rezimppreview" hidden>
-              <div id="rezimppreviewrows"></div>
-              <div class="improw">
-                <button class="ghost" id="rezimppotvrdit" type="button" data-i18n="rezim.imp.potvrdit">Importovat vybrané</button>
-                <button class="ghost" id="rezimpzrusit" type="button" data-i18n="spol.zrusit">Zrušit</button>
-              </div>
+               nastaveni-rezimy.js dál jen o editaci jednoho režimu. Spouštěče
+               (Sdílet/Importovat i volba Vybrat soubor/Vložit text) jsou
+               dole v #rezakcpruh, vkládací pole v #rezimppastedock nad ním
+               — tady v seznamu zůstává jen náhled výsledků importu. -->
+          <div id="rezimppreview" hidden>
+            <div id="rezimppreviewrows"></div>
+            <div class="improw">
+              <button class="ghost" id="rezimppotvrdit" type="button" data-i18n="rezim.imp.potvrdit">Importovat vybrané</button>
+              <button class="ghost" id="rezimpzrusit" type="button" data-i18n="spol.zrusit">Zrušit</button>
             </div>
           </div>
-          <div class="msg" id="rezimpzprava" hidden></div>
           <input type="file" id="rezimpfile" accept=".txt,text/plain" hidden>
         </div>
 
@@ -1547,9 +1541,17 @@
          důvodu (viz nastaveni.css u .rizpruh — sticky v .modalbody nedosáhne
          na skutečnou hranu okna). Viditelnost celého pásu (jen nad seznamem
          režimů, ne v detailu ani v editoru kombinace) řídí renderRezimy()
-         v nastaveni-rezimy.js stejně jako u #rezriziko; který ze dvou
+         v nastaveni-rezimy.js stejně jako u #rezriziko; který ze tří
          vnitřních řádků je vidět, řídí sdileni-rezimu.js — obě strany se
-         kvůli tomu nemusí importovat navzájem. -->
+         kvůli tomu nemusí importovat navzájem. Hlášky (úspěch i chyby) jdou
+         přes #toast, ne přes řádek v týhle liště — proto tu žádný .msg není. -->
+    <div id="rezimppastedock" hidden>
+      <textarea id="rezimppastearea" data-i18n-ph="nast.vlozit.ph" placeholder="Sem vlož zkopírovanou zálohu"></textarea>
+      <div class="improw">
+        <button class="ghost" id="rezimppasteload" type="button" data-i18n="nast.nacist">Načíst</button>
+        <button class="ghost" id="rezimppastecancel" type="button" data-i18n="spol.zrusit">Zrušit</button>
+      </div>
+    </div>
     <div class="rezakcpruh" id="rezakcpruh" hidden>
       <div class="rezakcrada" id="rezakcnormal">
         <button class="ghost" id="rezakcsdil" type="button" data-i18n="rezim.sdil.btn">Sdílet</button>
@@ -1560,7 +1562,11 @@
         <button class="ghost" id="rezakckopie" type="button" data-i18n="nast.kop.btn">Kopírovat</button>
         <button class="ghost" id="rezakczrusit" type="button" data-i18n="spol.zrusit">Zrušit</button>
       </div>
-      <div class="msg" id="rezakczprava" hidden></div>
+      <div class="rezakcrada" id="rezakcimpvolba" hidden>
+        <button class="ghost" id="rezimpsoubor" type="button" data-i18n="nast.impf.btn">Vybrat soubor</button>
+        <button class="ghost" id="rezimptext" type="button" data-i18n="nast.imps.btn">Vložit text</button>
+        <button class="ghost" id="rezimpvolbazrusit" type="button" data-i18n="spol.zrusit">Zrušit</button>
+      </div>
     </div>
     <!-- Pás rizika je při stavbě pravidel ten údaj, podle kterého se pozná,
          jestli režim dává smysl, takže je vidět pořád. Stojí za .modalbody,
@@ -5222,8 +5228,9 @@
     var strop = REZIMY.sez.length >= PRESET_REZ_PORADI.length + REZIMY_MAX;
     var zpr = $("rezstrop");
     zpr.textContent = strop ? t("rezim.strop", { n: REZIMY_MAX }) : "";
-    zpr.hidden = !strop;
-    $("reznovy").disabled = strop || vyberRezimuZap;
+    zpr.hidden = !strop || vyberRezimuZap;
+    $("reznovyrow").hidden = vyberRezimuZap;
+    $("reznovy").disabled = strop;
   }
   function renderRezDetail(rez) {
     $("reztitul").textContent = nazevRezimu(rez);
@@ -5988,6 +5995,7 @@
         var telo = $("setmodal").querySelector(".modalbody");
         if (telo) telo.scrollTop = 0;
         ukazRezPruh();
+        ukazRezAkcPruh();
       };
       Array.prototype.forEach.call(tlac, function(b, i) {
         b.addEventListener("click", function() {
@@ -6833,6 +6841,10 @@
   function datumProNazev() {
     var d = /* @__PURE__ */ new Date();
     return d.getFullYear() + "-" + ("0" + (d.getMonth() + 1)).slice(-2) + "-" + ("0" + d.getDate()).slice(-2);
+  }
+  function datumCasProNazev() {
+    var d = /* @__PURE__ */ new Date();
+    return datumProNazev() + "-" + ("0" + d.getHours()).slice(-2) + ("0" + d.getMinutes()).slice(-2);
   }
   function slozHry(hotovo) {
     var hry = histAll().sort(function(a, b) {
@@ -7695,10 +7707,11 @@
     if (b <= 0) return;
     el.style.top = Math.round((a + b) / 2) + "px";
   }
-  function toast(text) {
+  function toast(text, spatne) {
     var el = $("toast");
     if (!el) return;
     $("toasttext").textContent = text;
+    el.classList.toggle("bad", !!spatne);
     el.hidden = false;
     umistiToast(el);
     clearTimeout(toastTimer);
@@ -8655,28 +8668,18 @@
   var ZNACKA_SDIL = "#SDILENIREZIMU:";
   var elAkcNormal = $("rezakcnormal");
   var elAkcVyber = $("rezakcvyber");
-  var elAkcMsg = $("rezakczprava");
-  var elImpBox2 = $("rezimpbox");
-  var elImpFile2 = $("rezimpfile");
-  var elImpPasteBox = $("rezimppastebox");
+  var elAkcImpVolba = $("rezakcimpvolba");
+  var elPasteDock = $("rezimppastedock");
   var elImpPasteArea = $("rezimppastearea");
+  var elImpFile2 = $("rezimpfile");
   var elImpPreview = $("rezimppreview");
   var elImpPreviewRows = $("rezimppreviewrows");
-  var elImpMsg = $("rezimpzprava");
+  var impVolbaZap = false;
   var nacteneKandidati = null;
-  function zalMsgSdil(text, spatne) {
-    elAkcMsg.hidden = !text;
-    elAkcMsg.textContent = text || "";
-    elAkcMsg.classList.toggle("bad", !!spatne);
-  }
-  function zalMsgImp(text, spatne) {
-    elImpMsg.hidden = !text;
-    elImpMsg.textContent = text || "";
-    elImpMsg.classList.toggle("bad", !!spatne);
-  }
   function prekresliBar() {
-    elAkcNormal.hidden = vyberRezimuZap;
+    elAkcNormal.hidden = vyberRezimuZap || impVolbaZap;
     elAkcVyber.hidden = !vyberRezimuZap;
+    elAkcImpVolba.hidden = !impVolbaZap;
   }
   function sestavVyber() {
     return REZIMY.sez.filter(function(rez) {
@@ -8748,7 +8751,7 @@
   function zpracujText(text, zdroj) {
     var i = String(text || "").lastIndexOf(ZNACKA_SDIL);
     if (i < 0) {
-      zalMsgImp(t("zal.nerozumim." + zdroj), true);
+      toast(t("zal.nerozumim." + zdroj), true);
       return;
     }
     var radek = text.slice(i + ZNACKA_SDIL.length).split("\n")[0].trim();
@@ -8759,72 +8762,69 @@
       d = null;
     }
     if (!Array.isArray(d) || !d.length) {
-      zalMsgImp(t("zal.prazdno." + zdroj), true);
+      toast(t("zal.prazdno." + zdroj), true);
       return;
     }
     nacteneKandidati = zpracujKandidaty(d);
     renderNahled(nacteneKandidati);
     zavriImpVlozeni();
+    impVolbaZap = false;
+    prekresliBar();
     elImpPreview.hidden = false;
-    zalMsgImp("");
   }
   function zavriImpVlozeni() {
-    elImpPasteBox.hidden = true;
+    elPasteDock.hidden = true;
     elImpPasteArea.value = "";
   }
   function zavriImpNahled() {
     elImpPreview.hidden = true;
     nacteneKandidati = null;
   }
-  function zavriImp() {
-    elImpBox2.hidden = true;
+  function zavriImpVolba() {
+    impVolbaZap = false;
     zavriImpVlozeni();
     zavriImpNahled();
-    $("rezakcimp").classList.remove("on");
   }
   function renderSdileniRezimu() {
     if (vyberRezimuZap) vypniVyberRezimu();
-    zalMsgSdil("");
+    zavriImpVolba();
     prekresliBar();
-    zalMsgImp("");
-    zavriImp();
   }
   function initSdileniRezimu() {
     prekresliBar();
     $("rezakcsdil").addEventListener("click", function() {
-      zavriImp();
+      zavriImpVolba();
       zapniVyberRezimu();
-      zalMsgSdil("");
       prekresliBar();
     });
     $("rezakczrusit").addEventListener("click", function() {
       vypniVyberRezimu();
-      zalMsgSdil("");
       prekresliBar();
     });
     $("rezakcstahni").addEventListener("click", function() {
       var sez = sestavVyber();
       if (!sez.length) {
-        zalMsgSdil(t("rezim.sdil.vyber"), true);
+        toast(t("rezim.sdil.vyber"), true);
         return;
       }
       var text = exportTextSdileni(sez);
-      var ok = stahni("farkle-rezimy-sdileni-" + datumProNazev() + ".txt", text);
-      zalMsgSdil(t(ok ? "zal.ukladase" : "zal.stazenineslo"), !ok);
-      if (ok) {
-        vypniVyberRezimu();
-        prekresliBar();
+      var ok = stahni("farkle-rezimy-sdileni-" + datumCasProNazev() + ".txt", text);
+      if (!ok) {
+        toast(t("zal.stazenineslo"), true);
+        return;
       }
+      vypniVyberRezimu();
+      prekresliBar();
     });
     $("rezakckopie").addEventListener("click", function() {
       var sez = sestavVyber();
       if (!sez.length) {
-        zalMsgSdil(t("rezim.sdil.vyber"), true);
+        toast(t("rezim.sdil.vyber"), true);
         return;
       }
       var text = exportTextSdileni(sez);
       doSchranky(text, function(ok) {
-        zalMsgSdil(t(ok ? "zal.veschrance" : "zal.schrankaneslo"), !ok);
+        toast(t(ok ? "zal.veschrance" : "zal.schrankaneslo"), !ok);
         if (ok) {
           vypniVyberRezimu();
           prekresliBar();
@@ -8832,20 +8832,15 @@
       });
     });
     $("rezakcimp").addEventListener("click", function() {
-      if (elImpBox2.hidden) {
-        if (vyberRezimuZap) {
-          vypniVyberRezimu();
-          prekresliBar();
-        }
-        zalMsgImp("");
-        elImpBox2.hidden = false;
-        $("rezakcimp").classList.add("on");
-      } else {
-        zavriImp();
-      }
+      if (vyberRezimuZap) vypniVyberRezimu();
+      impVolbaZap = true;
+      prekresliBar();
     });
-    $("rezimpfilebtn").addEventListener("click", function() {
-      zalMsgImp("");
+    $("rezimpvolbazrusit").addEventListener("click", function() {
+      zavriImpVolba();
+      prekresliBar();
+    });
+    $("rezimpsoubor").addEventListener("click", function() {
       elImpFile2.value = "";
       elImpFile2.click();
     });
@@ -8857,28 +8852,24 @@
         zpracujText(fr.result, "soubor");
       };
       fr.onerror = function() {
-        zalMsgImp(t("zal.souborneslo"), true);
+        toast(t("zal.souborneslo"), true);
       };
       fr.readAsText(f, "utf-8");
     });
-    $("rezimppastebtn").addEventListener("click", function() {
-      zalMsgImp("");
-      elImpPasteBox.hidden = false;
+    $("rezimptext").addEventListener("click", function() {
+      elPasteDock.hidden = false;
       elImpPasteArea.focus();
     });
-    $("rezimppastecancel").addEventListener("click", function() {
-      zavriImpVlozeni();
-      zalMsgImp("");
-    });
+    $("rezimppastecancel").addEventListener("click", zavriImpVlozeni);
     $("rezimppasteload").addEventListener("click", function() {
       var text = elImpPasteArea.value;
       if (!text.trim()) {
-        zalMsgImp(t("zal.poleprazdne"), true);
+        toast(t("zal.poleprazdne"), true);
         return;
       }
       zpracujText(text, "text");
     });
-    $("rezimpzrusit").addEventListener("click", zavriImp);
+    $("rezimpzrusit").addEventListener("click", zavriImpNahled);
     $("rezimppotvrdit").addEventListener("click", function() {
       if (!nacteneKandidati) return;
       var pridano = 0;
@@ -8889,9 +8880,9 @@
         }
       });
       if (pridano) ulozRezimy();
-      zavriImp();
+      zavriImpNahled();
       renderRezimy();
-      zalMsgImp(pridano ? tn("rezim.pridano", pridano) : t("rezim.imp.nic"), !pridano);
+      if (!pridano) toast(t("rezim.imp.nic"), true);
     });
   }
 

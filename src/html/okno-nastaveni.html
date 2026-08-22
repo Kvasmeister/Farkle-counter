@@ -55,7 +55,7 @@
           <div class="cap" data-i18n="rezim.nadpis">Herní režim</div>
           <div class="msg" id="rezzamek" hidden></div>
           <div id="rezrows"></div>
-          <div class="setrow">
+          <div class="setrow" id="reznovyrow">
             <div class="t">
               <b data-i18n="rezim.novy.n">Vlastní režim</b>
               <span data-i18n="rezim.novy.p">Postaví se od pravidel KCD a dá se předělat celý.</span>
@@ -67,34 +67,17 @@
           <!-- Sdílení jednotlivých režimů: samostatný mechanismus od Zálohy
                herních režimů na kartě Zálohy — tady se posílá jen výběr,
                ne všechno. Vlastní modul (ui/sdileni-rezimu.js), aby zůstal
-               nastaveni-rezimy.js dál jen o editaci jednoho režimu. Spouštěč
-               obou akcí je teď dole v #rezakcpruh, ne tady — výběr ke
-               sdílení běží přímo v #rezrows. -->
-          <div id="rezimpbox" hidden>
-            <div class="setrow">
-              <div class="t"><b data-i18n="nast.impf.n">Import ze souboru</b><span data-i18n="nast.impf.p">Načte zálohu a nabídne přidání nebo nahrazení.</span></div>
-              <button class="ghost" id="rezimpfilebtn" type="button" data-i18n="nast.impf.btn">Vybrat soubor</button>
-            </div>
-            <div class="setrow">
-              <div class="t"><b data-i18n="nast.imps.n">Import ze schránky</b><span data-i18n="nast.imps.p">Vlož text zálohy do pole a načti ho.</span></div>
-              <button class="ghost" id="rezimppastebtn" type="button" data-i18n="nast.imps.btn">Vložit text</button>
-            </div>
-            <div id="rezimppastebox" hidden>
-              <textarea id="rezimppastearea" data-i18n-ph="nast.vlozit.ph" placeholder="Sem vlož zkopírovanou zálohu"></textarea>
-              <div class="improw">
-                <button class="ghost" id="rezimppasteload" type="button" data-i18n="nast.nacist">Načíst</button>
-                <button class="ghost" id="rezimppastecancel" type="button" data-i18n="spol.zrusit">Zrušit</button>
-              </div>
-            </div>
-            <div id="rezimppreview" hidden>
-              <div id="rezimppreviewrows"></div>
-              <div class="improw">
-                <button class="ghost" id="rezimppotvrdit" type="button" data-i18n="rezim.imp.potvrdit">Importovat vybrané</button>
-                <button class="ghost" id="rezimpzrusit" type="button" data-i18n="spol.zrusit">Zrušit</button>
-              </div>
+               nastaveni-rezimy.js dál jen o editaci jednoho režimu. Spouštěče
+               (Sdílet/Importovat i volba Vybrat soubor/Vložit text) jsou
+               dole v #rezakcpruh, vkládací pole v #rezimppastedock nad ním
+               — tady v seznamu zůstává jen náhled výsledků importu. -->
+          <div id="rezimppreview" hidden>
+            <div id="rezimppreviewrows"></div>
+            <div class="improw">
+              <button class="ghost" id="rezimppotvrdit" type="button" data-i18n="rezim.imp.potvrdit">Importovat vybrané</button>
+              <button class="ghost" id="rezimpzrusit" type="button" data-i18n="spol.zrusit">Zrušit</button>
             </div>
           </div>
-          <div class="msg" id="rezimpzprava" hidden></div>
           <input type="file" id="rezimpfile" accept=".txt,text/plain" hidden>
         </div>
 
@@ -368,9 +351,17 @@
          důvodu (viz nastaveni.css u .rizpruh — sticky v .modalbody nedosáhne
          na skutečnou hranu okna). Viditelnost celého pásu (jen nad seznamem
          režimů, ne v detailu ani v editoru kombinace) řídí renderRezimy()
-         v nastaveni-rezimy.js stejně jako u #rezriziko; který ze dvou
+         v nastaveni-rezimy.js stejně jako u #rezriziko; který ze tří
          vnitřních řádků je vidět, řídí sdileni-rezimu.js — obě strany se
-         kvůli tomu nemusí importovat navzájem. -->
+         kvůli tomu nemusí importovat navzájem. Hlášky (úspěch i chyby) jdou
+         přes #toast, ne přes řádek v týhle liště — proto tu žádný .msg není. -->
+    <div id="rezimppastedock" hidden>
+      <textarea id="rezimppastearea" data-i18n-ph="nast.vlozit.ph" placeholder="Sem vlož zkopírovanou zálohu"></textarea>
+      <div class="improw">
+        <button class="ghost" id="rezimppasteload" type="button" data-i18n="nast.nacist">Načíst</button>
+        <button class="ghost" id="rezimppastecancel" type="button" data-i18n="spol.zrusit">Zrušit</button>
+      </div>
+    </div>
     <div class="rezakcpruh" id="rezakcpruh" hidden>
       <div class="rezakcrada" id="rezakcnormal">
         <button class="ghost" id="rezakcsdil" type="button" data-i18n="rezim.sdil.btn">Sdílet</button>
@@ -381,7 +372,11 @@
         <button class="ghost" id="rezakckopie" type="button" data-i18n="nast.kop.btn">Kopírovat</button>
         <button class="ghost" id="rezakczrusit" type="button" data-i18n="spol.zrusit">Zrušit</button>
       </div>
-      <div class="msg" id="rezakczprava" hidden></div>
+      <div class="rezakcrada" id="rezakcimpvolba" hidden>
+        <button class="ghost" id="rezimpsoubor" type="button" data-i18n="nast.impf.btn">Vybrat soubor</button>
+        <button class="ghost" id="rezimptext" type="button" data-i18n="nast.imps.btn">Vložit text</button>
+        <button class="ghost" id="rezimpvolbazrusit" type="button" data-i18n="spol.zrusit">Zrušit</button>
+      </div>
     </div>
     <!-- Pás rizika je při stavbě pravidel ten údaj, podle kterého se pozná,
          jestli režim dává smysl, takže je vidět pořád. Stojí za .modalbody,

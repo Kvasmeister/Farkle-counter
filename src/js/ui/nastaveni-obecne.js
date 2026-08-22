@@ -12,7 +12,7 @@
    Panel nastavení hry je plovoucí, ne prvek v toku: v toku odsouval
    tlačítka pod spodní hranu na iPhonu SE 2. */
 import { S } from "../stav/stav.js";
-import { ukazRezPruh } from "./nastaveni-rezimy.js";
+import { ukazRezAkcPruh, ukazRezPruh } from "./nastaveni-rezimy.js";
 import { $, elGoalNum, elGoalSel, elModeSel, elRoundNum, elRoundSel } from "./prvky.js";
 
 
@@ -93,8 +93,10 @@ export function initNastaveni(){
       Array.prototype.forEach.call(tlac, function(b, j){ b.classList.toggle("on", j === i); });
       var telo = $("setmodal").querySelector(".modalbody");
       if(telo) telo.scrollTop = 0;
-      /* Pás rizika stojí mimo obě karty, takže o přepnutí sám neví. */
+      /* Pás rizika i lišta Sdílet/Importovat stojí mimo obě karty, takže
+         o přepnutí samy nevědí. */
       ukazRezPruh();
+      ukazRezAkcPruh();
     };
     Array.prototype.forEach.call(tlac, function(b, i){
       b.addEventListener("click", function(){ naKartuNastaveni(i); });

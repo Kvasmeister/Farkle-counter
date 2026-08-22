@@ -40,6 +40,14 @@ function datumProNazev(){
   var d = new Date();
   return d.getFullYear() + "-" + ("0" + (d.getMonth() + 1)).slice(-2) + "-" + ("0" + d.getDate()).slice(-2);
 }
+/* S minutami navíc — jen pro sdílení jednotlivých režimů (ui/sdileni-rezimu.js):
+   víc sdílení za týž den by se jinak stahovalo pod stejným jménem a na
+   některých systémech by si to přepisovalo. Ostatní exporty (historie,
+   plná záloha, záloha režimů) zůstávají u datumProNazev() beze změny. */
+function datumCasProNazev(){
+  var d = new Date();
+  return datumProNazev() + "-" + ("0" + d.getHours()).slice(-2) + ("0" + d.getMinutes()).slice(-2);
+}
 /* Plné záznamy pro zálohu. V režimu ls je má paměť rovnou, v režimu idb
    se skládají ze souhrnů a detailů. Detaily se čtou kurzorem, ne jedním
    getAll() přes celou polici — při tisících her by to byl jeden obří
@@ -368,4 +376,4 @@ export function initZaloha(){
   });
 }
 
-export { ZNACKA, cistaHra, datumProNazev, doSchranky, elImpBox, elImpFile, elImpInfo, elPasteArea, elPasteBox, elZalMsg, exportText, hrySeznamRadky, nactene, novychZ, parseZaloha, prijmiZalohu, renderZaloha, renderZaloha2, repTimer, sTextemZalohy, slozHry, stahni, zalMsg, zavriImport, zavriVlozeni };
+export { ZNACKA, cistaHra, datumCasProNazev, datumProNazev, doSchranky, elImpBox, elImpFile, elImpInfo, elPasteArea, elPasteBox, elZalMsg, exportText, hrySeznamRadky, nactene, novychZ, parseZaloha, prijmiZalohu, renderZaloha, renderZaloha2, repTimer, sTextemZalohy, slozHry, stahni, zalMsg, zavriImport, zavriVlozeni };
