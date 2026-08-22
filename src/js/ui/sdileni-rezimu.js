@@ -2,9 +2,22 @@
    duplicit. Samostatný systém od zálohy (ui/zaloha-plna.js) — záloha bere
    všechny režimy najednou, tohle jen ten výběr, který hráč pošle dál.
 
+   Sdílet a Importovat jsou dvě tlačítka v patičce okna (#rezakcpruh,
+   viz okno-nastaveni.html a nastaveni.css u .rizpruh pro důvod, proč
+   patička, ne sticky prvek uvnitř .modalbody). Výběr, které režimy jít
+   sdílet, se neděje v samostatném seznamu — přímo v hlavním #rezrows:
+   zapniVyberRezimu() přepne rezRadek() na jedno výběrové tlačítko na
+   řádek (viz ui/nastaveni-rezimy.js), lišta dole se zároveň přepne na
+   Uložit/Kopírovat/Zrušit. Dokončení i zrušení výběru vrátí obojí zpátky.
+
    Závisí na: pravidla/rezimy, spolecne, text/format, ui/zaloha (stavební
-              bloky), ui/nastaveni-rezimy (jen renderRezimy, kvůli obnově
-              seznamu po importu)
+              bloky), ui/nastaveni-rezimy — renderRezimy (obnova seznamu po
+              importu) a čtveřice vyberRezimuZap/vybraneRezimy/
+              zapniVyberRezimu/vypniVyberRezimu, která tvoří stav výběru.
+              Ten stav bydlí v nastaveni-rezimy.js, ne tady: ten modul kreslí
+              řádky seznamu, takže o výběru musí vědět přímo, a obrácený
+              import (nastaveni-rezimy.js by importoval odsud) by udělal
+              cyklus. Tenhle modul jen řídí, kdy je výběr zapnutý.
    Sahá na: DOM, schránka, soubory
 
    Vlastní marker #SDILENIREZIMU:, mimo dosah uzamčeného #DATA: i mimo obě
@@ -33,24 +46,29 @@ import {
 } from "../pravidla/rezimy.js";
 import { NAZEV_MAX, newId } from "../spolecne.js";
 import { dt, dtDen } from "../text/format.js";
-import { renderRezimy } from "./nastaveni-rezimy.js";
+import {
+  renderRezimy,
+  vybraneRezimy,
+  vyberRezimuZap,
+  zapniVyberRezimu,
+  vypniVyberRezimu
+} from "./nastaveni-rezimy.js";
 import { $ } from "./prvky.js";
 import { datumProNazev, doSchranky, stahni } from "./zaloha.js";
 
 var ZNACKA_SDIL = "#SDILENIREZIMU:";
 
-var elSdilBox = $("rezsdilbox"), elSdilRows = $("rezsdilrows"), elSdilMsg = $("rezsdilzprava");
+var elAkcNormal = $("rezakcnormal"), elAkcVyber = $("rezakcvyber"), elAkcMsg = $("rezakczprava");
 var elImpBox = $("rezimpbox"), elImpFile = $("rezimpfile");
 var elImpPasteBox = $("rezimppastebox"), elImpPasteArea = $("rezimppastearea");
 var elImpPreview = $("rezimppreview"), elImpPreviewRows = $("rezimppreviewrows"), elImpMsg = $("rezimpzprava");
 
-var vybraneRezimy = {};
 var nacteneKandidati = null;
 
 function zalMsgSdil(text, spatne){
-  elSdilMsg.hidden = !text;
-  elSdilMsg.textContent = text || "";
-  elSdilMsg.classList.toggle("bad", !!spatne);
+  elAkcMsg.hidden = !text;
+  elAkcMsg.textContent = text || "";
+  elAkcMsg.classList.toggle("bad", !!spatne);
 }
 function zalMsgImp(text, spatne){
   elImpMsg.hidden = !text;
@@ -59,36 +77,12 @@ function zalMsgImp(text, spatne){
 }
 
 /* ---------- Sdílet ---------- */
-function renderSdilRows(){
-  elSdilRows.textContent = "";
-  REZIMY.sez.forEach(function(rez){
-    var row = document.createElement("div");
-    row.className = "setrow";
-    var tCol = document.createElement("div");
-    tCol.className = "t";
-    var b = document.createElement("b");
-    b.textContent = nazevRezimu(rez);
-    tCol.appendChild(b);
-    row.appendChild(tCol);
-    var btns = document.createElement("div");
-    btns.className = "setbtns";
-    var btn = document.createElement("button");
-    btn.type = "button";
-    btn.className = "ghost";
-    function mark(){
-      var on = !!vybraneRezimy[rez.id];
-      btn.classList.toggle("on", on);
-      btn.textContent = t(on ? "rezim.sdil.vybrano" : "rezim.sdil.nevybrano");
-    }
-    btn.addEventListener("click", function(){
-      vybraneRezimy[rez.id] = !vybraneRezimy[rez.id];
-      mark();
-    });
-    mark();
-    btns.appendChild(btn);
-    row.appendChild(btns);
-    elSdilRows.appendChild(row);
-  });
+/* Který ze dvou řádků lišty je vidět. Import a výběr ke sdílení se
+   vzájemně vylučují (viz posluchače níž), takže tahle dvojice nikdy
+   nepotřebuje třetí, „oba schované" stav mimo renderSdileniRezimu(). */
+function prekresliBar(){
+  elAkcNormal.hidden = vyberRezimuZap;
+  elAkcVyber.hidden = !vyberRezimuZap;
 }
 function sestavVyber(){
   return REZIMY.sez.filter(function(rez){ return vybraneRezimy[rez.id]; });
@@ -98,16 +92,6 @@ function exportTextSdileni(sez){
   sez.forEach(function(rez, i){ r.push((i + 1) + ") " + nazevRezimu(rez)); });
   return r.join("\n") +
          "\n" + t("exp.oddelovac") + "\n" + ZNACKA_SDIL + JSON.stringify(sez.map(venRezimSdileny));
-}
-function otevriSdil(){
-  zalMsgSdil("");
-  renderSdilRows();
-  elSdilBox.hidden = false;
-}
-function zavriSdil(){
-  elSdilBox.hidden = true;
-  vybraneRezimy = {};
-  zalMsgSdil("");
 }
 
 /* ---------- Importovat ---------- */
@@ -187,35 +171,62 @@ function zavriImp(){
   elImpBox.hidden = true;
   zavriImpVlozeni();
   zavriImpNahled();
+  $("rezakcimp").classList.remove("on");
 }
 
 function renderSdileniRezimu(){
-  zavriSdil();
+  if(vyberRezimuZap) vypniVyberRezimu();
+  zalMsgSdil("");
+  prekresliBar();
   zalMsgImp("");
   zavriImp();
 }
 
 /* Vedlejší efekty. Volá je hlavni.js na místě, kde je vidět celé pořadí startu. */
 export function initSdileniRezimu(){
-  $("rezsdilbtn").addEventListener("click", otevriSdil);
-  $("rezsdilzrusit").addEventListener("click", zavriSdil);
-  $("rezsdilstahni").addEventListener("click", function(){
+  prekresliBar();
+
+  $("rezakcsdil").addEventListener("click", function(){
+    zavriImp();   // vzájemné vyloučení — obě akce sdílejí dvou-/tříslotovou lištu
+    zapniVyberRezimu();
+    zalMsgSdil("");
+    prekresliBar();
+  });
+  $("rezakczrusit").addEventListener("click", function(){
+    vypniVyberRezimu();
+    zalMsgSdil("");
+    prekresliBar();
+  });
+  $("rezakcstahni").addEventListener("click", function(){
     var sez = sestavVyber();
     if(!sez.length){ zalMsgSdil(t("rezim.sdil.vyber"), true); return; }
     var text = exportTextSdileni(sez);
     var ok = stahni("farkle-rezimy-sdileni-" + datumProNazev() + ".txt", text);
     zalMsgSdil(t(ok ? "zal.ukladase" : "zal.stazenineslo"), !ok);
+    if(ok){ vypniVyberRezimu(); prekresliBar(); }
   });
-  $("rezsdilkopie").addEventListener("click", function(){
+  $("rezakckopie").addEventListener("click", function(){
     var sez = sestavVyber();
     if(!sez.length){ zalMsgSdil(t("rezim.sdil.vyber"), true); return; }
     var text = exportTextSdileni(sez);
-    doSchranky(text, function(ok){ zalMsgSdil(t(ok ? "zal.veschrance" : "zal.schrankaneslo"), !ok); });
+    doSchranky(text, function(ok){
+      zalMsgSdil(t(ok ? "zal.veschrance" : "zal.schrankaneslo"), !ok);
+      if(ok){ vypniVyberRezimu(); prekresliBar(); }
+    });
   });
 
-  $("rezimpbtn").addEventListener("click", function(){
-    zalMsgImp("");
-    elImpBox.hidden = false;
+  /* Přepínač jako #reznadinfo v nastaveni-rezimy.js: druhé kliknutí zavře,
+     co první otevřelo. Dřív tenhle knoflík jen otevíral a zavřít šlo jen
+     vnitřním tlačítkem Zrušit. */
+  $("rezakcimp").addEventListener("click", function(){
+    if(elImpBox.hidden){
+      if(vyberRezimuZap){ vypniVyberRezimu(); prekresliBar(); }   // vzájemné vyloučení
+      zalMsgImp("");
+      elImpBox.hidden = false;
+      $("rezakcimp").classList.add("on");
+    } else {
+      zavriImp();
+    }
   });
   $("rezimpfilebtn").addEventListener("click", function(){
     zalMsgImp("");

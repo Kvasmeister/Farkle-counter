@@ -341,12 +341,9 @@ export var EN = {
   "nast.impsrez.p":     "Paste the game mode backup text into the field and read it in.",
   "nast.impsrez.btn":   "Paste text",
 
-  /* sdílení jednotlivých herních režimů */
-  "rezim.sdil.n":       "Share selected",
-  "rezim.sdil.p":       "Sends one or more game modes to another device.",
+  /* sdílení jednotlivých herních režimů — n/p popisky zmizely s řádky
+     v okno-nastaveni.html (tlačítka jsou teď v patičce #rezakcpruh) */
   "rezim.sdil.btn":     "Share",
-  "rezim.imp.n":        "Import",
-  "rezim.imp.p":        "Reads a sharing code from a file or the clipboard and offers to add it.",
   "rezim.imp.btn":      "Import",
   "rezim.imp.potvrdit": "Import selected",
 

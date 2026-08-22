@@ -50,15 +50,16 @@ function app(opt){
   const klik = el => el.dispatchEvent(new w.MouseEvent("click", { bubbles:true }));
   return { w, d, $, klik,
     rezimy: () => JSON.parse(w.localStorage.getItem("farkle-rezimy-v1") || "null"),
-    /* Řádek výběru ke sdílení podle názvu — renderSdilRows() staví jeden
-       .setrow na režim, se jménem v <b> a přepínacím tlačítkem vedle. */
+    /* Výběr ke sdílení běží přímo v hlavním seznamu (#rezrows), ne v
+       samostatném panelu — řádek podle jména v <b>, stejná stavba jako
+       normální řádek (rezRadek()/kombPopis()), jen s jiným obsahem tlačítek. */
     radekSdil(nazev){
-      return [...d.querySelectorAll("#rezsdilrows .setrow")]
+      return [...d.querySelectorAll("#rezrows .setrow")]
         .find(r => r.querySelector("b").textContent === nazev);
     },
     vyberKesdileni(nazev){ klik(this.radekSdil(nazev).querySelector(".setbtns button")); },
     vlozAnacti(text){
-      klik($("rezimpbtn"));
+      klik($("rezakcimp"));
       klik($("rezimppastebtn"));
       $("rezimppastearea").value = text;
       klik($("rezimppasteload"));
@@ -71,15 +72,17 @@ console.log("A) sdílet: bez výběru se nic nevygeneruje");
 let a = app({ rezimy:{ akt:"kcd2", p:{}, v:[MOJE_PRAVIDLA] } });
 a.klik(a.$("setbtn"));
 a.klik(a.$("setseg").children[1]);
-a.klik(a.$("rezsdilbtn"));
-a.klik(a.$("rezsdilstahni"));
+a.klik(a.$("rezakcsdil"));
+ok(a.radekSdil("Moje pravidla").querySelectorAll(".setbtns button").length === 1,
+   "v režimu výběru má řádek jedno tlačítko místo tří");
+a.klik(a.$("rezakcstahni"));
 ok(a.w.__blob === null, "žádný soubor nevznikl");
-ok(/Vyber aspoň jeden/.test(a.$("rezsdilzprava").textContent), "hláška: " + a.$("rezsdilzprava").textContent);
+ok(/Vyber aspoň jeden/.test(a.$("rezakczprava").textContent), "hláška: " + a.$("rezakczprava").textContent);
 
 console.log("B) sdílet: vybraný vlastní i přednastavený režim jdou do souboru");
 a.vyberKesdileni("Moje pravidla");
 a.vyberKesdileni("KCD");
-a.klik(a.$("rezsdilstahni"));
+a.klik(a.$("rezakcstahni"));
 ok(a.w.__blob !== null, "soubor vznikl");
 const textSdil = await a.w.__blob.text();
 ok(/^Kostky — sdílené herní režimy/.test(textSdil), "hlavička souboru");
@@ -89,6 +92,10 @@ const dataSdil = JSON.parse(textSdil.slice(textSdil.indexOf("#SDILENIREZIMU:") +
 ok(dataSdil.length === 2, "v datech jsou dva režimy, je " + dataSdil.length);
 ok(dataSdil.some(r => r.nazev === "Moje pravidla") && dataSdil.some(r => r.nazev === "KCD"),
    "jméno přednastaveného je taky materializované do dat");
+ok(a.$("rezakcnormal").hidden === false && a.$("rezakcvyber").hidden === true,
+   "úspěšné uložení vrátilo lištu na Sdílet/Importovat");
+ok(a.radekSdil("Moje pravidla").querySelectorAll(".setbtns button").length === 3,
+   "a řádek zase má Pravidla/Upravit/Zvolit");
 
 console.log("C) importovat: nový odlišný režim se přijme beze změny jména");
 let b = app({ rezimy:{ akt:"kcd2", p:{}, v:[MOJE_PRAVIDLA] } });
@@ -159,12 +166,45 @@ console.log("I) otevření nastavení oba panely zavře a vynuluje");
 let h = app({ rezimy:{ akt:"kcd2", p:{}, v:[MOJE_PRAVIDLA] } });
 h.klik(h.$("setbtn"));
 h.klik(h.$("setseg").children[1]);
-h.klik(h.$("rezsdilbtn"));
+h.klik(h.$("rezakcsdil"));
 h.vyberKesdileni("Moje pravidla");
 h.vlozAnacti(marker([NOVY_RUZNY]));
 h.klik(h.$("setmodal").querySelector(".modalx"));
 h.klik(h.$("setbtn"));
-ok(h.$("rezsdilbox").hidden && h.$("rezimpbox").hidden, "oba panely zase zavřené");
+ok(h.$("rezakcvyber").hidden && h.$("rezimpbox").hidden, "oba panely zase zavřené");
+ok(h.$("rezakcnormal").hidden === false, "lišta zpátky na Sdílet/Importovat");
+
+console.log("J) importovat: druhé kliknutí na Importovat box zase zavře");
+let j = app({ rezimy:{ akt:"kcd2", p:{}, v:[MOJE_PRAVIDLA] } });
+j.klik(j.$("setbtn"));
+j.klik(j.$("setseg").children[1]);
+j.klik(j.$("rezakcimp"));
+ok(!j.$("rezimpbox").hidden, "první kliknutí otevře");
+j.klik(j.$("rezakcimp"));
+ok(j.$("rezimpbox").hidden, "druhé kliknutí zavře — dřív to nešlo");
+
+console.log("K) výběr ke sdílení a import se vzájemně vylučují");
+let k = app({ rezimy:{ akt:"kcd2", p:{}, v:[MOJE_PRAVIDLA] } });
+k.klik(k.$("setbtn"));
+k.klik(k.$("setseg").children[1]);
+k.klik(k.$("rezakcimp"));
+ok(!k.$("rezimpbox").hidden, "import otevřený");
+k.klik(k.$("rezakcsdil"));
+ok(k.$("rezimpbox").hidden, "spuštění výběru ke sdílení zavře box importu");
+ok(!k.$("rezakcvyber").hidden, "a přepne lištu na Uložit/Kopírovat/Zrušit");
+k.klik(k.$("rezakcimp"));
+ok(k.$("rezakcvyber").hidden, "otevření importu naopak ukončí výběr");
+ok(!k.$("rezimpbox").hidden, "a otevře box importu");
+
+console.log("L) Přidat vlastní režim je při výběru ke sdílení zamčené");
+let l = app({ rezimy:{ akt:"kcd2", p:{}, v:[MOJE_PRAVIDLA] } });
+l.klik(l.$("setbtn"));
+l.klik(l.$("setseg").children[1]);
+ok(!l.$("reznovy").disabled, "mimo výběr jde přidat");
+l.klik(l.$("rezakcsdil"));
+ok(l.$("reznovy").disabled, "v režimu výběru je zamčené");
+l.klik(l.$("rezakczrusit"));
+ok(!l.$("reznovy").disabled, "po zrušení výběru zase jde");
 
 console.log(fails ? `\n${fails} CHYB` : "\nvše prošlo");
 process.exit(fails ? 1 : 0);

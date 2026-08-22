@@ -672,6 +672,20 @@
   }
   .trojpole .kombsazba{flex:1 1 0}
   .trojpole > span{flex:0 0 44px;font-family:"IM Fell English",Georgia,serif;font-size:16px;color:var(--bone)}
+  /* Lišta Sdílet/Importovat je patička ve stejném pružném sloupci jako
+     .rizpruh níž a ze stejného důvodu (viz tam). Řádek dvou/tří stejně
+     širokých tlačítek, ne sloupec přes celou šířku jako .archwrap u
+     historie — proto vlastní pravidlo, ne rozšíření odtud. */
+  .rezakcpruh{
+    flex:0 0 auto;
+    padding:8px 13px calc(10px + env(safe-area-inset-bottom));
+    background:var(--slate);border-top:1px solid var(--edge);
+  }
+  .rezakcpruh[hidden]{display:none}
+  .rezakcrada{display:flex;gap:8px}
+  .rezakcrada[hidden]{display:none}
+  .rezakcrada button{flex:1 1 0;min-height:46px;font-size:13px;padding:6px 4px}
+  #rezakczprava{margin-top:8px}
   /* Pás s rizikem farklu je patička okna nastavení: třetí prvek pružného
      sloupce .modalbox za .modalhead a .modalbody. Sticky uvnitř těla se pod
      jeho spodní padding nedostane a pod pásem prosvítal obsah. */
@@ -1232,31 +1246,9 @@
           <!-- Sdílení jednotlivých režimů: samostatný mechanismus od Zálohy
                herních režimů na kartě Zálohy — tady se posílá jen výběr,
                ne všechno. Vlastní modul (ui/sdileni-rezimu.js), aby zůstal
-               nastaveni-rezimy.js dál jen o editaci jednoho režimu. -->
-          <div class="setrow">
-            <div class="t">
-              <b data-i18n="rezim.sdil.n">Sdílet vybrané</b>
-              <span data-i18n="rezim.sdil.p">Pošle jeden nebo víc herních režimů do jiného zařízení.</span>
-            </div>
-            <div class="setbtns"><button class="ghost" id="rezsdilbtn" type="button" data-i18n="rezim.sdil.btn">Sdílet</button></div>
-          </div>
-          <div id="rezsdilbox" hidden>
-            <div id="rezsdilrows"></div>
-            <div class="improw">
-              <button class="ghost" id="rezsdilstahni" type="button" data-i18n="nast.exp.btn">Uložit</button>
-              <button class="ghost" id="rezsdilkopie" type="button" data-i18n="nast.kop.btn">Kopírovat</button>
-              <button class="ghost" id="rezsdilzrusit" type="button" data-i18n="spol.zrusit">Zrušit</button>
-            </div>
-            <div class="msg" id="rezsdilzprava" hidden></div>
-          </div>
-
-          <div class="setrow">
-            <div class="t">
-              <b data-i18n="rezim.imp.n">Importovat</b>
-              <span data-i18n="rezim.imp.p">Načte kód sdílení ze souboru nebo ze schránky a nabídne přidání.</span>
-            </div>
-            <div class="setbtns"><button class="ghost" id="rezimpbtn" type="button" data-i18n="rezim.imp.btn">Importovat</button></div>
-          </div>
+               nastaveni-rezimy.js dál jen o editaci jednoho režimu. Spouštěč
+               obou akcí je teď dole v #rezakcpruh, ne tady — výběr ke
+               sdílení běží přímo v #rezrows. -->
           <div id="rezimpbox" hidden>
             <div class="setrow">
               <div class="t"><b data-i18n="nast.impf.n">Import ze souboru</b><span data-i18n="nast.impf.p">Načte zálohu a nabídne přidání nebo nahrazení.</span></div>
@@ -1550,6 +1542,25 @@
         <input type="file" id="impfileplna" accept=".txt,text/plain" hidden>
         <input type="file" id="impfilerez" accept=".txt,text/plain" hidden>
       </div>
+    </div>
+    <!-- Sdílet/Importovat jsou patička okna jako #rezriziko níž, ze stejného
+         důvodu (viz nastaveni.css u .rizpruh — sticky v .modalbody nedosáhne
+         na skutečnou hranu okna). Viditelnost celého pásu (jen nad seznamem
+         režimů, ne v detailu ani v editoru kombinace) řídí renderRezimy()
+         v nastaveni-rezimy.js stejně jako u #rezriziko; který ze dvou
+         vnitřních řádků je vidět, řídí sdileni-rezimu.js — obě strany se
+         kvůli tomu nemusí importovat navzájem. -->
+    <div class="rezakcpruh" id="rezakcpruh" hidden>
+      <div class="rezakcrada" id="rezakcnormal">
+        <button class="ghost" id="rezakcsdil" type="button" data-i18n="rezim.sdil.btn">Sdílet</button>
+        <button class="ghost" id="rezakcimp" type="button" data-i18n="rezim.imp.btn">Importovat</button>
+      </div>
+      <div class="rezakcrada" id="rezakcvyber" hidden>
+        <button class="ghost" id="rezakcstahni" type="button" data-i18n="nast.exp.btn">Uložit</button>
+        <button class="ghost" id="rezakckopie" type="button" data-i18n="nast.kop.btn">Kopírovat</button>
+        <button class="ghost" id="rezakczrusit" type="button" data-i18n="spol.zrusit">Zrušit</button>
+      </div>
+      <div class="msg" id="rezakczprava" hidden></div>
     </div>
     <!-- Pás rizika je při stavbě pravidel ten údaj, podle kterého se pozná,
          jestli režim dává smysl, takže je vidět pořád. Stojí za .modalbody,
@@ -2318,12 +2329,9 @@
     "nast.impsrez.n": "Import from clipboard",
     "nast.impsrez.p": "Paste the game mode backup text into the field and read it in.",
     "nast.impsrez.btn": "Paste text",
-    /* sdílení jednotlivých herních režimů */
-    "rezim.sdil.n": "Share selected",
-    "rezim.sdil.p": "Sends one or more game modes to another device.",
+    /* sdílení jednotlivých herních režimů — n/p popisky zmizely s řádky
+       v okno-nastaveni.html (tlačítka jsou teď v patičce #rezakcpruh) */
     "rezim.sdil.btn": "Share",
-    "rezim.imp.n": "Import",
-    "rezim.imp.p": "Reads a sharing code from a file or the clipboard and offers to add it.",
     "rezim.imp.btn": "Import",
     "rezim.imp.potvrdit": "Import selected",
     /* okna filtrů a nové hry */
@@ -4894,6 +4902,18 @@
   var ptamSeVzor = null;
   var ptamSeRezim = null;
   var ptamSeTvar = null;
+  var vyberRezimuZap = false;
+  var vybraneRezimy = {};
+  function zapniVyberRezimu() {
+    vyberRezimuZap = true;
+    vybraneRezimy = {};
+    renderRezSeznam();
+  }
+  function vypniVyberRezimu() {
+    vyberRezimuZap = false;
+    vybraneRezimy = {};
+    renderRezSeznam();
+  }
   var rezEdit = null;
   var kombEdit = null;
   function editRezim() {
@@ -5135,6 +5155,25 @@
       return row;
     }
     var popis = kombPopis(nazevRezimu(rez), false, esc(popisRezimuKratky(rez)));
+    if (vyberRezimuZap) {
+      let znac = function() {
+        var on = !!vybraneRezimy[rez.id];
+        vyb.classList.toggle("on", on);
+        vyb.textContent = t(on ? "rezim.sdil.vybrano" : "rezim.sdil.nevybrano");
+      };
+      var vyb = document.createElement("button");
+      vyb.type = "button";
+      vyb.className = "ghost";
+      vyb.addEventListener("click", function() {
+        vybraneRezimy[rez.id] = !vybraneRezimy[rez.id];
+        znac();
+      });
+      znac();
+      btns.appendChild(vyb);
+      row.appendChild(popis);
+      row.appendChild(btns);
+      return row;
+    }
     var prav = document.createElement("button");
     prav.type = "button";
     prav.className = "ghost rezbtn";
@@ -5184,7 +5223,7 @@
     var zpr = $("rezstrop");
     zpr.textContent = strop ? t("rezim.strop", { n: REZIMY_MAX }) : "";
     zpr.hidden = !strop;
-    $("reznovy").disabled = strop;
+    $("reznovy").disabled = strop || vyberRezimuZap;
   }
   function renderRezDetail(rez) {
     $("reztitul").textContent = nazevRezimu(rez);
@@ -5443,6 +5482,10 @@
     var pruh = $("rezriziko");
     if (pruh) pruh.hidden = $("setcardrezimy").hidden || $("rezdetail").hidden && $("kombdetail").hidden;
   }
+  function ukazRezAkcPruh() {
+    var pruh = $("rezakcpruh");
+    if (pruh) pruh.hidden = $("setcardrezimy").hidden || !($("rezdetail").hidden && $("kombdetail").hidden);
+  }
   function renderRezPruh(rez) {
     var pruh = $("rezriziko");
     if (!pruh) return;
@@ -5584,6 +5627,7 @@
     if (vDetailu) renderRezDetail(rez);
     if (vKombi) renderKombDetail(rez, k);
     ukazRezPruh();
+    ukazRezAkcPruh();
   }
   function renderKombDetail(rez, k) {
     $("kombtitul").textContent = nazevKombinace(k);
@@ -8609,9 +8653,9 @@
 
   // src/js/ui/sdileni-rezimu.js
   var ZNACKA_SDIL = "#SDILENIREZIMU:";
-  var elSdilBox = $("rezsdilbox");
-  var elSdilRows = $("rezsdilrows");
-  var elSdilMsg = $("rezsdilzprava");
+  var elAkcNormal = $("rezakcnormal");
+  var elAkcVyber = $("rezakcvyber");
+  var elAkcMsg = $("rezakczprava");
   var elImpBox2 = $("rezimpbox");
   var elImpFile2 = $("rezimpfile");
   var elImpPasteBox = $("rezimppastebox");
@@ -8619,48 +8663,20 @@
   var elImpPreview = $("rezimppreview");
   var elImpPreviewRows = $("rezimppreviewrows");
   var elImpMsg = $("rezimpzprava");
-  var vybraneRezimy = {};
   var nacteneKandidati = null;
   function zalMsgSdil(text, spatne) {
-    elSdilMsg.hidden = !text;
-    elSdilMsg.textContent = text || "";
-    elSdilMsg.classList.toggle("bad", !!spatne);
+    elAkcMsg.hidden = !text;
+    elAkcMsg.textContent = text || "";
+    elAkcMsg.classList.toggle("bad", !!spatne);
   }
   function zalMsgImp(text, spatne) {
     elImpMsg.hidden = !text;
     elImpMsg.textContent = text || "";
     elImpMsg.classList.toggle("bad", !!spatne);
   }
-  function renderSdilRows() {
-    elSdilRows.textContent = "";
-    REZIMY.sez.forEach(function(rez) {
-      var row = document.createElement("div");
-      row.className = "setrow";
-      var tCol = document.createElement("div");
-      tCol.className = "t";
-      var b = document.createElement("b");
-      b.textContent = nazevRezimu(rez);
-      tCol.appendChild(b);
-      row.appendChild(tCol);
-      var btns = document.createElement("div");
-      btns.className = "setbtns";
-      var btn = document.createElement("button");
-      btn.type = "button";
-      btn.className = "ghost";
-      function mark() {
-        var on = !!vybraneRezimy[rez.id];
-        btn.classList.toggle("on", on);
-        btn.textContent = t(on ? "rezim.sdil.vybrano" : "rezim.sdil.nevybrano");
-      }
-      btn.addEventListener("click", function() {
-        vybraneRezimy[rez.id] = !vybraneRezimy[rez.id];
-        mark();
-      });
-      mark();
-      btns.appendChild(btn);
-      row.appendChild(btns);
-      elSdilRows.appendChild(row);
-    });
+  function prekresliBar() {
+    elAkcNormal.hidden = vyberRezimuZap;
+    elAkcVyber.hidden = !vyberRezimuZap;
   }
   function sestavVyber() {
     return REZIMY.sez.filter(function(rez) {
@@ -8673,16 +8689,6 @@
       r.push(i + 1 + ") " + nazevRezimu(rez));
     });
     return r.join("\n") + "\n" + t("exp.oddelovac") + "\n" + ZNACKA_SDIL + JSON.stringify(sez.map(venRezimSdileny));
-  }
-  function otevriSdil() {
-    zalMsgSdil("");
-    renderSdilRows();
-    elSdilBox.hidden = false;
-  }
-  function zavriSdil() {
-    elSdilBox.hidden = true;
-    vybraneRezimy = {};
-    zalMsgSdil("");
   }
   function zpracujKandidaty(pole) {
     var vysledky = [], prijate = [];
@@ -8774,16 +8780,29 @@
     elImpBox2.hidden = true;
     zavriImpVlozeni();
     zavriImpNahled();
+    $("rezakcimp").classList.remove("on");
   }
   function renderSdileniRezimu() {
-    zavriSdil();
+    if (vyberRezimuZap) vypniVyberRezimu();
+    zalMsgSdil("");
+    prekresliBar();
     zalMsgImp("");
     zavriImp();
   }
   function initSdileniRezimu() {
-    $("rezsdilbtn").addEventListener("click", otevriSdil);
-    $("rezsdilzrusit").addEventListener("click", zavriSdil);
-    $("rezsdilstahni").addEventListener("click", function() {
+    prekresliBar();
+    $("rezakcsdil").addEventListener("click", function() {
+      zavriImp();
+      zapniVyberRezimu();
+      zalMsgSdil("");
+      prekresliBar();
+    });
+    $("rezakczrusit").addEventListener("click", function() {
+      vypniVyberRezimu();
+      zalMsgSdil("");
+      prekresliBar();
+    });
+    $("rezakcstahni").addEventListener("click", function() {
       var sez = sestavVyber();
       if (!sez.length) {
         zalMsgSdil(t("rezim.sdil.vyber"), true);
@@ -8792,8 +8811,12 @@
       var text = exportTextSdileni(sez);
       var ok = stahni("farkle-rezimy-sdileni-" + datumProNazev() + ".txt", text);
       zalMsgSdil(t(ok ? "zal.ukladase" : "zal.stazenineslo"), !ok);
+      if (ok) {
+        vypniVyberRezimu();
+        prekresliBar();
+      }
     });
-    $("rezsdilkopie").addEventListener("click", function() {
+    $("rezakckopie").addEventListener("click", function() {
       var sez = sestavVyber();
       if (!sez.length) {
         zalMsgSdil(t("rezim.sdil.vyber"), true);
@@ -8802,11 +8825,24 @@
       var text = exportTextSdileni(sez);
       doSchranky(text, function(ok) {
         zalMsgSdil(t(ok ? "zal.veschrance" : "zal.schrankaneslo"), !ok);
+        if (ok) {
+          vypniVyberRezimu();
+          prekresliBar();
+        }
       });
     });
-    $("rezimpbtn").addEventListener("click", function() {
-      zalMsgImp("");
-      elImpBox2.hidden = false;
+    $("rezakcimp").addEventListener("click", function() {
+      if (elImpBox2.hidden) {
+        if (vyberRezimuZap) {
+          vypniVyberRezimu();
+          prekresliBar();
+        }
+        zalMsgImp("");
+        elImpBox2.hidden = false;
+        $("rezakcimp").classList.add("on");
+      } else {
+        zavriImp();
+      }
     });
     $("rezimpfilebtn").addEventListener("click", function() {
       zalMsgImp("");

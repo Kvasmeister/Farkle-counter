@@ -42,7 +42,7 @@ npm test          ověří, že je aktuální, zkontroluje importy, pustí 22 sa
 Všech 21 jsdom sad staví DOM z řetězce (`new JSDOM(html, …)` bez
 `resources: "usable"`). Takový jsdom **nenačte `<script src>`** a
 **`<script type="module">` neumí vůbec**. Servírovat aplikaci jako víc
-souborů by stálo celou testovací síť — 1 529 kontrol. Zdroj je proto
+souborů by stálo celou testovací síť — 1 543 kontrol. Zdroj je proto
 modulární a výstup zůstává jeden soubor — pro testy i pro `SOUBORY`
 v `sw.js` se tím nemění nic.
 
@@ -262,7 +262,7 @@ node Testy/vse.mjs 18 19    jen vyjmenované
 npm test                    build --kontrola + kontrola importů + sady
 ```
 
-Dnes **1 529 kontrol**, poslední stav: vše prošlo. Rozpis sad drží
+Dnes **1 543 kontrol**, poslední stav: vše prošlo. Rozpis sad drží
 `Testy/TESTS_README.md`.
 
 ### Nástroje vedle sad

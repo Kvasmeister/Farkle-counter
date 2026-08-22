@@ -79,6 +79,14 @@ var kombSazbyPamet = {};
 /* Rozdělaná otázka na smazání kombinace, jednoho jejího vzoru a celého
    režimu — jedna na oddíl, stejně jako ptamSeKos v koších. */
 var ptamSeVzor = null, ptamSeRezim = null, ptamSeTvar = null;
+/* Výběr ke sdílení běží přímo v tomhle seznamu (rezRadek() se v tomhle
+   stavu větví na jedno výběrové tlačítko místo Pravidla/Upravit/Zvolit).
+   Stav bydlí tady, ne v ui/sdileni-rezimu.js: ten modul importuje z tohohle
+   jen renderRezimy a obrácený import by udělal cyklus. sdileni-rezimu.js
+   čte obě proměnné živým bindingem a řídí je přes zapni/vypniVyberRezimu. */
+var vyberRezimuZap = false, vybraneRezimy = {};
+function zapniVyberRezimu(){ vyberRezimuZap = true; vybraneRezimy = {}; renderRezSeznam(); }
+function vypniVyberRezimu(){ vyberRezimuZap = false; vybraneRezimy = {}; renderRezSeznam(); }
 /* Který režim se právě upravuje a která jeho vlastní kombinace; null je
    o patro výš, tedy seznam režimů a detail režimu. */
 var rezEdit = null, kombEdit = null;
@@ -297,6 +305,25 @@ function rezRadek(rez){
   }
 
   var popis = kombPopis(nazevRezimu(rez), false, esc(popisRezimuKratky(rez)));
+
+  if(vyberRezimuZap){
+    var vyb = document.createElement("button");
+    vyb.type = "button"; vyb.className = "ghost";
+    function znac(){
+      var on = !!vybraneRezimy[rez.id];
+      vyb.classList.toggle("on", on);
+      vyb.textContent = t(on ? "rezim.sdil.vybrano" : "rezim.sdil.nevybrano");
+    }
+    vyb.addEventListener("click", function(){
+      vybraneRezimy[rez.id] = !vybraneRezimy[rez.id];
+      znac();
+    });
+    znac();
+    btns.appendChild(vyb);
+    row.appendChild(popis); row.appendChild(btns);
+    return row;
+  }
+
   var prav = document.createElement("button");
   prav.type = "button"; prav.className = "ghost rezbtn"; prav.textContent = t("rezim.pravidla");
   prav.addEventListener("click", function(){ otevriPravidla(rez.id); });
@@ -335,7 +362,9 @@ function renderRezSeznam(){
   var zpr = $("rezstrop");
   zpr.textContent = strop ? t("rezim.strop", { n: REZIMY_MAX }) : "";
   zpr.hidden = !strop;
-  $("reznovy").disabled = strop;
+  /* Přidat nový režim uprostřed výběru ke sdílení by odvedlo na detail bez
+     seznamu, na který se dá výběrová lišta dole uplatnit. */
+  $("reznovy").disabled = strop || vyberRezimuZap;
 }
 /* ---------- detail jednoho režimu ---------- */
 /* Detail režimu má šest sekcí a každá svůj nadpis s linkou: samostatné
@@ -609,6 +638,14 @@ function ukazRezPruh(){
   if(pruh) pruh.hidden = $("setcardrezimy").hidden ||
                          ($("rezdetail").hidden && $("kombdetail").hidden);
 }
+/* Lišta Sdílet/Importovat (#rezakcpruh, ui/sdileni-rezimu.js) je patička
+   stejného tvaru jako pás rizika výš, jen s opačnou viditelností: patří
+   nad seznam, ne nad detail nebo editor kombinace. */
+function ukazRezAkcPruh(){
+  var pruh = $("rezakcpruh");
+  if(pruh) pruh.hidden = $("setcardrezimy").hidden ||
+                         !($("rezdetail").hidden && $("kombdetail").hidden);
+}
 /* Text pásu. Vlastní dveře k překreslení, ne součást renderRezDetail():
    mění se i při psaní do pole se sazbou a celý oddíl se tam překreslovat
    nesmí. Ukazuje celou křivku — při stavbě pravidel je zajímavé právě to,
@@ -739,6 +776,7 @@ function renderRezimy(){
   if(vDetailu) renderRezDetail(rez);
   if(vKombi) renderKombDetail(rez, k);
   ukazRezPruh();
+  ukazRezAkcPruh();
 }
 /* ---------- editor jedné vlastní kombinace ----------
    Jméno, body, stav a jeden až šest vzorů. Vzory jsou spojené „nebo“:
@@ -1038,4 +1076,4 @@ function zrusRozdelaneRezimy(){
   kombEdit = null;
 }
 
-export { dalsiJmenoKombinace, duplikujRezim, editKombi, editRezim, kombEdit, kombNovy, kombPoleSazby, kombPopis, kombPresetRadek, kombSazbyPamet, kombSmazRadek, kombVlastniRadek, kombVzorRadek, mrizkaSazeb, naKombiDetail, naKombiZpet, naRezimDetail, naRezimSeznam, nadPole, naplnPrah, nazevKombinace, podradekKombinace, popisRezimuKratky, posunPrah, prepinacRadek, prepniRozs, prepniSam, prepniStej, prepniStejZaklad, ptamSeRezim, ptamSeTvar, ptamSeVzor, renderKombDetail, renderKombiNovy, renderRezDetail, renderRezKonec, renderRezPruh, renderRezSeznam, renderRezStej, renderRezimy, rezEdit, rezPostRadek, rezRadek, rezRadekBodu, rozsPamet, samPamet, sazbaPole, smazKombinaci, stavTlacitko, stejOddil, stejPamet, ukazRezPruh, umistiNad, vychoziStej, vzorZZetonu, zrusRozdelaneRezimy };
+export { dalsiJmenoKombinace, duplikujRezim, editKombi, editRezim, kombEdit, kombNovy, kombPoleSazby, kombPopis, kombPresetRadek, kombSazbyPamet, kombSmazRadek, kombVlastniRadek, kombVzorRadek, mrizkaSazeb, naKombiDetail, naKombiZpet, naRezimDetail, naRezimSeznam, nadPole, naplnPrah, nazevKombinace, podradekKombinace, popisRezimuKratky, posunPrah, prepinacRadek, prepniRozs, prepniSam, prepniStej, prepniStejZaklad, ptamSeRezim, ptamSeTvar, ptamSeVzor, renderKombDetail, renderKombiNovy, renderRezDetail, renderRezKonec, renderRezPruh, renderRezSeznam, renderRezStej, renderRezimy, rezEdit, rezPostRadek, rezRadek, rezRadekBodu, rozsPamet, samPamet, sazbaPole, smazKombinaci, stavTlacitko, stejOddil, stejPamet, ukazRezAkcPruh, ukazRezPruh, umistiNad, vybraneRezimy, vyberRezimuZap, vychoziStej, vypniVyberRezimu, vzorZZetonu, zapniVyberRezimu, zrusRozdelaneRezimy };

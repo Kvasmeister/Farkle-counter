@@ -59,6 +59,20 @@
   }
   .trojpole .kombsazba{flex:1 1 0}
   .trojpole > span{flex:0 0 44px;font-family:"IM Fell English",Georgia,serif;font-size:16px;color:var(--bone)}
+  /* Lišta Sdílet/Importovat je patička ve stejném pružném sloupci jako
+     .rizpruh níž a ze stejného důvodu (viz tam). Řádek dvou/tří stejně
+     širokých tlačítek, ne sloupec přes celou šířku jako .archwrap u
+     historie — proto vlastní pravidlo, ne rozšíření odtud. */
+  .rezakcpruh{
+    flex:0 0 auto;
+    padding:8px 13px calc(10px + env(safe-area-inset-bottom));
+    background:var(--slate);border-top:1px solid var(--edge);
+  }
+  .rezakcpruh[hidden]{display:none}
+  .rezakcrada{display:flex;gap:8px}
+  .rezakcrada[hidden]{display:none}
+  .rezakcrada button{flex:1 1 0;min-height:46px;font-size:13px;padding:6px 4px}
+  #rezakczprava{margin-top:8px}
   /* Pás s rizikem farklu je patička okna nastavení: třetí prvek pružného
      sloupce .modalbox za .modalhead a .modalbody. Sticky uvnitř těla se pod
      jeho spodní padding nedostane a pod pásem prosvítal obsah. */
