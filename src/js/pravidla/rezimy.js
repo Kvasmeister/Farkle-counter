@@ -132,6 +132,46 @@ function stejnePole(a, b){
   for(var i = 0; i < a.length; i++){ if(a[i] !== b[i]) return false; }
   return true;
 }
+/* Vzor jedné kombinace popisují dvě setříděná/napočtená pole (viz cistyTvar
+   v kombinace.js), takže je stačí porovnat prvek po prvku. */
+function stejnyVzor(a, b){
+  return stejnePole(a.pocty, b.pocty) && stejnePole(a.tvar, b.tvar);
+}
+/* Vzory i kombinace se porovnávají jako NEUSPOŘÁDANÉ množiny: pořadí, ve
+   kterém autor kombinace/vzory naťukal, na chování hry nemá vliv
+   (sediKombinace/kombinaceZap v kombinace.js ho ignorují), takže by trvání
+   na shodě pořadí dávalo falešně odlišné výsledky u dvou prakticky
+   identických režimů. */
+function stejnaMnozina(a, b, stejnyPrvek){
+  if(a.length !== b.length) return false;
+  var pouzite = new Array(b.length), i, j, nasel;
+  for(i = 0; i < a.length; i++){
+    nasel = false;
+    for(j = 0; j < b.length; j++){
+      if(pouzite[j]) continue;
+      if(stejnyPrvek(a[i], b[j])){ pouzite[j] = true; nasel = true; break; }
+    }
+    if(!nasel) return false;
+  }
+  return true;
+}
+function stejnaKombinace(a, b){
+  return a.b === b.b && a.z === b.z && stejnaMnozina(a.vz, b.vz, stejnyVzor);
+}
+/* Funkční rovnost dvou režimů: stejná pravidla bez ohledu na id, jméno
+   a kosmetické `rozs` (jen přepínač zobrazení, viz renderRezStej). Používá
+   se při importu sdíleného režimu k odhalení, že jde o už existující
+   nastavení pod jiným jménem. */
+function stejnyRezim(a, b){
+  return a.kostek === b.kostek &&
+         stejnePole(a.sam, b.sam) &&
+         stejnaStej(a.stej, b.stej) &&
+         a.nad === b.nad &&
+         stejnePole(a.nadP, b.nadP) &&
+         stejnaMapa(a.post, b.post) &&
+         stejnaMapa(a.p, b.p) &&
+         stejnaMnozina(a.v, b.v, stejnaKombinace);
+}
 /* Čerstvý režim z presetu. Pole a mapy se kopírují, aby úprava jednoho
    režimu nepřepsala výchozí tabulku ani sourozence. */
 function zPresetu(id){
@@ -246,8 +286,32 @@ function mezeBodu(x){
   return Math.min(b, BODY_MAX);
 }
 
+function sezPodleId(sez, id){
+  for(var i = 0; i < sez.length; i++){ if(sez[i].id === id) return sez[i]; }
+  return null;
+}
+/* Čistá stavba seznamu režimů z uloženého/cizího objektu {akt,p,v}. Nemutuje
+   REZIMY, takže ji použije i náhled importu (zálohy, sdílení) beze změny
+   běžící hry, dokud se výsledek výslovně nepřijme. */
+function rezimyZObjektu(o){
+  var sez = [], i, id, x;
+  for(i = 0; i < PRESET_REZ_PORADI.length; i++){
+    id = PRESET_REZ_PORADI[i];
+    sez.push(cistyRezim(o && o.p ? o.p[id] : null, id, id));
+  }
+  if(o && Array.isArray(o.v)){
+    for(i = 0; i < o.v.length && sez.length < PRESET_REZ_PORADI.length + REZIMY_MAX; i++){
+      x = o.v[i];
+      if(!x || typeof x !== "object") continue;
+      id = (typeof x.id === "string" && x.id && !jePreset(x.id)) ? x.id.slice(0, 40) : novyIdRezimu();
+      if(sezPodleId(sez, id)) continue;
+      sez.push(cistyRezim(x, id, VYCHOZI_REZIM));
+    }
+  }
+  return { sez: sez, akt: (o && typeof o.akt === "string" && sezPodleId(sez, o.akt)) ? o.akt : VYCHOZI_REZIM };
+}
 function nactiRezimy(){
-  var raw = null, o = null, i, id;
+  var raw = null, o = null;
   try{ raw = localStorage.getItem(REZKEY); }catch(e){}
   if(raw){ try{ o = JSON.parse(raw); }catch(e){ o = null; } }
   if(!o || typeof o !== "object") o = null;
@@ -262,21 +326,9 @@ function nactiRezimy(){
       if(so && typeof so === "object") o = { akt: VYCHOZI_REZIM, p: { kcd2: { p: so.p, v: so.v } }, v: [] };
     }
   }
-  REZIMY.sez = [];
-  for(i = 0; i < PRESET_REZ_PORADI.length; i++){
-    id = PRESET_REZ_PORADI[i];
-    REZIMY.sez.push(cistyRezim(o && o.p ? o.p[id] : null, id, id));
-  }
-  if(o && Array.isArray(o.v)){
-    for(i = 0; i < o.v.length && REZIMY.sez.length < PRESET_REZ_PORADI.length + REZIMY_MAX; i++){
-      var x = o.v[i];
-      if(!x || typeof x !== "object") continue;
-      id = (typeof x.id === "string" && x.id && !jePreset(x.id)) ? x.id.slice(0, 40) : novyIdRezimu();
-      if(rezimPodleId(id)) continue;
-      REZIMY.sez.push(cistyRezim(x, id, VYCHOZI_REZIM));
-    }
-  }
-  REZIMY.akt = (o && typeof o.akt === "string" && rezimPodleId(o.akt)) ? o.akt : VYCHOZI_REZIM;
+  var vysledek = rezimyZObjektu(o);
+  REZIMY.sez = vysledek.sez;
+  REZIMY.akt = vysledek.akt;
 }
 function novyIdRezimu(){
   return "r" + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
@@ -308,14 +360,26 @@ function venRezim(rez){
            nad: rez.nad, nadP: rez.nadP.slice(),
            post: kopieMapy(rez.post), p: kopieMapy(rez.p), v: rez.v.map(venKombinaci) };
 }
-function ulozRezimy(){
+/* Export pro sdílení jednoho režimu: na rozdíl od venRezim() materializuje
+   jméno i u přednastaveného režimu, protože příjemce nezná katalog
+   „rezim.n.*“ odesílatele, jen data — a i přednastavený režim s odchylkou
+   má smysl poslat dál. */
+function venRezimSdileny(rez){
+  var v = venRezim(rez);
+  if(!rez.vlastni) v.nazev = nazevRezimu(rez);
+  return v;
+}
+function slozRezimy(){
   var ven = { akt: REZIMY.akt, p: {}, v: [] }, o;
   REZIMY.sez.forEach(function(rez){
     if(rez.vlastni){ ven.v.push(venRezim(rez)); return; }
     o = odchylkyRezimu(rez);
     if(o) ven.p[rez.id] = o;
   });
-  try{ localStorage.setItem(REZKEY, JSON.stringify(ven)); }catch(e){}
+  return ven;
+}
+function ulozRezimy(){
+  try{ localStorage.setItem(REZKEY, JSON.stringify(slozRezimy())); }catch(e){}
 }
 
 
@@ -330,4 +394,4 @@ function nazevRezimu(rez){
   return rez.nazev || t("rezim.beznazvu");
 }
 
-export { NADP_ZAKLAD, NAD_DRUHY, POCTY_STEJ, PRAH_ZAKLAD, PRESET_REZIMY, PRESET_REZ_PORADI, REZIMY, REZIMY_MAX, REZKEY, SAMOSTATNE_V_RADE, SAM_ZAKLAD, TROJ_ZAKLAD, VYCHOZI_REZIM, aktRezim, cistaSestice, cistyRezim, jePreset, kopieMapy, kopieStej, kostek, mezeBodu, nactiRezimy, nazevRezimu, nejvyssiStej, novyIdRezimu, odchylkyRezimu, pocetSamostatnych, poctyStej, prahStej, rezimPodleId, sestiZap, seznamRezimu, stejZap, stejnaMapa, stejnaStej, stejnePole, ulozRezimy, venKombinaci, venRezim, zPresetu };
+export { NADP_ZAKLAD, NAD_DRUHY, POCTY_STEJ, PRAH_ZAKLAD, PRESET_REZIMY, PRESET_REZ_PORADI, REZIMY, REZIMY_MAX, REZKEY, SAMOSTATNE_V_RADE, SAM_ZAKLAD, TROJ_ZAKLAD, VYCHOZI_REZIM, aktRezim, cistaSestice, cistyRezim, jePreset, kopieMapy, kopieStej, kostek, mezeBodu, nactiRezimy, nazevRezimu, nejvyssiStej, novyIdRezimu, odchylkyRezimu, pocetSamostatnych, poctyStej, prahStej, rezimPodleId, rezimyZObjektu, sestiZap, seznamRezimu, slozRezimy, stejZap, stejnaKombinace, stejnaMapa, stejnaMnozina, stejnaStej, stejnePole, stejnyRezim, stejnyVzor, ulozRezimy, venKombinaci, venRezim, venRezimSdileny, zPresetu };

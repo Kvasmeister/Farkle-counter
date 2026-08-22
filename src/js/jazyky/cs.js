@@ -20,6 +20,7 @@ export var RUCNI = {
   "slovo.kolo":     ["{n} kolo", "{n} kola", "{n} kol"],
   "slovo.hra":      ["{n} hra", "{n} hry", "{n} her"],
   "slovo.nova":     ["{n} nová", "{n} nové", "{n} nových"],
+  "slovo.rezim":    ["{n} režim", "{n} režimy", "{n} režimů"],
   "slovo.kostkami": ["{n} kostkou", "{n} kostkami"],
   /* první pád — pro výčty v nastavení; „kostkami“ je sedmý a jinam nesedne */
   "slovo.kostek":   ["{n} kostka", "{n} kostky", "{n} kostek"],
@@ -124,6 +125,15 @@ export var RUCNI = {
   "rezim.vychozi.btn": "Obnovit",
   "rezim.smazat.n":   "Smazat režim",
   "rezim.smazat.p":   "Hry, které už jsou v historii, si svůj název ponechají.",
+
+  /* sdílení jednotlivých režimů */
+  "rezim.pridano":          ["Přidán {n} režim.", "Přidány {n} režimy.", "Přidáno {n} režimů."],
+  "rezim.sdil.vyber":       "Vyber aspoň jeden herní režim.",
+  "rezim.sdil.vybrano":     "Vybráno",
+  "rezim.sdil.nevybrano":   "Nevybráno",
+  "rezim.imp.duplicitni":   "Stejná pravidla má už „{n}“ — nenačte se.",
+  "rezim.imp.prejmenovano": "Přejmenováno kvůli shodě jména.",
+  "rezim.imp.nic":          "Nic k importu — všechny režimy se vynechaly.",
   "komb.nevejde":     "víc kostek, než režim má",
   "komb.bezvzoru":    "zatím bez vzoru — na počítadle se neukáže",
   "pocitadlo.postupkykomb": "Postupky a kombinace",
@@ -350,6 +360,23 @@ export var RUCNI = {
   "exp.souhrn":     "celkem {b}, nejlepší kolo {nej}, farklů {f}",
   "exp.mezisoucet": "celkem {b}",
   "exp.oddelovac":  "--- data pro import, nešahat ---",
+
+  /* kompletní záloha a záloha herních režimů — vlastní marker, ne #DATA:,
+     ale stejná kostra (čitelný text + JSON) jako záloha historie */
+  "expplna.nadpis":     "Kostky — kompletní záloha",
+  "expplna.vytvoreno":  "vytvořeno {kdy}, {her}, {rez}",
+  "exprez.nadpis":      "Kostky — záloha herních režimů",
+  "exprez.vytvoreno":   "vytvořeno {kdy}, {n}",
+  "sdil.nadpis":        "Kostky — sdílené herní režimy",
+  "sdil.vytvoreno":     "vytvořeno {kdy}, {n}",
+  "zalplna.info.soubor":    "Soubor obsahuje {her} a {rez}.",
+  "zalplna.info.text":      "Text obsahuje {her} a {rez}.",
+  "zalplna.pridano":        "Přidáno: {her}, {rez}.",
+  "zalplna.nahrazeno":      "Kompletní záloha nahrazena, {her}, {rez}.",
+  "zalrez.info.soubor":     "Soubor obsahuje {rez}.",
+  "zalrez.info.text":       "Text obsahuje {rez}.",
+  "zalrez.nahrazeno":       "Herní režimy nahrazeny, {rez}.",
+  "zal.rezimyzamceno":      "Nahradit herní režimy nejde uprostřed rozehrané hry. Dohraj nebo zruš hru a zkus to znovu.",
 
   /* zabrané místo */
   "misto.nezjistit":     "Velikost se nedaří zjistit.",

@@ -232,6 +232,8 @@ import { renderP2 } from "./ui/statistiky-stranka.js";
 import { initStranky } from "./ui/stranky.js";
 import { render } from "./ui/vykresleni.js";
 import { initZaloha, renderZaloha, renderZaloha2 } from "./ui/zaloha.js";
+import { initZalohaPlna } from "./ui/zaloha-plna.js";
+import { initSdileniRezimu } from "./ui/sdileni-rezimu.js";
 import {
   archive,
   fixMode,
@@ -329,6 +331,8 @@ import { initUdalosti } from "./ui/udalosti.js";
   initPlatforma();
   initStranky();
   initZaloha();
+  initZalohaPlna();
+  initSdileniRezimu();
   initFiltry();
   initUdalosti();
 

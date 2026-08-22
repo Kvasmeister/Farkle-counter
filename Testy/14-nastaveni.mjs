@@ -20,8 +20,10 @@ function app(seed){
     /* jsdom nemá layout, ale <details> umí — klepnutí na hlavičku ho otevře */
     rozbal(id){ klik($(id).querySelector("summary")); },
     sekce(){ return [...d.querySelectorAll("#setmodal .setsec")]; },
-    /* Okno má dvě karty; všechno kromě kombinací sedí v té první. */
+    /* Okno má tři karty: přepínače na první, kombinace na druhé, zálohy
+       a zabrané místo na třetí. */
     karta(){ return $("setcardobecne"); },
+    kartaZaloh(){ return $("setcardzalohy"); },
     karty(){ return [...d.querySelectorAll("#setmodal .setcard")]; },
     naKartu(i){ klik($("setseg").children[i]); },
     nova(){ klik($("reset")); klik($("reset")); if(!$("newmodal").hidden) klik($("newdrop")); } };
@@ -30,14 +32,12 @@ function app(seed){
 console.log("A) nahoře přepínače bez podmnožin");
 {
   const a = app();
-  /* Přepínače a harmonika sedí na první kartě; „hlavní úroveň“ je od rozdělení
-     okna na dvě karty právě ona, ne rovnou .modalbody. */
+  /* Přepínače a harmonika koše sedí na první kartě; „hlavní úroveň“ je od
+     rozdělení okna na tři karty právě ona, ne rovnou .modalbody. Záloha
+     historie a zabrané místo se přesunuly na kartu Zálohy. */
   const telo = a.karta();
   const deti = [...telo.children];
-  /* řádek o zabraném místě je taky .setrow, ale leží až pod harmonikou —
-     přepínače jsou jen ty nad ní */
-  const nahore = deti.slice(0, deti.indexOf(a.$("seckos")));
-  const radky = nahore.filter(x => x.classList.contains("setrow"));
+  const radky = deti.filter(x => x.classList.contains("setrow"));
   /* fullscreen i nezhasínání se v jsdom odstraní samy — ani jedno API tam
      není. Zbývá jazyk a automatické ukládání; ani jedno na prohlížeči
      nezávisí, takže ta dvojice zbude vždycky. */
@@ -46,43 +46,58 @@ console.log("A) nahoře přepínače bez podmnožin");
      "zbylé přepínače jsou na hlavní úrovni a v pořadí jazyk, ukládání; řádků " + radky.length);
   ok(deti.indexOf(a.$("jazykrow")) === 0, "jazyk je úplně první řádek karty");
   ok(a.$("jazykrow").contains(a.$("jazyksel")), "a přepínač sedí uvnitř něj");
-  ok(deti.indexOf(a.$("mistorow")) > deti.indexOf(a.$("seczal")),
-     "řádek o místě je až pod harmonikou");
+  ok(!telo.contains(a.$("mistorow")) && !telo.contains(a.$("seczal")),
+     "zabrané místo i záloha historie se přestěhovaly na kartu Zálohy");
   ok(a.$("autorow").parentNode === telo, "a nesedí uvnitř žádného oddílu");
   ok(deti.indexOf(a.$("autorow")) < deti.indexOf(a.$("seckos")),
      "přepínače jsou nad harmonikou");
 }
 
-console.log("A2) okno je rozdělené na dvě karty");
+console.log("A2) okno je rozdělené na tři karty");
 {
   const a = app();
   const telo = a.$("setmodal").querySelector(".modalbody");
   const deti = [...telo.children];
   ok(deti[0] === a.$("setseg"), "přepínač karet je úplně nahoře");
-  ok(a.$("setseg").children.length === 2, "má dvě tlačítka, je " + a.$("setseg").children.length);
-  ok(a.karty().length === 2 && a.karty()[0] === a.$("setcardobecne") && a.karty()[1] === a.$("setcardrezimy"),
-     "karty jsou dvě, obecná první");
-  ok(!a.$("setcardobecne").hidden && a.$("setcardrezimy").hidden, "vidět je jen ta první");
-  ok(a.$("setseg").children[0].classList.contains("on") && !a.$("setseg").children[1].classList.contains("on"),
+  ok(a.$("setseg").children.length === 3, "má tři tlačítka, je " + a.$("setseg").children.length);
+  ok(a.karty().length === 3 && a.karty()[0] === a.$("setcardobecne") &&
+     a.karty()[1] === a.$("setcardrezimy") && a.karty()[2] === a.$("setcardzalohy"),
+     "karty jsou tři, obecná první, zálohy poslední");
+  ok(!a.$("setcardobecne").hidden && a.$("setcardrezimy").hidden && a.$("setcardzalohy").hidden,
+     "vidět je jen ta první");
+  ok(a.$("setseg").children[0].classList.contains("on") && !a.$("setseg").children[1].classList.contains("on") &&
+     !a.$("setseg").children[2].classList.contains("on"),
      "a její tlačítko je zvýrazněné");
   /* kombinace patří výhradně na druhou kartu */
   ok(a.$("setcardrezimy").contains(a.$("komblist")) && a.$("setcardrezimy").contains(a.$("kombpridat")),
      "kombinace sedí na druhé kartě");
-  ok(a.sekce().every(x => a.$("setcardobecne").contains(x)), "všechny oddíly harmoniky jsou na první");
+  /* harmonika se dnes dělí mezi první kartu (koše) a třetí (zálohy) */
+  ok(["seckos", "seckoshist"].every(id => a.$("setcardobecne").contains(a.$(id))),
+     "koše sedí na první kartě");
+  ok(["seczalplna", "seczal", "seczalrez"].every(id => a.$("setcardzalohy").contains(a.$(id))),
+     "zálohy sedí na třetí kartě");
   ok(!a.d.querySelector("#komblist").closest("details"), "kombinace už nejsou v žádném oddílu");
 
   a.naKartu(1);
-  ok(a.$("setcardobecne").hidden && !a.$("setcardrezimy").hidden, "klepnutí kartu prohodí");
-  ok(!a.$("setseg").children[0].classList.contains("on") && a.$("setseg").children[1].classList.contains("on"),
+  ok(a.$("setcardobecne").hidden && !a.$("setcardrezimy").hidden && a.$("setcardzalohy").hidden,
+     "klepnutí na Herní režimy přepne kartu");
+  ok(!a.$("setseg").children[0].classList.contains("on") && a.$("setseg").children[1].classList.contains("on") &&
+     !a.$("setseg").children[2].classList.contains("on"),
      "zvýraznění jde s ní");
+  a.naKartu(2);
+  ok(a.$("setcardobecne").hidden && a.$("setcardrezimy").hidden && !a.$("setcardzalohy").hidden,
+     "klepnutí na Zálohy přepne na třetí kartu");
+  ok(!a.$("setseg").children[1].classList.contains("on") && a.$("setseg").children[2].classList.contains("on"),
+     "a zvýraznění jde i sem");
   a.naKartu(0);
-  ok(!a.$("setcardobecne").hidden && a.$("setcardrezimy").hidden, "a zpátky taky");
+  ok(!a.$("setcardobecne").hidden && a.$("setcardrezimy").hidden && a.$("setcardzalohy").hidden,
+     "a zpátky taky");
 
   /* okno začíná vždycky na první kartě, stejně jako se sbalenou harmonikou */
-  a.naKartu(1);
+  a.naKartu(2);
   a.klik(a.$("setmodal").querySelector(".modalx"));
   a.klik(a.$("setbtn"));
-  ok(!a.$("setcardobecne").hidden && a.$("setcardrezimy").hidden,
+  ok(!a.$("setcardobecne").hidden && a.$("setcardrezimy").hidden && a.$("setcardzalohy").hidden,
      "po dalším otevření je zase na první");
 }
 
@@ -116,42 +131,52 @@ console.log("A3) karta Herní režimy má seznam a detail jako podstránky");
   ok(!a.$("rezlist").hidden && a.$("rezdetail").hidden, "po dalším otevření je zase na seznamu");
 }
 
-console.log("B) tři oddíly, sbalené a se správnými názvy");
+console.log("B) pět oddílů, sbalené a se správnými názvy");
 {
   const b = app();
   const s = b.sekce();
-  ok(s.length === 3, "tři oddíly, je " + s.length);
-  ok(s.map(x => x.id).join(",") === "seckos,seckoshist,seczal", "pořadí: " + s.map(x => x.id).join(","));
+  ok(s.length === 5, "pět oddílů, je " + s.length);
+  ok(s.map(x => x.id).join(",") === "seckos,seckoshist,seczalplna,seczal,seczalrez",
+     "pořadí: " + s.map(x => x.id).join(","));
   ok(s.every(x => !x.open), "všechny sbalené");
   const nazvy = s.map(x => x.querySelector("summary span").textContent);
   ok(nazvy[0] === "Smazané rozehrané hry" && nazvy[1] === "Smazané hry z historie" &&
-     nazvy[2] === "Záloha historie",
+     nazvy[2] === "Kompletní záloha" && nazvy[3] === "Záloha historie" && nazvy[4] === "Záloha herních režimů",
      "názvy: " + nazvy.join(" / "));
   ok(b.$("seckos").contains(b.$("koslist")), "koš rozehraných je v prvním oddílu");
   ok(b.$("seckoshist").contains(b.$("koshistlist")), "koš historie je ve druhém");
+  ok(b.$("seczalplna").contains(b.$("expbtnplna")) && b.$("seczalplna").contains(b.$("impbtnplna")),
+     "kompletní záloha má uvnitř export i import");
   ok(b.$("seczal").contains(b.$("expbtn")) && b.$("seczal").contains(b.$("impbtn")),
-     "záloha má uvnitř export i import");
+     "záloha historie má uvnitř export i import");
+  ok(b.$("seczalrez").contains(b.$("expbtnrez")) && b.$("seczalrez").contains(b.$("impbtnrez")),
+     "záloha herních režimů má uvnitř export i import");
 }
 
-console.log("C) harmonika: otevřený je vždycky jen jeden");
+console.log("C) harmonika: otevřený je vždycky jen jeden, i napříč kartami");
 {
   const c = app();
   c.rozbal("seckos");
   await tik();
   ok(c.$("seckos").open, "první oddíl se otevřel");
+  /* seczal sedí dnes na jiné kartě (Zálohy) než seckos (Obecné) — exkluzivita
+     harmoniky je ale globální přes celé #setmodal, takže musí zabrat i tak */
+  c.naKartu(2);
   c.rozbal("seczal");
   await tik();                       /* toggle je podle specifikace asynchronní */
-  ok(c.$("seczal").open, "třetí oddíl se otevřel");
-  ok(!c.$("seckos").open, "a první se sám zavřel");
+  ok(c.$("seczal").open, "oddíl na jiné kartě se otevřel");
+  ok(!c.$("seckos").open, "a ten na první kartě se sám zavřel");
+  c.naKartu(0);
   c.rozbal("seckoshist");
   await tik();
-  ok(c.$("seckoshist").open && !c.$("seczal").open, "a totéž při přechodu na druhý");
+  ok(c.$("seckoshist").open && !c.$("seczal").open, "a totéž při přechodu zpátky");
 }
 
 console.log("D) otevření okna začíná vždycky se sbalenou kartou");
 {
   const dd = app();
   dd.klik(dd.$("setbtn"));
+  dd.naKartu(2);
   dd.rozbal("seczal");
   ok(dd.$("seczal").open, "oddíl otevřený");
   dd.klik(dd.$("setmodal").querySelector(".modalx"));
@@ -177,19 +202,19 @@ console.log("E) počty v hlavičkách oddílů");
   ok(e.$("koshistcnt").textContent === "", "druhý koš zůstal prázdný");
 }
 
-console.log("F) údaj o zabraném místě je jen jednou, na hlavní úrovni");
+console.log("F) údaj o zabraném místě je jen jednou, na kartě Zálohy");
 {
   const f = app();
   const vsechny = [...f.d.querySelectorAll(".misto")];
   ok(vsechny.length === 1, "jeden prvek, je " + vsechny.length);
-  ok(!f.$("seczal").contains(vsechny[0]), "v oddílu zálohy už není");
-  const telo = f.karta();
-  ok(vsechny[0].parentNode === telo, "je na hlavní úrovni první karty");
+  ok(!f.$("seczal").contains(vsechny[0]), "v žádném oddílu zálohy není");
+  const telo = f.kartaZaloh();
+  ok(vsechny[0].parentNode === telo, "je na hlavní úrovni karty Zálohy");
   ok(vsechny[0] === telo.lastElementChild || vsechny[0].nextElementSibling.id === "impfile",
      "a je úplně dole");
   ok(vsechny.every(x => x.hidden), "dokud se nerozbalilo, neukazují se");
   ok(f.$("mistorow").parentNode === telo && f.$("mistorow").contains(f.$("mistobtn")),
-     "řádek s tlačítkem je taky na hlavní úrovni");
+     "řádek s tlačítkem je taky na hlavní úrovni karty Zálohy");
 }
 
 console.log("F2) celek se počítá sám, rozpis až tlačítkem Detail");

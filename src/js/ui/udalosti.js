@@ -50,6 +50,8 @@ import {
 } from "./prvky.js";
 import { render } from "./vykresleni.js";
 import { renderZaloha } from "./zaloha.js";
+import { renderZalohaPlna, renderZalohaRez } from "./zaloha-plna.js";
+import { renderSdileniRezimu } from "./sdileni-rezimu.js";
 import {
   archive,
   hlaskaNaTlacitku,
@@ -157,7 +159,7 @@ export function initUdalosti(){
     zrusPtaniKosu();
     zrusRozdelaneRezimy();
     naKartuNastaveni(0);
-    renderKos(); renderZaloha(); renderRezimy();
+    renderKos(); renderZaloha(); renderZalohaPlna(); renderZalohaRez(); renderRezimy(); renderSdileniRezimu();
   });
 
   /* Změna cíle, režimu i limitu může hru zamknout — a zamknutá hra je

@@ -64,13 +64,11 @@ function slozHry(hotovo){
   kur.onerror = function(){ hotovo(null); };
 }
 
-/* Formát zálohy se nemění: nahoře čitelný přehled, dole řádek #DATA:.
-   Soubor z dřívější verze musí jít naimportovat i potom. */
-function exportText(hry){
+/* Čitelný rozpis her, jedna hra po druhé. Vytažené z exportText(), aby ho
+   stejnou podobou použil i export Kompletní zálohy (ui/zaloha-plna.js) —
+   ta k němu jen připojí rozpis herních režimů. */
+function hrySeznamRadky(hry){
   var r = [];
-  r.push(t("exp.nadpis"));
-  r.push(t("exp.vytvoreno", { kdy: dt(Date.now()), n: hry.length }));
-  r.push("");
   hry.forEach(function(rec, i){
     r.push((i + 1) + ") " + popisHry(rec));
     r.push("   " + t("exp.souhrn", {
@@ -89,6 +87,13 @@ function exportText(hry){
     });
     r.push("");
   });
+  return r;
+}
+/* Formát zálohy se nemění: nahoře čitelný přehled, dole řádek #DATA:.
+   Soubor z dřívější verze musí jít naimportovat i potom. */
+function exportText(hry){
+  var r = [t("exp.nadpis"), t("exp.vytvoreno", { kdy: dt(Date.now()), n: hry.length }), ""];
+  r = r.concat(hrySeznamRadky(hry));
   /* v čitelné části nechceme úzkou nezlomitelnou mezeru, v textovém
      souboru by se leckde zobrazila jako podivný znak */
   return r.join("\n").replace(/\u202F/g, " ") +
@@ -109,6 +114,27 @@ function sTextemZalohy(btn, puvodni, hotovo){
     hotovo(exportText(hry));
   });
 }
+/* Očištěná kopie jednoho záznamu hry z cizích dat, nebo null. Vytažené
+   z parseZaloha(), aby ji stejně použil i import Kompletní zálohy
+   (ui/zaloha-plna.js) — je to ta samá cizí data, jen v jiném obalu. */
+function cistaHra(g){
+  if(!g || typeof g !== "object" || !Array.isArray(g.turns)) return null;
+  return {
+    id: (typeof g.id === "string" && g.id) ? g.id : newId(),
+    savedAt: typeof g.savedAt === "number" ? g.savedAt : Date.now(),
+    mode: g.mode === "rounds" ? "rounds" : "points",
+    goal: g.goal > 0 ? g.goal : 4000,
+    roundGoal: g.roundGoal > 0 ? g.roundGoal : null,
+    /* Režim může přijít z cizího telefonu, kde takový vlastní režim
+       existuje a tady ne — proto se veze i jeho název. Obojí ořezané,
+       obojí jde do stránky přes esc(). */
+    rezim: (typeof g.rezim === "string" && g.rezim) ? g.rezim.slice(0, NAZEV_MAX) : VYCHOZI_REZIM,
+    rezimN: (typeof g.rezimN === "string" && g.rezimN) ? g.rezimN.slice(0, NAZEV_MAX) : null,
+    banked: typeof g.banked === "number" ? g.banked : 0,
+    /* legitimní popis kola je do stovky znaků, delší je omyl */
+    turns: g.turns.map(function(tah){ return kopieKola(tah, 300); })
+  };
+}
 function parseZaloha(text){
   var i = text.lastIndexOf(ZNACKA);
   if(i < 0) return null;
@@ -118,22 +144,8 @@ function parseZaloha(text){
   if(!Array.isArray(d)) return null;
   var out = [];
   d.forEach(function(g){
-    if(!g || typeof g !== "object" || !Array.isArray(g.turns)) return;
-    out.push({
-      id: (typeof g.id === "string" && g.id) ? g.id : newId(),
-      savedAt: typeof g.savedAt === "number" ? g.savedAt : Date.now(),
-      mode: g.mode === "rounds" ? "rounds" : "points",
-      goal: g.goal > 0 ? g.goal : 4000,
-      roundGoal: g.roundGoal > 0 ? g.roundGoal : null,
-      /* Režim může přijít z cizího telefonu, kde takový vlastní režim
-         existuje a tady ne — proto se veze i jeho název. Obojí ořezané,
-         obojí jde do stránky přes esc(). */
-      rezim: (typeof g.rezim === "string" && g.rezim) ? g.rezim.slice(0, NAZEV_MAX) : VYCHOZI_REZIM,
-      rezimN: (typeof g.rezimN === "string" && g.rezimN) ? g.rezimN.slice(0, NAZEV_MAX) : null,
-      banked: typeof g.banked === "number" ? g.banked : 0,
-      /* legitimní popis kola je do stovky znaků, delší je omyl */
-      turns: g.turns.map(function(tah){ return kopieKola(tah, 300); })
-    });
+    var h = cistaHra(g);
+    if(h) out.push(h);
   });
   return out;
 }
@@ -356,4 +368,4 @@ export function initZaloha(){
   });
 }
 
-export { ZNACKA, datumProNazev, doSchranky, elImpBox, elImpFile, elImpInfo, elPasteArea, elPasteBox, elZalMsg, exportText, nactene, novychZ, parseZaloha, prijmiZalohu, renderZaloha, renderZaloha2, repTimer, sTextemZalohy, slozHry, stahni, zalMsg, zavriImport, zavriVlozeni };
+export { ZNACKA, cistaHra, datumProNazev, doSchranky, elImpBox, elImpFile, elImpInfo, elPasteArea, elPasteBox, elZalMsg, exportText, hrySeznamRadky, nactene, novychZ, parseZaloha, prijmiZalohu, renderZaloha, renderZaloha2, repTimer, sTextemZalohy, slozHry, stahni, zalMsg, zavriImport, zavriVlozeni };

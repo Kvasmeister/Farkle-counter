@@ -1165,13 +1165,16 @@
       <button class="modalx" type="button" data-close data-i18n-aria="spol.zavrit" aria-label="Zavřít">×</button>
     </div>
     <div class="modalbody">
-      <!-- Dvě karty jako podmenu Statistik. Kombinace mají vlastní kartu,
-           protože jinak se okno nedalo projít bez rolování přes cizí oddíly. -->
+      <!-- Tři karty jako podmenu Statistik. Kombinace mají vlastní kartu,
+           protože jinak se okno nedalo projít bez rolování přes cizí oddíly.
+           Zálohy mají vlastní kartu ze stejného důvodu — čtyři položky
+           zálohování by na kartě Obecné smíchaly různé účely dohromady. -->
       <div class="seg" id="setseg">
         <button type="button" class="on" data-i18n="nast.seg.obecne">Obecné</button>
         <!-- název zvoleného režimu sedí vedle popisku, ne v něm: do katalogu
              se tak nedostane žádná značka a překlad nepřepíše ten prvek -->
         <button type="button"><span data-i18n="nast.seg.rezimy">Herní režimy</span><span class="cnt" id="reznazev"></span></button>
+        <button type="button" data-i18n="nast.seg.zalohy">Zálohy</button>
       </div>
       <div class="setcard" id="setcardobecne">
       <div class="setrow" id="jazykrow">
@@ -1200,49 +1203,6 @@
         <div class="secbody"><div id="koshistlist"></div></div>
       </details>
 
-      <details class="setsec" id="seczal">
-        <summary><span data-i18n="nast.zaloha">Záloha historie</span></summary>
-        <div class="secbody">
-          <div class="setrow">
-            <div class="t"><b data-i18n="nast.exp.n">Export do souboru</b><span data-i18n="nast.exp.p">Textový soubor s přehledem her a daty pro pozdější import.</span></div>
-            <button class="ghost" id="expbtn" type="button" data-i18n="nast.exp.btn">Uložit</button>
-          </div>
-          <div class="setrow">
-            <div class="t"><b data-i18n="nast.kop.n">Zkopírovat do schránky</b><span data-i18n="nast.kop.p">Pro případ nefunkčního stahování.</span></div>
-            <button class="ghost" id="copybtn" type="button" data-i18n="nast.kop.btn">Kopírovat</button>
-          </div>
-          <div class="setrow">
-            <div class="t"><b data-i18n="nast.impf.n">Import ze souboru</b><span data-i18n="nast.impf.p">Načte zálohu a nabídne přidání nebo nahrazení.</span></div>
-            <button class="ghost" id="impbtn" type="button" data-i18n="nast.impf.btn">Vybrat soubor</button>
-          </div>
-          <div class="setrow">
-            <div class="t"><b data-i18n="nast.imps.n">Import ze schránky</b><span data-i18n="nast.imps.p">Vlož text zálohy do pole a načti ho.</span></div>
-            <button class="ghost" id="pastebtn" type="button" data-i18n="nast.imps.btn">Vložit text</button>
-          </div>
-          <div id="pastebox" hidden>
-            <textarea id="pastearea" data-i18n-ph="nast.vlozit.ph" placeholder="Sem vlož zkopírovanou zálohu"></textarea>
-            <div class="improw">
-              <button class="ghost" id="pasteload" type="button" data-i18n="nast.nacist">Načíst</button>
-              <button class="ghost" id="pastecancel" type="button" data-i18n="spol.zrusit">Zrušit</button>
-            </div>
-          </div>
-          <div id="impbox" hidden>
-            <div class="msg" id="impinfo"></div>
-            <div class="improw">
-              <button class="ghost" id="impadd" type="button" data-i18n="nast.pridatnove">Přidat nové</button>
-              <button class="ghost warn" id="imprep" type="button" data-i18n="nast.nahraditvse">Nahradit vše</button>
-            </div>
-          </div>
-          <div class="msg" id="zalmsg" hidden></div>
-        </div>
-      </details>
-
-      <div class="setrow mistorow" id="mistorow">
-        <div class="t"><b data-i18n="nast.misto.n">Zabrané místo</b><span id="mistocelkem" data-i18n="nast.misto.zjistuji">Zjišťuji&#8230;</span></div>
-        <button class="ghost" id="mistobtn" type="button" data-i18n="nast.misto.btn">Detail</button>
-      </div>
-      <div class="msg misto" hidden></div>
-      <input type="file" id="impfile" accept=".txt,text/plain" hidden>
       </div>
 
       <!-- Herní režimy: seznam a detail jednoho režimu jako podstránky téže
@@ -1263,6 +1223,61 @@
             <div class="setbtns"><button class="ghost rezbtn" id="reznovy" type="button" data-i18n="rezim.novy.btn">Přidat</button></div>
           </div>
           <div class="msg" id="rezstrop" hidden></div>
+
+          <!-- Sdílení jednotlivých režimů: samostatný mechanismus od Zálohy
+               herních režimů na kartě Zálohy — tady se posílá jen výběr,
+               ne všechno. Vlastní modul (ui/sdileni-rezimu.js), aby zůstal
+               nastaveni-rezimy.js dál jen o editaci jednoho režimu. -->
+          <div class="setrow">
+            <div class="t">
+              <b data-i18n="rezim.sdil.n">Sdílet vybrané</b>
+              <span data-i18n="rezim.sdil.p">Pošle jeden nebo víc herních režimů do jiného zařízení.</span>
+            </div>
+            <div class="setbtns"><button class="ghost" id="rezsdilbtn" type="button" data-i18n="rezim.sdil.btn">Sdílet</button></div>
+          </div>
+          <div id="rezsdilbox" hidden>
+            <div id="rezsdilrows"></div>
+            <div class="improw">
+              <button class="ghost" id="rezsdilstahni" type="button" data-i18n="nast.exp.btn">Uložit</button>
+              <button class="ghost" id="rezsdilkopie" type="button" data-i18n="nast.kop.btn">Kopírovat</button>
+              <button class="ghost" id="rezsdilzrusit" type="button" data-i18n="spol.zrusit">Zrušit</button>
+            </div>
+            <div class="msg" id="rezsdilzprava" hidden></div>
+          </div>
+
+          <div class="setrow">
+            <div class="t">
+              <b data-i18n="rezim.imp.n">Importovat</b>
+              <span data-i18n="rezim.imp.p">Načte kód sdílení ze souboru nebo ze schránky a nabídne přidání.</span>
+            </div>
+            <div class="setbtns"><button class="ghost" id="rezimpbtn" type="button" data-i18n="rezim.imp.btn">Importovat</button></div>
+          </div>
+          <div id="rezimpbox" hidden>
+            <div class="setrow">
+              <div class="t"><b data-i18n="nast.impf.n">Import ze souboru</b><span data-i18n="nast.impf.p">Načte zálohu a nabídne přidání nebo nahrazení.</span></div>
+              <button class="ghost" id="rezimpfilebtn" type="button" data-i18n="nast.impf.btn">Vybrat soubor</button>
+            </div>
+            <div class="setrow">
+              <div class="t"><b data-i18n="nast.imps.n">Import ze schránky</b><span data-i18n="nast.imps.p">Vlož text zálohy do pole a načti ho.</span></div>
+              <button class="ghost" id="rezimppastebtn" type="button" data-i18n="nast.imps.btn">Vložit text</button>
+            </div>
+            <div id="rezimppastebox" hidden>
+              <textarea id="rezimppastearea" data-i18n-ph="nast.vlozit.ph" placeholder="Sem vlož zkopírovanou zálohu"></textarea>
+              <div class="improw">
+                <button class="ghost" id="rezimppasteload" type="button" data-i18n="nast.nacist">Načíst</button>
+                <button class="ghost" id="rezimppastecancel" type="button" data-i18n="spol.zrusit">Zrušit</button>
+              </div>
+            </div>
+            <div id="rezimppreview" hidden>
+              <div id="rezimppreviewrows"></div>
+              <div class="improw">
+                <button class="ghost" id="rezimppotvrdit" type="button" data-i18n="rezim.imp.potvrdit">Importovat vybrané</button>
+                <button class="ghost" id="rezimpzrusit" type="button" data-i18n="spol.zrusit">Zrušit</button>
+              </div>
+            </div>
+          </div>
+          <div class="msg" id="rezimpzprava" hidden></div>
+          <input type="file" id="rezimpfile" accept=".txt,text/plain" hidden>
         </div>
 
         <div id="rezdetail" hidden>
@@ -1403,6 +1418,133 @@
           <div id="kombsmazrow"></div>
         </div>
       </div>
+
+      <!-- Zálohy: čtyři položky v pevném pořadí (zadání) — kompletní záloha,
+           záloha historie (beze změny přesunutá ze Obecné), záloha herních
+           režimů, zabrané místo (přesunuto beze změny). Kompletní záloha
+           a Záloha herních režimů kopírují strukturu Zálohy historie beze
+           změny vzoru, jen s jiným markerem a náplní (ui/zaloha-plna.js). -->
+      <div class="setcard" id="setcardzalohy" hidden>
+        <details class="setsec" id="seczalplna">
+          <summary><span data-i18n="nast.zalplna">Kompletní záloha</span></summary>
+          <div class="secbody">
+            <div class="setrow">
+              <div class="t"><b data-i18n="nast.expplna.n">Export do souboru</b><span data-i18n="nast.expplna.p">Textový soubor s historií i herními režimy pro pozdější import.</span></div>
+              <button class="ghost" id="expbtnplna" type="button" data-i18n="nast.expplna.btn">Uložit</button>
+            </div>
+            <div class="setrow">
+              <div class="t"><b data-i18n="nast.kopplna.n">Zkopírovat do schránky</b><span data-i18n="nast.kopplna.p">Pro případ nefunkčního stahování.</span></div>
+              <button class="ghost" id="copybtnplna" type="button" data-i18n="nast.kopplna.btn">Kopírovat</button>
+            </div>
+            <div class="setrow">
+              <div class="t"><b data-i18n="nast.impfplna.n">Import ze souboru</b><span data-i18n="nast.impfplna.p">Načte kompletní zálohu a nabídne přidání nebo nahrazení.</span></div>
+              <button class="ghost" id="impbtnplna" type="button" data-i18n="nast.impfplna.btn">Vybrat soubor</button>
+            </div>
+            <div class="setrow">
+              <div class="t"><b data-i18n="nast.impsplna.n">Import ze schránky</b><span data-i18n="nast.impsplna.p">Vlož text kompletní zálohy do pole a načti ho.</span></div>
+              <button class="ghost" id="pastebtnplna" type="button" data-i18n="nast.impsplna.btn">Vložit text</button>
+            </div>
+            <div id="pasteboxplna" hidden>
+              <textarea id="pasteareaplna" data-i18n-ph="nast.vlozit.ph" placeholder="Sem vlož zkopírovanou zálohu"></textarea>
+              <div class="improw">
+                <button class="ghost" id="pasteloadplna" type="button" data-i18n="nast.nacist">Načíst</button>
+                <button class="ghost" id="pastecancelplna" type="button" data-i18n="spol.zrusit">Zrušit</button>
+              </div>
+            </div>
+            <div id="impboxplna" hidden>
+              <div class="msg" id="impinfoplna"></div>
+              <div class="improw">
+                <button class="ghost" id="impaddplna" type="button" data-i18n="nast.pridatnove">Přidat nové</button>
+                <button class="ghost warn" id="imprepplna" type="button" data-i18n="nast.nahraditvse">Nahradit vše</button>
+              </div>
+            </div>
+            <div class="msg" id="zalmsgplna" hidden></div>
+          </div>
+        </details>
+
+        <details class="setsec" id="seczal">
+          <summary><span data-i18n="nast.zaloha">Záloha historie</span></summary>
+          <div class="secbody">
+            <div class="setrow">
+              <div class="t"><b data-i18n="nast.exp.n">Export do souboru</b><span data-i18n="nast.exp.p">Textový soubor s přehledem her a daty pro pozdější import.</span></div>
+              <button class="ghost" id="expbtn" type="button" data-i18n="nast.exp.btn">Uložit</button>
+            </div>
+            <div class="setrow">
+              <div class="t"><b data-i18n="nast.kop.n">Zkopírovat do schránky</b><span data-i18n="nast.kop.p">Pro případ nefunkčního stahování.</span></div>
+              <button class="ghost" id="copybtn" type="button" data-i18n="nast.kop.btn">Kopírovat</button>
+            </div>
+            <div class="setrow">
+              <div class="t"><b data-i18n="nast.impf.n">Import ze souboru</b><span data-i18n="nast.impf.p">Načte zálohu a nabídne přidání nebo nahrazení.</span></div>
+              <button class="ghost" id="impbtn" type="button" data-i18n="nast.impf.btn">Vybrat soubor</button>
+            </div>
+            <div class="setrow">
+              <div class="t"><b data-i18n="nast.imps.n">Import ze schránky</b><span data-i18n="nast.imps.p">Vlož text zálohy do pole a načti ho.</span></div>
+              <button class="ghost" id="pastebtn" type="button" data-i18n="nast.imps.btn">Vložit text</button>
+            </div>
+            <div id="pastebox" hidden>
+              <textarea id="pastearea" data-i18n-ph="nast.vlozit.ph" placeholder="Sem vlož zkopírovanou zálohu"></textarea>
+              <div class="improw">
+                <button class="ghost" id="pasteload" type="button" data-i18n="nast.nacist">Načíst</button>
+                <button class="ghost" id="pastecancel" type="button" data-i18n="spol.zrusit">Zrušit</button>
+              </div>
+            </div>
+            <div id="impbox" hidden>
+              <div class="msg" id="impinfo"></div>
+              <div class="improw">
+                <button class="ghost" id="impadd" type="button" data-i18n="nast.pridatnove">Přidat nové</button>
+                <button class="ghost warn" id="imprep" type="button" data-i18n="nast.nahraditvse">Nahradit vše</button>
+              </div>
+            </div>
+            <div class="msg" id="zalmsg" hidden></div>
+          </div>
+        </details>
+
+        <details class="setsec" id="seczalrez">
+          <summary><span data-i18n="nast.zalrez">Záloha herních režimů</span></summary>
+          <div class="secbody">
+            <div class="setrow">
+              <div class="t"><b data-i18n="nast.exprez.n">Export do souboru</b><span data-i18n="nast.exprez.p">Textový soubor se všemi herními režimy pro pozdější import.</span></div>
+              <button class="ghost" id="expbtnrez" type="button" data-i18n="nast.exprez.btn">Uložit</button>
+            </div>
+            <div class="setrow">
+              <div class="t"><b data-i18n="nast.koprez.n">Zkopírovat do schránky</b><span data-i18n="nast.koprez.p">Pro případ nefunkčního stahování.</span></div>
+              <button class="ghost" id="copybtnrez" type="button" data-i18n="nast.koprez.btn">Kopírovat</button>
+            </div>
+            <div class="setrow">
+              <div class="t"><b data-i18n="nast.impfrez.n">Import ze souboru</b><span data-i18n="nast.impfrez.p">Načte zálohu herních režimů a nabídne přidání nebo nahrazení.</span></div>
+              <button class="ghost" id="impbtnrez" type="button" data-i18n="nast.impfrez.btn">Vybrat soubor</button>
+            </div>
+            <div class="setrow">
+              <div class="t"><b data-i18n="nast.impsrez.n">Import ze schránky</b><span data-i18n="nast.impsrez.p">Vlož text zálohy herních režimů do pole a načti ho.</span></div>
+              <button class="ghost" id="pastebtnrez" type="button" data-i18n="nast.impsrez.btn">Vložit text</button>
+            </div>
+            <div id="pasteboxrez" hidden>
+              <textarea id="pasteareazrez" data-i18n-ph="nast.vlozit.ph" placeholder="Sem vlož zkopírovanou zálohu"></textarea>
+              <div class="improw">
+                <button class="ghost" id="pasteloadrez" type="button" data-i18n="nast.nacist">Načíst</button>
+                <button class="ghost" id="pastecancelrez" type="button" data-i18n="spol.zrusit">Zrušit</button>
+              </div>
+            </div>
+            <div id="impboxrez" hidden>
+              <div class="msg" id="impinforez"></div>
+              <div class="improw">
+                <button class="ghost" id="impaddrez" type="button" data-i18n="nast.pridatnove">Přidat nové</button>
+                <button class="ghost warn" id="imprepzrez" type="button" data-i18n="nast.nahraditvse">Nahradit vše</button>
+              </div>
+            </div>
+            <div class="msg" id="zalmsgrez" hidden></div>
+          </div>
+        </details>
+
+        <div class="setrow mistorow" id="mistorow">
+          <div class="t"><b data-i18n="nast.misto.n">Zabrané místo</b><span id="mistocelkem" data-i18n="nast.misto.zjistuji">Zjišťuji&#8230;</span></div>
+          <button class="ghost" id="mistobtn" type="button" data-i18n="nast.misto.btn">Detail</button>
+        </div>
+        <div class="msg misto" hidden></div>
+        <input type="file" id="impfile" accept=".txt,text/plain" hidden>
+        <input type="file" id="impfileplna" accept=".txt,text/plain" hidden>
+        <input type="file" id="impfilerez" accept=".txt,text/plain" hidden>
+      </div>
     </div>
     <!-- Pás rizika je při stavbě pravidel ten údaj, podle kterého se pozná,
          jestli režim dává smysl, takže je vidět pořád. Stojí za .modalbody,
@@ -1512,6 +1654,7 @@
     "slovo.kolo": ["{n} kolo", "{n} kola", "{n} kol"],
     "slovo.hra": ["{n} hra", "{n} hry", "{n} her"],
     "slovo.nova": ["{n} nová", "{n} nové", "{n} nových"],
+    "slovo.rezim": ["{n} režim", "{n} režimy", "{n} režimů"],
     "slovo.kostkami": ["{n} kostkou", "{n} kostkami"],
     /* první pád — pro výčty v nastavení; „kostkami“ je sedmý a jinam nesedne */
     "slovo.kostek": ["{n} kostka", "{n} kostky", "{n} kostek"],
@@ -1611,6 +1754,14 @@
     "rezim.vychozi.btn": "Obnovit",
     "rezim.smazat.n": "Smazat režim",
     "rezim.smazat.p": "Hry, které už jsou v historii, si svůj název ponechají.",
+    /* sdílení jednotlivých režimů */
+    "rezim.pridano": ["Přidán {n} režim.", "Přidány {n} režimy.", "Přidáno {n} režimů."],
+    "rezim.sdil.vyber": "Vyber aspoň jeden herní režim.",
+    "rezim.sdil.vybrano": "Vybráno",
+    "rezim.sdil.nevybrano": "Nevybráno",
+    "rezim.imp.duplicitni": "Stejná pravidla má už „{n}“ — nenačte se.",
+    "rezim.imp.prejmenovano": "Přejmenováno kvůli shodě jména.",
+    "rezim.imp.nic": "Nic k importu — všechny režimy se vynechaly.",
     "komb.nevejde": "víc kostek, než režim má",
     "komb.bezvzoru": "zatím bez vzoru — na počítadle se neukáže",
     "pocitadlo.postupkykomb": "Postupky a kombinace",
@@ -1815,6 +1966,22 @@
     "exp.souhrn": "celkem {b}, nejlepší kolo {nej}, farklů {f}",
     "exp.mezisoucet": "celkem {b}",
     "exp.oddelovac": "--- data pro import, nešahat ---",
+    /* kompletní záloha a záloha herních režimů — vlastní marker, ne #DATA:,
+       ale stejná kostra (čitelný text + JSON) jako záloha historie */
+    "expplna.nadpis": "Kostky — kompletní záloha",
+    "expplna.vytvoreno": "vytvořeno {kdy}, {her}, {rez}",
+    "exprez.nadpis": "Kostky — záloha herních režimů",
+    "exprez.vytvoreno": "vytvořeno {kdy}, {n}",
+    "sdil.nadpis": "Kostky — sdílené herní režimy",
+    "sdil.vytvoreno": "vytvořeno {kdy}, {n}",
+    "zalplna.info.soubor": "Soubor obsahuje {her} a {rez}.",
+    "zalplna.info.text": "Text obsahuje {her} a {rez}.",
+    "zalplna.pridano": "Přidáno: {her}, {rez}.",
+    "zalplna.nahrazeno": "Kompletní záloha nahrazena, {her}, {rez}.",
+    "zalrez.info.soubor": "Soubor obsahuje {rez}.",
+    "zalrez.info.text": "Text obsahuje {rez}.",
+    "zalrez.nahrazeno": "Herní režimy nahrazeny, {rez}.",
+    "zal.rezimyzamceno": "Nahradit herní režimy nejde uprostřed rozehrané hry. Dohraj nebo zruš hru a zkus to znovu.",
     /* zabrané místo */
     "misto.nezjistit": "Velikost se nedaří zjistit.",
     "misto.zdostupnych": "{u} z {q} dostupných",
@@ -1985,6 +2152,14 @@
     "rezim.vychozi.btn": "Restore",
     "rezim.smazat.n": "Delete mode",
     "rezim.smazat.p": "Games already in the history keep their name.",
+    /* sharing individual game modes */
+    "rezim.pridano": ["{n} mode added.", "{n} modes added."],
+    "rezim.sdil.vyber": "Pick at least one game mode.",
+    "rezim.sdil.vybrano": "Selected",
+    "rezim.sdil.nevybrano": "Not selected",
+    "rezim.imp.duplicitni": "“{n}” already has the same rules — this one won’t be added.",
+    "rezim.imp.prejmenovano": "Renamed because of a matching name.",
+    "rezim.imp.nic": "Nothing to import — every mode was skipped.",
     "pravidla.p1": "You roll {kostky} and set aside at least one scoring die or combination. If the roll scores nothing at all, it’s a <b>Farkle</b> — everything you have on the table this turn is lost and the turn passes on.",
     "pravidla.p2": "After every roll you decide: <b>bank</b> the points and pass the turn, or <b>keep rolling</b> with just the dice you haven’t set aside.",
     "pravidla.p3": "Set aside even the last die and you get <b>hot dice</b> — you roll {kostky} again and the points keep adding up in the same turn.",
@@ -2088,6 +2263,7 @@
     "nast.nahraditvse": "Replace all",
     "nast.seg.obecne": "General",
     "nast.seg.rezimy": "Game modes",
+    "nast.seg.zalohy": "Backups",
     "nast.komb": "Extra combinations",
     "komb.novy.n": "Custom combination",
     "komb.novy.p": "Tapped in die by die; it can score through several patterns at once.",
@@ -2105,6 +2281,41 @@
     "nast.misto.n": "Storage used",
     "nast.misto.zjistuji": "Checking…",
     "nast.misto.btn": "Detail",
+    /* karta Zálohy: kompletní záloha a záloha herních režimů */
+    "nast.zalplna": "Complete backup",
+    "nast.expplna.n": "Export to file",
+    "nast.expplna.p": "A text file with the history and the game modes for a later import.",
+    "nast.expplna.btn": "Save",
+    "nast.kopplna.n": "Copy to clipboard",
+    "nast.kopplna.p": "In case downloading doesn’t work.",
+    "nast.kopplna.btn": "Copy",
+    "nast.impfplna.n": "Import from file",
+    "nast.impfplna.p": "Reads a complete backup and offers to add or to replace.",
+    "nast.impfplna.btn": "Choose file",
+    "nast.impsplna.n": "Import from clipboard",
+    "nast.impsplna.p": "Paste the complete backup text into the field and read it in.",
+    "nast.impsplna.btn": "Paste text",
+    "nast.zalrez": "Game mode backup",
+    "nast.exprez.n": "Export to file",
+    "nast.exprez.p": "A text file with all game modes for a later import.",
+    "nast.exprez.btn": "Save",
+    "nast.koprez.n": "Copy to clipboard",
+    "nast.koprez.p": "In case downloading doesn’t work.",
+    "nast.koprez.btn": "Copy",
+    "nast.impfrez.n": "Import from file",
+    "nast.impfrez.p": "Reads a game mode backup and offers to add or to replace.",
+    "nast.impfrez.btn": "Choose file",
+    "nast.impsrez.n": "Import from clipboard",
+    "nast.impsrez.p": "Paste the game mode backup text into the field and read it in.",
+    "nast.impsrez.btn": "Paste text",
+    /* sdílení jednotlivých herních režimů */
+    "rezim.sdil.n": "Share selected",
+    "rezim.sdil.p": "Sends one or more game modes to another device.",
+    "rezim.sdil.btn": "Share",
+    "rezim.imp.n": "Import",
+    "rezim.imp.p": "Reads a sharing code from a file or the clipboard and offers to add it.",
+    "rezim.imp.btn": "Import",
+    "rezim.imp.potvrdit": "Import selected",
     /* okna filtrů a nové hry */
     "datum.nadpis": "Filter by date",
     "datum.jedenden": "One day",
@@ -2142,6 +2353,7 @@
     "slovo.kolo": ["{n} turn", "{n} turns"],
     "slovo.hra": ["{n} game", "{n} games"],
     "slovo.nova": ["{n} new", "{n} new"],
+    "slovo.rezim": ["{n} mode", "{n} modes"],
     "slovo.kostkami": ["{n} die", "{n} dice"],
     "slovo.kostek": ["{n} die", "{n} dice"],
     "slovo.farkle": "farkle",
@@ -2329,6 +2541,21 @@
     "exp.souhrn": "total {b}, best turn {nej}, farkles {f}",
     "exp.mezisoucet": "total {b}",
     "exp.oddelovac": "--- data for the import, do not touch ---",
+    /* complete backup and game mode backup */
+    "expplna.nadpis": "Dice — complete backup",
+    "expplna.vytvoreno": "created {kdy}, {her}, {rez}",
+    "exprez.nadpis": "Dice — game mode backup",
+    "exprez.vytvoreno": "created {kdy}, {n}",
+    "sdil.nadpis": "Dice — shared game modes",
+    "sdil.vytvoreno": "created {kdy}, {n}",
+    "zalplna.info.soubor": "The file contains {her} and {rez}.",
+    "zalplna.info.text": "The text contains {her} and {rez}.",
+    "zalplna.pridano": "Added: {her}, {rez}.",
+    "zalplna.nahrazeno": "Complete backup restored, {her}, {rez}.",
+    "zalrez.info.soubor": "The file contains {rez}.",
+    "zalrez.info.text": "The text contains {rez}.",
+    "zalrez.nahrazeno": "Game modes replaced, {rez}.",
+    "zal.rezimyzamceno": "Game modes can’t be replaced in the middle of a game. Finish or discard the game and try again.",
     /* zabrané místo */
     "misto.nezjistit": "The size can’t be found out.",
     "misto.zdostupnych": "{u} of {q} available",
@@ -2866,6 +3093,32 @@
     }
     return true;
   }
+  function stejnyVzor(a, b) {
+    return stejnePole(a.pocty, b.pocty) && stejnePole(a.tvar, b.tvar);
+  }
+  function stejnaMnozina(a, b, stejnyPrvek) {
+    if (a.length !== b.length) return false;
+    var pouzite = new Array(b.length), i, j, nasel;
+    for (i = 0; i < a.length; i++) {
+      nasel = false;
+      for (j = 0; j < b.length; j++) {
+        if (pouzite[j]) continue;
+        if (stejnyPrvek(a[i], b[j])) {
+          pouzite[j] = true;
+          nasel = true;
+          break;
+        }
+      }
+      if (!nasel) return false;
+    }
+    return true;
+  }
+  function stejnaKombinace(a, b) {
+    return a.b === b.b && a.z === b.z && stejnaMnozina(a.vz, b.vz, stejnyVzor);
+  }
+  function stejnyRezim(a, b) {
+    return a.kostek === b.kostek && stejnePole(a.sam, b.sam) && stejnaStej(a.stej, b.stej) && a.nad === b.nad && stejnePole(a.nadP, b.nadP) && stejnaMapa(a.post, b.post) && stejnaMapa(a.p, b.p) && stejnaMnozina(a.v, b.v, stejnaKombinace);
+  }
   function zPresetu(id) {
     var d = PRESET_REZIMY[id];
     return {
@@ -2984,8 +3237,31 @@
     if (!(b > 0)) return 0;
     return Math.min(b, BODY_MAX);
   }
+  function sezPodleId(sez, id) {
+    for (var i = 0; i < sez.length; i++) {
+      if (sez[i].id === id) return sez[i];
+    }
+    return null;
+  }
+  function rezimyZObjektu(o) {
+    var sez = [], i, id, x;
+    for (i = 0; i < PRESET_REZ_PORADI.length; i++) {
+      id = PRESET_REZ_PORADI[i];
+      sez.push(cistyRezim(o && o.p ? o.p[id] : null, id, id));
+    }
+    if (o && Array.isArray(o.v)) {
+      for (i = 0; i < o.v.length && sez.length < PRESET_REZ_PORADI.length + REZIMY_MAX; i++) {
+        x = o.v[i];
+        if (!x || typeof x !== "object") continue;
+        id = typeof x.id === "string" && x.id && !jePreset(x.id) ? x.id.slice(0, 40) : novyIdRezimu();
+        if (sezPodleId(sez, id)) continue;
+        sez.push(cistyRezim(x, id, VYCHOZI_REZIM));
+      }
+    }
+    return { sez, akt: o && typeof o.akt === "string" && sezPodleId(sez, o.akt) ? o.akt : VYCHOZI_REZIM };
+  }
   function nactiRezimy() {
-    var raw = null, o = null, i, id;
+    var raw = null, o = null;
     try {
       raw = localStorage.getItem(REZKEY);
     } catch (e) {
@@ -3013,21 +3289,9 @@
         if (so && typeof so === "object") o = { akt: VYCHOZI_REZIM, p: { kcd2: { p: so.p, v: so.v } }, v: [] };
       }
     }
-    REZIMY.sez = [];
-    for (i = 0; i < PRESET_REZ_PORADI.length; i++) {
-      id = PRESET_REZ_PORADI[i];
-      REZIMY.sez.push(cistyRezim(o && o.p ? o.p[id] : null, id, id));
-    }
-    if (o && Array.isArray(o.v)) {
-      for (i = 0; i < o.v.length && REZIMY.sez.length < PRESET_REZ_PORADI.length + REZIMY_MAX; i++) {
-        var x = o.v[i];
-        if (!x || typeof x !== "object") continue;
-        id = typeof x.id === "string" && x.id && !jePreset(x.id) ? x.id.slice(0, 40) : novyIdRezimu();
-        if (rezimPodleId(id)) continue;
-        REZIMY.sez.push(cistyRezim(x, id, VYCHOZI_REZIM));
-      }
-    }
-    REZIMY.akt = o && typeof o.akt === "string" && rezimPodleId(o.akt) ? o.akt : VYCHOZI_REZIM;
+    var vysledek = rezimyZObjektu(o);
+    REZIMY.sez = vysledek.sez;
+    REZIMY.akt = vysledek.akt;
   }
   function novyIdRezimu() {
     return "r" + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
@@ -3075,7 +3339,12 @@
       v: rez.v.map(venKombinaci)
     };
   }
-  function ulozRezimy() {
+  function venRezimSdileny(rez) {
+    var v = venRezim(rez);
+    if (!rez.vlastni) v.nazev = nazevRezimu(rez);
+    return v;
+  }
+  function slozRezimy() {
     var ven = { akt: REZIMY.akt, p: {}, v: [] }, o;
     REZIMY.sez.forEach(function(rez) {
       if (rez.vlastni) {
@@ -3085,8 +3354,11 @@
       o = odchylkyRezimu(rez);
       if (o) ven.p[rez.id] = o;
     });
+    return ven;
+  }
+  function ulozRezimy() {
     try {
-      localStorage.setItem(REZKEY, JSON.stringify(ven));
+      localStorage.setItem(REZKEY, JSON.stringify(slozRezimy()));
     } catch (e) {
     }
   }
@@ -5651,7 +5923,7 @@
     });
     (function() {
       var tlac = $("setseg").children;
-      var karty = [$("setcardobecne"), $("setcardrezimy")];
+      var karty = [$("setcardobecne"), $("setcardrezimy"), $("setcardzalohy")];
       naKartuNastaveni = function(i) {
         karty.forEach(function(k, j) {
           k.hidden = j !== i;
@@ -6551,11 +6823,8 @@
       hotovo(null);
     };
   }
-  function exportText(hry) {
+  function hrySeznamRadky(hry) {
     var r = [];
-    r.push(t("exp.nadpis"));
-    r.push(t("exp.vytvoreno", { kdy: dt(Date.now()), n: hry.length }));
-    r.push("");
     hry.forEach(function(rec, i) {
       r.push(i + 1 + ") " + popisHry(rec));
       r.push("   " + t("exp.souhrn", {
@@ -6572,6 +6841,11 @@
       });
       r.push("");
     });
+    return r;
+  }
+  function exportText(hry) {
+    var r = [t("exp.nadpis"), t("exp.vytvoreno", { kdy: dt(Date.now()), n: hry.length }), ""];
+    r = r.concat(hrySeznamRadky(hry));
     return r.join("\n").replace(/\u202F/g, " ") + "\n" + t("exp.oddelovac") + "\n" + ZNACKA + JSON.stringify(hry);
   }
   function sTextemZalohy(btn, puvodni, hotovo) {
@@ -6587,6 +6861,26 @@
       hotovo(exportText(hry));
     });
   }
+  function cistaHra(g) {
+    if (!g || typeof g !== "object" || !Array.isArray(g.turns)) return null;
+    return {
+      id: typeof g.id === "string" && g.id ? g.id : newId(),
+      savedAt: typeof g.savedAt === "number" ? g.savedAt : Date.now(),
+      mode: g.mode === "rounds" ? "rounds" : "points",
+      goal: g.goal > 0 ? g.goal : 4e3,
+      roundGoal: g.roundGoal > 0 ? g.roundGoal : null,
+      /* Režim může přijít z cizího telefonu, kde takový vlastní režim
+         existuje a tady ne — proto se veze i jeho název. Obojí ořezané,
+         obojí jde do stránky přes esc(). */
+      rezim: typeof g.rezim === "string" && g.rezim ? g.rezim.slice(0, NAZEV_MAX) : VYCHOZI_REZIM,
+      rezimN: typeof g.rezimN === "string" && g.rezimN ? g.rezimN.slice(0, NAZEV_MAX) : null,
+      banked: typeof g.banked === "number" ? g.banked : 0,
+      /* legitimní popis kola je do stovky znaků, delší je omyl */
+      turns: g.turns.map(function(tah) {
+        return kopieKola(tah, 300);
+      })
+    };
+  }
   function parseZaloha(text) {
     var i = text.lastIndexOf(ZNACKA);
     if (i < 0) return null;
@@ -6600,24 +6894,8 @@
     if (!Array.isArray(d)) return null;
     var out = [];
     d.forEach(function(g) {
-      if (!g || typeof g !== "object" || !Array.isArray(g.turns)) return;
-      out.push({
-        id: typeof g.id === "string" && g.id ? g.id : newId(),
-        savedAt: typeof g.savedAt === "number" ? g.savedAt : Date.now(),
-        mode: g.mode === "rounds" ? "rounds" : "points",
-        goal: g.goal > 0 ? g.goal : 4e3,
-        roundGoal: g.roundGoal > 0 ? g.roundGoal : null,
-        /* Režim může přijít z cizího telefonu, kde takový vlastní režim
-           existuje a tady ne — proto se veze i jeho název. Obojí ořezané,
-           obojí jde do stránky přes esc(). */
-        rezim: typeof g.rezim === "string" && g.rezim ? g.rezim.slice(0, NAZEV_MAX) : VYCHOZI_REZIM,
-        rezimN: typeof g.rezimN === "string" && g.rezimN ? g.rezimN.slice(0, NAZEV_MAX) : null,
-        banked: typeof g.banked === "number" ? g.banked : 0,
-        /* legitimní popis kola je do stovky znaků, delší je omyl */
-        turns: g.turns.map(function(tah) {
-          return kopieKola(tah, 300);
-        })
-      });
+      var h = cistaHra(g);
+      if (h) out.push(h);
     });
     return out;
   }
@@ -7927,6 +8205,650 @@
     }
   }
 
+  // src/js/ui/zaloha-plna.js
+  var ZNACKA_PLNA = "#PLNAZALOHA:";
+  var ZNACKA_REZ = "#REZIMYZALOHA:";
+  function rezimySeznamRadky(sez) {
+    return sez.map(function(rez, i) {
+      return i + 1 + ") " + nazevRezimu(rez);
+    });
+  }
+  function rezimyPrazdne(sez) {
+    return !sez.some(function(r) {
+      return r.vlastni || odchylkyRezimu(r) !== null;
+    });
+  }
+  function novychRezimu(sez) {
+    var mame = {};
+    REZIMY.sez.forEach(function(r) {
+      mame[r.id] = true;
+    });
+    return sez.filter(function(r) {
+      return r.vlastni && !mame[r.id];
+    });
+  }
+  function pridatRezimy(sez) {
+    var nove = novychRezimu(sez);
+    var volno = PRESET_REZ_PORADI.length + REZIMY_MAX - REZIMY.sez.length;
+    if (volno < 0) volno = 0;
+    nove = nove.slice(0, volno);
+    nove.forEach(function(r) {
+      REZIMY.sez.push(r);
+    });
+    if (nove.length) ulozRezimy();
+    return nove.length;
+  }
+  function nahraditRezimy(vysledek) {
+    REZIMY.sez = vysledek.sez;
+    REZIMY.akt = vysledek.akt;
+    ulozRezimy();
+  }
+  function exportTextPlna(hry, sez, rezimyObj) {
+    var r = [t("expplna.nadpis"), t("expplna.vytvoreno", {
+      kdy: dt(Date.now()),
+      her: tn("slovo.hra", hry.length),
+      rez: tn("slovo.rezim", sez.length)
+    }), ""];
+    r = r.concat(hrySeznamRadky(hry));
+    r = r.concat(rezimySeznamRadky(sez));
+    return r.join("\n").replace(/ /g, " ") + "\n" + t("exp.oddelovac") + "\n" + ZNACKA_PLNA + JSON.stringify({ hry, rezimy: rezimyObj });
+  }
+  function exportTextRez(sez, rezimyObj) {
+    var r = [t("exprez.nadpis"), t("exprez.vytvoreno", { kdy: dt(Date.now()), n: tn("slovo.rezim", sez.length) }), ""];
+    r = r.concat(rezimySeznamRadky(sez));
+    return r.join("\n").replace(/ /g, " ") + "\n" + t("exp.oddelovac") + "\n" + ZNACKA_REZ + JSON.stringify(rezimyObj);
+  }
+  function parsePlnaZaloha(text) {
+    var i = text.lastIndexOf(ZNACKA_PLNA);
+    if (i < 0) return null;
+    var radek = text.slice(i + ZNACKA_PLNA.length).split("\n")[0].trim();
+    var d;
+    try {
+      d = JSON.parse(radek);
+    } catch (e) {
+      return null;
+    }
+    if (!d || typeof d !== "object" || !Array.isArray(d.hry)) return null;
+    var hry = [];
+    d.hry.forEach(function(g) {
+      var h = cistaHra(g);
+      if (h) hry.push(h);
+    });
+    return { hry, rezimy: rezimyZObjektu(d.rezimy && typeof d.rezimy === "object" ? d.rezimy : null) };
+  }
+  function parseRezZaloha(text) {
+    var i = text.lastIndexOf(ZNACKA_REZ);
+    if (i < 0) return null;
+    var radek = text.slice(i + ZNACKA_REZ.length).split("\n")[0].trim();
+    var d;
+    try {
+      d = JSON.parse(radek);
+    } catch (e) {
+      return null;
+    }
+    if (!d || typeof d !== "object") return null;
+    return rezimyZObjektu(d);
+  }
+  var elZalMsgPlna = $("zalmsgplna");
+  var elImpBoxPlna = $("impboxplna");
+  var elImpInfoPlna = $("impinfoplna");
+  var elImpFilePlna = $("impfileplna");
+  var elPasteBoxPlna = $("pasteboxplna");
+  var elPasteAreaPlna = $("pasteareaplna");
+  var nactenoPlna = null;
+  var repTimerPlna = null;
+  function zalMsgPlna(text, spatne) {
+    elZalMsgPlna.hidden = !text;
+    elZalMsgPlna.textContent = text || "";
+    elZalMsgPlna.classList.toggle("bad", !!spatne);
+  }
+  function zavriImportPlna() {
+    nactenoPlna = null;
+    elImpBoxPlna.hidden = true;
+    clearTimeout(repTimerPlna);
+    repTimerPlna = null;
+    $("imprepplna").textContent = t("nast.nahraditvse");
+  }
+  function zavriVlozeniPlna() {
+    elPasteBoxPlna.hidden = true;
+    elPasteAreaPlna.value = "";
+  }
+  function renderZalohaPlna() {
+    zalMsgPlna("");
+    zavriImportPlna();
+    zavriVlozeniPlna();
+  }
+  function prijmiPlnaZaloha(text, zdroj) {
+    var vysledek = parsePlnaZaloha(String(text || ""));
+    if (!vysledek) {
+      zavriImportPlna();
+      zalMsgPlna(t("zal.nerozumim." + zdroj), true);
+      return;
+    }
+    if (!vysledek.hry.length && rezimyPrazdne(vysledek.rezimy.sez)) {
+      zavriImportPlna();
+      zalMsgPlna(t("zal.prazdno." + zdroj), true);
+      return;
+    }
+    nactenoPlna = vysledek;
+    var noveHer = novychZ(vysledek.hry).length;
+    var noveRez = novychRezimu(vysledek.rezimy.sez).length;
+    var zamek = !gameEmpty();
+    elImpInfoPlna.textContent = t("zalplna.info." + zdroj, {
+      her: tn("slovo.hra", vysledek.hry.length),
+      rez: tn("slovo.rezim", vysledek.rezimy.sez.length)
+    }) + (zamek ? " " + t("zal.rezimyzamceno") : "");
+    var celkemNovych = noveHer + noveRez;
+    $("impaddplna").disabled = celkemNovych === 0;
+    $("impaddplna").textContent = celkemNovych ? t("zal.pridatn", { n: celkemNovych }) : t("zal.nenicopridat");
+    $("imprepplna").disabled = zamek;
+    elImpBoxPlna.hidden = false;
+    zalMsgPlna("");
+  }
+  var elZalMsgRez = $("zalmsgrez");
+  var elImpBoxRez = $("impboxrez");
+  var elImpInfoRez = $("impinforez");
+  var elImpFileRez = $("impfilerez");
+  var elPasteBoxRez = $("pasteboxrez");
+  var elPasteAreaRez = $("pasteareazrez");
+  var nactenoRez = null;
+  var repTimerRez = null;
+  function zalMsgRez(text, spatne) {
+    elZalMsgRez.hidden = !text;
+    elZalMsgRez.textContent = text || "";
+    elZalMsgRez.classList.toggle("bad", !!spatne);
+  }
+  function zavriImportRez() {
+    nactenoRez = null;
+    elImpBoxRez.hidden = true;
+    clearTimeout(repTimerRez);
+    repTimerRez = null;
+    $("imprepzrez").textContent = t("nast.nahraditvse");
+  }
+  function zavriVlozeniRez() {
+    elPasteBoxRez.hidden = true;
+    elPasteAreaRez.value = "";
+  }
+  function renderZalohaRez() {
+    zalMsgRez("");
+    zavriImportRez();
+    zavriVlozeniRez();
+  }
+  function prijmiRezZaloha(text, zdroj) {
+    var vysledek = parseRezZaloha(String(text || ""));
+    if (!vysledek) {
+      zavriImportRez();
+      zalMsgRez(t("zal.nerozumim." + zdroj), true);
+      return;
+    }
+    if (rezimyPrazdne(vysledek.sez)) {
+      zavriImportRez();
+      zalMsgRez(t("zal.prazdno." + zdroj), true);
+      return;
+    }
+    nactenoRez = vysledek;
+    var nove = novychRezimu(vysledek.sez).length;
+    var zamek = !gameEmpty();
+    elImpInfoRez.textContent = t("zalrez.info." + zdroj, {
+      rez: tn("slovo.rezim", vysledek.sez.length)
+    }) + (zamek ? " " + t("zal.rezimyzamceno") : "");
+    $("impaddrez").disabled = nove === 0;
+    $("impaddrez").textContent = nove ? t("zal.pridatn", { n: nove }) : t("zal.nenicopridat");
+    $("imprepzrez").disabled = zamek;
+    elImpBoxRez.hidden = false;
+    zalMsgRez("");
+  }
+  function initZalohaPlna() {
+    $("expbtnplna").addEventListener("click", function() {
+      var btn = $("expbtnplna"), puvodni = t("nast.expplna.btn");
+      btn.disabled = true;
+      btn.textContent = t("zal.pripravuji");
+      slozHry(function(hry) {
+        btn.disabled = false;
+        btn.textContent = puvodni;
+        if (hry === null) {
+          zalMsgPlna(t("zal.neslozit"), true);
+          return;
+        }
+        var text = exportTextPlna(hry, REZIMY.sez, slozRezimy());
+        var ok = stahni("farkle-zaloha-" + datumProNazev() + ".txt", text);
+        zalMsgPlna(t(ok ? "zal.ukladase" : "zal.stazenineslo"), !ok);
+      });
+    });
+    $("copybtnplna").addEventListener("click", function() {
+      var btn = $("copybtnplna"), puvodni = t("nast.kopplna.btn");
+      btn.disabled = true;
+      btn.textContent = t("zal.pripravuji");
+      slozHry(function(hry) {
+        btn.disabled = false;
+        btn.textContent = puvodni;
+        if (hry === null) {
+          zalMsgPlna(t("zal.neslozit"), true);
+          return;
+        }
+        var text = exportTextPlna(hry, REZIMY.sez, slozRezimy());
+        doSchranky(text, function(ok) {
+          zalMsgPlna(t(ok ? "zal.veschrance" : "zal.schrankaneslo"), !ok);
+        });
+      });
+    });
+    $("impbtnplna").addEventListener("click", function() {
+      zalMsgPlna("");
+      elImpFilePlna.value = "";
+      elImpFilePlna.click();
+    });
+    elImpFilePlna.addEventListener("change", function() {
+      var f = elImpFilePlna.files && elImpFilePlna.files[0];
+      if (!f) return;
+      var fr = new FileReader();
+      fr.onload = function() {
+        zavriVlozeniPlna();
+        prijmiPlnaZaloha(fr.result, "soubor");
+      };
+      fr.onerror = function() {
+        zavriImportPlna();
+        zalMsgPlna(t("zal.souborneslo"), true);
+      };
+      fr.readAsText(f, "utf-8");
+    });
+    $("pastebtnplna").addEventListener("click", function() {
+      zalMsgPlna("");
+      zavriImportPlna();
+      elPasteBoxPlna.hidden = false;
+      elPasteAreaPlna.focus();
+    });
+    $("pastecancelplna").addEventListener("click", function() {
+      zavriImportPlna();
+      zavriVlozeniPlna();
+      zalMsgPlna("");
+    });
+    $("pasteloadplna").addEventListener("click", function() {
+      var text = elPasteAreaPlna.value;
+      if (!text.trim()) {
+        zalMsgPlna(t("zal.poleprazdne"), true);
+        return;
+      }
+      prijmiPlnaZaloha(text, "text");
+    });
+    $("impaddplna").addEventListener("click", function() {
+      if (!nactenoPlna) return;
+      var noveHry = novychZ(nactenoPlna.hry);
+      histWrite(histAll().concat(noveHry.map(proHistorii)), function(ok) {
+        if (!ok) {
+          zalMsgPlna(t(klicSelhani("chyba.mistoulozit")) + ".", true);
+          return;
+        }
+        var noveRez = pridatRezimy(nactenoPlna.rezimy.sez);
+        zavriImportPlna();
+        zavriVlozeniPlna();
+        zalMsgPlna(t("zalplna.pridano", { her: tn("slovo.hra", noveHry.length), rez: tn("slovo.rezim", noveRez) }));
+        render();
+        renderP2();
+        renderRezimy();
+      }, noveHry);
+    });
+    $("imprepplna").addEventListener("click", function() {
+      if (!nactenoPlna || !gameEmpty()) return;
+      var b = $("imprepplna");
+      if (!repTimerPlna) {
+        b.textContent = t("zal.opravdunahradit");
+        repTimerPlna = setTimeout(function() {
+          repTimerPlna = null;
+          b.textContent = t("nast.nahraditvse");
+        }, 5e3);
+        return;
+      }
+      clearTimeout(repTimerPlna);
+      repTimerPlna = null;
+      if (!gameEmpty()) return;
+      var pocetHer = nactenoPlna.hry.length, pocetRez = nactenoPlna.rezimy.sez.length;
+      histWrite(nactenoPlna.hry.map(proHistorii), function(ok) {
+        if (!ok) {
+          zalMsgPlna(t(klicSelhani("chyba.mistoulozit")) + ".", true);
+          return;
+        }
+        nahraditRezimy(nactenoPlna.rezimy);
+        render();
+        zavriImportPlna();
+        zavriVlozeniPlna();
+        zalMsgPlna(t("zalplna.nahrazeno", { her: tn("slovo.hra", pocetHer), rez: tn("slovo.rezim", pocetRez) }));
+        renderP2();
+        renderRezimy();
+      }, nactenoPlna.hry);
+    });
+    $("expbtnrez").addEventListener("click", function() {
+      var text = exportTextRez(REZIMY.sez, slozRezimy());
+      var ok = stahni("farkle-rezimy-" + datumProNazev() + ".txt", text);
+      zalMsgRez(t(ok ? "zal.ukladase" : "zal.stazenineslo"), !ok);
+    });
+    $("copybtnrez").addEventListener("click", function() {
+      var text = exportTextRez(REZIMY.sez, slozRezimy());
+      doSchranky(text, function(ok) {
+        zalMsgRez(t(ok ? "zal.veschrance" : "zal.schrankaneslo"), !ok);
+      });
+    });
+    $("impbtnrez").addEventListener("click", function() {
+      zalMsgRez("");
+      elImpFileRez.value = "";
+      elImpFileRez.click();
+    });
+    elImpFileRez.addEventListener("change", function() {
+      var f = elImpFileRez.files && elImpFileRez.files[0];
+      if (!f) return;
+      var fr = new FileReader();
+      fr.onload = function() {
+        zavriVlozeniRez();
+        prijmiRezZaloha(fr.result, "soubor");
+      };
+      fr.onerror = function() {
+        zavriImportRez();
+        zalMsgRez(t("zal.souborneslo"), true);
+      };
+      fr.readAsText(f, "utf-8");
+    });
+    $("pastebtnrez").addEventListener("click", function() {
+      zalMsgRez("");
+      zavriImportRez();
+      elPasteBoxRez.hidden = false;
+      elPasteAreaRez.focus();
+    });
+    $("pastecancelrez").addEventListener("click", function() {
+      zavriImportRez();
+      zavriVlozeniRez();
+      zalMsgRez("");
+    });
+    $("pasteloadrez").addEventListener("click", function() {
+      var text = elPasteAreaRez.value;
+      if (!text.trim()) {
+        zalMsgRez(t("zal.poleprazdne"), true);
+        return;
+      }
+      prijmiRezZaloha(text, "text");
+    });
+    $("impaddrez").addEventListener("click", function() {
+      if (!nactenoRez) return;
+      var pocet = pridatRezimy(nactenoRez.sez);
+      zavriImportRez();
+      zavriVlozeniRez();
+      zalMsgRez(pocet ? tn("rezim.pridano", pocet) : t("zal.nenicopridat"));
+      renderRezimy();
+    });
+    $("imprepzrez").addEventListener("click", function() {
+      if (!nactenoRez || !gameEmpty()) return;
+      var b = $("imprepzrez");
+      if (!repTimerRez) {
+        b.textContent = t("zal.opravdunahradit");
+        repTimerRez = setTimeout(function() {
+          repTimerRez = null;
+          b.textContent = t("nast.nahraditvse");
+        }, 5e3);
+        return;
+      }
+      clearTimeout(repTimerRez);
+      repTimerRez = null;
+      if (!gameEmpty()) return;
+      var pocet = nactenoRez.sez.length;
+      nahraditRezimy(nactenoRez);
+      render();
+      zavriImportRez();
+      zavriVlozeniRez();
+      zalMsgRez(t("zalrez.nahrazeno", { rez: tn("slovo.rezim", pocet) }));
+      renderRezimy();
+    });
+  }
+
+  // src/js/ui/sdileni-rezimu.js
+  var ZNACKA_SDIL = "#SDILENIREZIMU:";
+  var elSdilBox = $("rezsdilbox");
+  var elSdilRows = $("rezsdilrows");
+  var elSdilMsg = $("rezsdilzprava");
+  var elImpBox2 = $("rezimpbox");
+  var elImpFile2 = $("rezimpfile");
+  var elImpPasteBox = $("rezimppastebox");
+  var elImpPasteArea = $("rezimppastearea");
+  var elImpPreview = $("rezimppreview");
+  var elImpPreviewRows = $("rezimppreviewrows");
+  var elImpMsg = $("rezimpzprava");
+  var vybraneRezimy = {};
+  var nacteneKandidati = null;
+  function zalMsgSdil(text, spatne) {
+    elSdilMsg.hidden = !text;
+    elSdilMsg.textContent = text || "";
+    elSdilMsg.classList.toggle("bad", !!spatne);
+  }
+  function zalMsgImp(text, spatne) {
+    elImpMsg.hidden = !text;
+    elImpMsg.textContent = text || "";
+    elImpMsg.classList.toggle("bad", !!spatne);
+  }
+  function renderSdilRows() {
+    elSdilRows.textContent = "";
+    REZIMY.sez.forEach(function(rez) {
+      var row = document.createElement("div");
+      row.className = "setrow";
+      var tCol = document.createElement("div");
+      tCol.className = "t";
+      var b = document.createElement("b");
+      b.textContent = nazevRezimu(rez);
+      tCol.appendChild(b);
+      row.appendChild(tCol);
+      var btns = document.createElement("div");
+      btns.className = "setbtns";
+      var btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "ghost";
+      function mark() {
+        var on = !!vybraneRezimy[rez.id];
+        btn.classList.toggle("on", on);
+        btn.textContent = t(on ? "rezim.sdil.vybrano" : "rezim.sdil.nevybrano");
+      }
+      btn.addEventListener("click", function() {
+        vybraneRezimy[rez.id] = !vybraneRezimy[rez.id];
+        mark();
+      });
+      mark();
+      btns.appendChild(btn);
+      row.appendChild(btns);
+      elSdilRows.appendChild(row);
+    });
+  }
+  function sestavVyber() {
+    return REZIMY.sez.filter(function(rez) {
+      return vybraneRezimy[rez.id];
+    });
+  }
+  function exportTextSdileni(sez) {
+    var r = [t("sdil.nadpis"), t("sdil.vytvoreno", { kdy: dt(Date.now()), n: tn("slovo.rezim", sez.length) }), ""];
+    sez.forEach(function(rez, i) {
+      r.push(i + 1 + ") " + nazevRezimu(rez));
+    });
+    return r.join("\n") + "\n" + t("exp.oddelovac") + "\n" + ZNACKA_SDIL + JSON.stringify(sez.map(venRezimSdileny));
+  }
+  function otevriSdil() {
+    zalMsgSdil("");
+    renderSdilRows();
+    elSdilBox.hidden = false;
+  }
+  function zavriSdil() {
+    elSdilBox.hidden = true;
+    vybraneRezimy = {};
+    zalMsgSdil("");
+  }
+  function zpracujKandidaty(pole) {
+    var vysledky = [], prijate = [];
+    var kapacita = PRESET_REZ_PORADI.length + REZIMY_MAX - REZIMY.sez.length;
+    if (kapacita < 0) kapacita = 0;
+    pole.forEach(function(x) {
+      var kandidat = cistyRezim(x, novyIdRezimu(), VYCHOZI_REZIM);
+      kandidat.v.forEach(function(k) {
+        k.id = newId();
+      });
+      var srovnaniS = REZIMY.sez.concat(prijate);
+      var shodny = null;
+      for (var i = 0; i < srovnaniS.length; i++) {
+        if (stejnyRezim(kandidat, srovnaniS[i])) {
+          shodny = srovnaniS[i];
+          break;
+        }
+      }
+      if (shodny) {
+        vysledky.push({ rez: kandidat, prijme: false, duvod: t("rezim.imp.duplicitni", { n: nazevRezimu(shodny) }) });
+        return;
+      }
+      if (prijate.length >= kapacita) {
+        vysledky.push({ rez: kandidat, prijme: false, duvod: t("rezim.strop", { n: REZIMY_MAX }) });
+        return;
+      }
+      var puvodniNazev = nazevRezimu(kandidat);
+      var koliduje = srovnaniS.some(function(r) {
+        return nazevRezimu(r) === puvodniNazev;
+      });
+      var prejmenovano = false;
+      if (koliduje) {
+        var pripona = " (IMPORT - " + dtDen(Date.now()) + ")";
+        kandidat.nazev = puvodniNazev.slice(0, Math.max(0, NAZEV_MAX - pripona.length)) + pripona;
+        prejmenovano = true;
+      }
+      prijate.push(kandidat);
+      vysledky.push({ rez: kandidat, prijme: true, prejmenovano });
+    });
+    return vysledky;
+  }
+  function renderNahled(vysledky) {
+    elImpPreviewRows.textContent = "";
+    vysledky.forEach(function(v) {
+      var row = document.createElement("div");
+      row.className = "msg" + (v.prijme ? "" : " bad");
+      var text = nazevRezimu(v.rez);
+      if (v.prijme && v.prejmenovano) text += " — " + t("rezim.imp.prejmenovano");
+      if (!v.prijme) text += " — " + v.duvod;
+      row.textContent = text;
+      elImpPreviewRows.appendChild(row);
+    });
+    $("rezimppotvrdit").disabled = !vysledky.some(function(v) {
+      return v.prijme;
+    });
+  }
+  function zpracujText(text, zdroj) {
+    var i = String(text || "").lastIndexOf(ZNACKA_SDIL);
+    if (i < 0) {
+      zalMsgImp(t("zal.nerozumim." + zdroj), true);
+      return;
+    }
+    var radek = text.slice(i + ZNACKA_SDIL.length).split("\n")[0].trim();
+    var d;
+    try {
+      d = JSON.parse(radek);
+    } catch (e) {
+      d = null;
+    }
+    if (!Array.isArray(d) || !d.length) {
+      zalMsgImp(t("zal.prazdno." + zdroj), true);
+      return;
+    }
+    nacteneKandidati = zpracujKandidaty(d);
+    renderNahled(nacteneKandidati);
+    zavriImpVlozeni();
+    elImpPreview.hidden = false;
+    zalMsgImp("");
+  }
+  function zavriImpVlozeni() {
+    elImpPasteBox.hidden = true;
+    elImpPasteArea.value = "";
+  }
+  function zavriImpNahled() {
+    elImpPreview.hidden = true;
+    nacteneKandidati = null;
+  }
+  function zavriImp() {
+    elImpBox2.hidden = true;
+    zavriImpVlozeni();
+    zavriImpNahled();
+  }
+  function renderSdileniRezimu() {
+    zavriSdil();
+    zalMsgImp("");
+    zavriImp();
+  }
+  function initSdileniRezimu() {
+    $("rezsdilbtn").addEventListener("click", otevriSdil);
+    $("rezsdilzrusit").addEventListener("click", zavriSdil);
+    $("rezsdilstahni").addEventListener("click", function() {
+      var sez = sestavVyber();
+      if (!sez.length) {
+        zalMsgSdil(t("rezim.sdil.vyber"), true);
+        return;
+      }
+      var text = exportTextSdileni(sez);
+      var ok = stahni("farkle-rezimy-sdileni-" + datumProNazev() + ".txt", text);
+      zalMsgSdil(t(ok ? "zal.ukladase" : "zal.stazenineslo"), !ok);
+    });
+    $("rezsdilkopie").addEventListener("click", function() {
+      var sez = sestavVyber();
+      if (!sez.length) {
+        zalMsgSdil(t("rezim.sdil.vyber"), true);
+        return;
+      }
+      var text = exportTextSdileni(sez);
+      doSchranky(text, function(ok) {
+        zalMsgSdil(t(ok ? "zal.veschrance" : "zal.schrankaneslo"), !ok);
+      });
+    });
+    $("rezimpbtn").addEventListener("click", function() {
+      zalMsgImp("");
+      elImpBox2.hidden = false;
+    });
+    $("rezimpfilebtn").addEventListener("click", function() {
+      zalMsgImp("");
+      elImpFile2.value = "";
+      elImpFile2.click();
+    });
+    elImpFile2.addEventListener("change", function() {
+      var f = elImpFile2.files && elImpFile2.files[0];
+      if (!f) return;
+      var fr = new FileReader();
+      fr.onload = function() {
+        zpracujText(fr.result, "soubor");
+      };
+      fr.onerror = function() {
+        zalMsgImp(t("zal.souborneslo"), true);
+      };
+      fr.readAsText(f, "utf-8");
+    });
+    $("rezimppastebtn").addEventListener("click", function() {
+      zalMsgImp("");
+      elImpPasteBox.hidden = false;
+      elImpPasteArea.focus();
+    });
+    $("rezimppastecancel").addEventListener("click", function() {
+      zavriImpVlozeni();
+      zalMsgImp("");
+    });
+    $("rezimppasteload").addEventListener("click", function() {
+      var text = elImpPasteArea.value;
+      if (!text.trim()) {
+        zalMsgImp(t("zal.poleprazdne"), true);
+        return;
+      }
+      zpracujText(text, "text");
+    });
+    $("rezimpzrusit").addEventListener("click", zavriImp);
+    $("rezimppotvrdit").addEventListener("click", function() {
+      if (!nacteneKandidati) return;
+      var pridano = 0;
+      nacteneKandidati.forEach(function(v) {
+        if (v.prijme) {
+          REZIMY.sez.push(v.rez);
+          pridano++;
+        }
+      });
+      if (pridano) ulozRezimy();
+      zavriImp();
+      renderRezimy();
+      zalMsgImp(pridano ? tn("rezim.pridano", pridano) : t("rezim.imp.nic"), !pridano);
+    });
+  }
+
   // src/js/ui/udalosti.js
   function initUdalosti() {
     elDataSingle.forEach(function(b) {
@@ -8017,7 +8939,10 @@
       naKartuNastaveni(0);
       renderKos();
       renderZaloha();
+      renderZalohaPlna();
+      renderZalohaRez();
       renderRezimy();
+      renderSdileniRezimu();
     });
     elModeSel.addEventListener("change", function() {
       S.mode = elModeSel.value;
@@ -8138,6 +9063,8 @@
     initPlatforma();
     initStranky();
     initZaloha();
+    initZalohaPlna();
+    initSdileniRezimu();
     initFiltry();
     initUdalosti();
     (function() {

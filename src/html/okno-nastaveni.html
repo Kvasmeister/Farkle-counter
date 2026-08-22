@@ -5,13 +5,16 @@
       <button class="modalx" type="button" data-close data-i18n-aria="spol.zavrit" aria-label="Zavřít">×</button>
     </div>
     <div class="modalbody">
-      <!-- Dvě karty jako podmenu Statistik. Kombinace mají vlastní kartu,
-           protože jinak se okno nedalo projít bez rolování přes cizí oddíly. -->
+      <!-- Tři karty jako podmenu Statistik. Kombinace mají vlastní kartu,
+           protože jinak se okno nedalo projít bez rolování přes cizí oddíly.
+           Zálohy mají vlastní kartu ze stejného důvodu — čtyři položky
+           zálohování by na kartě Obecné smíchaly různé účely dohromady. -->
       <div class="seg" id="setseg">
         <button type="button" class="on" data-i18n="nast.seg.obecne">Obecné</button>
         <!-- název zvoleného režimu sedí vedle popisku, ne v něm: do katalogu
              se tak nedostane žádná značka a překlad nepřepíše ten prvek -->
         <button type="button"><span data-i18n="nast.seg.rezimy">Herní režimy</span><span class="cnt" id="reznazev"></span></button>
+        <button type="button" data-i18n="nast.seg.zalohy">Zálohy</button>
       </div>
       <div class="setcard" id="setcardobecne">
       <div class="setrow" id="jazykrow">
@@ -40,49 +43,6 @@
         <div class="secbody"><div id="koshistlist"></div></div>
       </details>
 
-      <details class="setsec" id="seczal">
-        <summary><span data-i18n="nast.zaloha">Záloha historie</span></summary>
-        <div class="secbody">
-          <div class="setrow">
-            <div class="t"><b data-i18n="nast.exp.n">Export do souboru</b><span data-i18n="nast.exp.p">Textový soubor s přehledem her a daty pro pozdější import.</span></div>
-            <button class="ghost" id="expbtn" type="button" data-i18n="nast.exp.btn">Uložit</button>
-          </div>
-          <div class="setrow">
-            <div class="t"><b data-i18n="nast.kop.n">Zkopírovat do schránky</b><span data-i18n="nast.kop.p">Pro případ nefunkčního stahování.</span></div>
-            <button class="ghost" id="copybtn" type="button" data-i18n="nast.kop.btn">Kopírovat</button>
-          </div>
-          <div class="setrow">
-            <div class="t"><b data-i18n="nast.impf.n">Import ze souboru</b><span data-i18n="nast.impf.p">Načte zálohu a nabídne přidání nebo nahrazení.</span></div>
-            <button class="ghost" id="impbtn" type="button" data-i18n="nast.impf.btn">Vybrat soubor</button>
-          </div>
-          <div class="setrow">
-            <div class="t"><b data-i18n="nast.imps.n">Import ze schránky</b><span data-i18n="nast.imps.p">Vlož text zálohy do pole a načti ho.</span></div>
-            <button class="ghost" id="pastebtn" type="button" data-i18n="nast.imps.btn">Vložit text</button>
-          </div>
-          <div id="pastebox" hidden>
-            <textarea id="pastearea" data-i18n-ph="nast.vlozit.ph" placeholder="Sem vlož zkopírovanou zálohu"></textarea>
-            <div class="improw">
-              <button class="ghost" id="pasteload" type="button" data-i18n="nast.nacist">Načíst</button>
-              <button class="ghost" id="pastecancel" type="button" data-i18n="spol.zrusit">Zrušit</button>
-            </div>
-          </div>
-          <div id="impbox" hidden>
-            <div class="msg" id="impinfo"></div>
-            <div class="improw">
-              <button class="ghost" id="impadd" type="button" data-i18n="nast.pridatnove">Přidat nové</button>
-              <button class="ghost warn" id="imprep" type="button" data-i18n="nast.nahraditvse">Nahradit vše</button>
-            </div>
-          </div>
-          <div class="msg" id="zalmsg" hidden></div>
-        </div>
-      </details>
-
-      <div class="setrow mistorow" id="mistorow">
-        <div class="t"><b data-i18n="nast.misto.n">Zabrané místo</b><span id="mistocelkem" data-i18n="nast.misto.zjistuji">Zjišťuji&#8230;</span></div>
-        <button class="ghost" id="mistobtn" type="button" data-i18n="nast.misto.btn">Detail</button>
-      </div>
-      <div class="msg misto" hidden></div>
-      <input type="file" id="impfile" accept=".txt,text/plain" hidden>
       </div>
 
       <!-- Herní režimy: seznam a detail jednoho režimu jako podstránky téže
@@ -103,6 +63,61 @@
             <div class="setbtns"><button class="ghost rezbtn" id="reznovy" type="button" data-i18n="rezim.novy.btn">Přidat</button></div>
           </div>
           <div class="msg" id="rezstrop" hidden></div>
+
+          <!-- Sdílení jednotlivých režimů: samostatný mechanismus od Zálohy
+               herních režimů na kartě Zálohy — tady se posílá jen výběr,
+               ne všechno. Vlastní modul (ui/sdileni-rezimu.js), aby zůstal
+               nastaveni-rezimy.js dál jen o editaci jednoho režimu. -->
+          <div class="setrow">
+            <div class="t">
+              <b data-i18n="rezim.sdil.n">Sdílet vybrané</b>
+              <span data-i18n="rezim.sdil.p">Pošle jeden nebo víc herních režimů do jiného zařízení.</span>
+            </div>
+            <div class="setbtns"><button class="ghost" id="rezsdilbtn" type="button" data-i18n="rezim.sdil.btn">Sdílet</button></div>
+          </div>
+          <div id="rezsdilbox" hidden>
+            <div id="rezsdilrows"></div>
+            <div class="improw">
+              <button class="ghost" id="rezsdilstahni" type="button" data-i18n="nast.exp.btn">Uložit</button>
+              <button class="ghost" id="rezsdilkopie" type="button" data-i18n="nast.kop.btn">Kopírovat</button>
+              <button class="ghost" id="rezsdilzrusit" type="button" data-i18n="spol.zrusit">Zrušit</button>
+            </div>
+            <div class="msg" id="rezsdilzprava" hidden></div>
+          </div>
+
+          <div class="setrow">
+            <div class="t">
+              <b data-i18n="rezim.imp.n">Importovat</b>
+              <span data-i18n="rezim.imp.p">Načte kód sdílení ze souboru nebo ze schránky a nabídne přidání.</span>
+            </div>
+            <div class="setbtns"><button class="ghost" id="rezimpbtn" type="button" data-i18n="rezim.imp.btn">Importovat</button></div>
+          </div>
+          <div id="rezimpbox" hidden>
+            <div class="setrow">
+              <div class="t"><b data-i18n="nast.impf.n">Import ze souboru</b><span data-i18n="nast.impf.p">Načte zálohu a nabídne přidání nebo nahrazení.</span></div>
+              <button class="ghost" id="rezimpfilebtn" type="button" data-i18n="nast.impf.btn">Vybrat soubor</button>
+            </div>
+            <div class="setrow">
+              <div class="t"><b data-i18n="nast.imps.n">Import ze schránky</b><span data-i18n="nast.imps.p">Vlož text zálohy do pole a načti ho.</span></div>
+              <button class="ghost" id="rezimppastebtn" type="button" data-i18n="nast.imps.btn">Vložit text</button>
+            </div>
+            <div id="rezimppastebox" hidden>
+              <textarea id="rezimppastearea" data-i18n-ph="nast.vlozit.ph" placeholder="Sem vlož zkopírovanou zálohu"></textarea>
+              <div class="improw">
+                <button class="ghost" id="rezimppasteload" type="button" data-i18n="nast.nacist">Načíst</button>
+                <button class="ghost" id="rezimppastecancel" type="button" data-i18n="spol.zrusit">Zrušit</button>
+              </div>
+            </div>
+            <div id="rezimppreview" hidden>
+              <div id="rezimppreviewrows"></div>
+              <div class="improw">
+                <button class="ghost" id="rezimppotvrdit" type="button" data-i18n="rezim.imp.potvrdit">Importovat vybrané</button>
+                <button class="ghost" id="rezimpzrusit" type="button" data-i18n="spol.zrusit">Zrušit</button>
+              </div>
+            </div>
+          </div>
+          <div class="msg" id="rezimpzprava" hidden></div>
+          <input type="file" id="rezimpfile" accept=".txt,text/plain" hidden>
         </div>
 
         <div id="rezdetail" hidden>
@@ -242,6 +257,133 @@
           <div class="seccap" data-i18n="rezim.cap.nastaveni">Nastavení</div>
           <div id="kombsmazrow"></div>
         </div>
+      </div>
+
+      <!-- Zálohy: čtyři položky v pevném pořadí (zadání) — kompletní záloha,
+           záloha historie (beze změny přesunutá ze Obecné), záloha herních
+           režimů, zabrané místo (přesunuto beze změny). Kompletní záloha
+           a Záloha herních režimů kopírují strukturu Zálohy historie beze
+           změny vzoru, jen s jiným markerem a náplní (ui/zaloha-plna.js). -->
+      <div class="setcard" id="setcardzalohy" hidden>
+        <details class="setsec" id="seczalplna">
+          <summary><span data-i18n="nast.zalplna">Kompletní záloha</span></summary>
+          <div class="secbody">
+            <div class="setrow">
+              <div class="t"><b data-i18n="nast.expplna.n">Export do souboru</b><span data-i18n="nast.expplna.p">Textový soubor s historií i herními režimy pro pozdější import.</span></div>
+              <button class="ghost" id="expbtnplna" type="button" data-i18n="nast.expplna.btn">Uložit</button>
+            </div>
+            <div class="setrow">
+              <div class="t"><b data-i18n="nast.kopplna.n">Zkopírovat do schránky</b><span data-i18n="nast.kopplna.p">Pro případ nefunkčního stahování.</span></div>
+              <button class="ghost" id="copybtnplna" type="button" data-i18n="nast.kopplna.btn">Kopírovat</button>
+            </div>
+            <div class="setrow">
+              <div class="t"><b data-i18n="nast.impfplna.n">Import ze souboru</b><span data-i18n="nast.impfplna.p">Načte kompletní zálohu a nabídne přidání nebo nahrazení.</span></div>
+              <button class="ghost" id="impbtnplna" type="button" data-i18n="nast.impfplna.btn">Vybrat soubor</button>
+            </div>
+            <div class="setrow">
+              <div class="t"><b data-i18n="nast.impsplna.n">Import ze schránky</b><span data-i18n="nast.impsplna.p">Vlož text kompletní zálohy do pole a načti ho.</span></div>
+              <button class="ghost" id="pastebtnplna" type="button" data-i18n="nast.impsplna.btn">Vložit text</button>
+            </div>
+            <div id="pasteboxplna" hidden>
+              <textarea id="pasteareaplna" data-i18n-ph="nast.vlozit.ph" placeholder="Sem vlož zkopírovanou zálohu"></textarea>
+              <div class="improw">
+                <button class="ghost" id="pasteloadplna" type="button" data-i18n="nast.nacist">Načíst</button>
+                <button class="ghost" id="pastecancelplna" type="button" data-i18n="spol.zrusit">Zrušit</button>
+              </div>
+            </div>
+            <div id="impboxplna" hidden>
+              <div class="msg" id="impinfoplna"></div>
+              <div class="improw">
+                <button class="ghost" id="impaddplna" type="button" data-i18n="nast.pridatnove">Přidat nové</button>
+                <button class="ghost warn" id="imprepplna" type="button" data-i18n="nast.nahraditvse">Nahradit vše</button>
+              </div>
+            </div>
+            <div class="msg" id="zalmsgplna" hidden></div>
+          </div>
+        </details>
+
+        <details class="setsec" id="seczal">
+          <summary><span data-i18n="nast.zaloha">Záloha historie</span></summary>
+          <div class="secbody">
+            <div class="setrow">
+              <div class="t"><b data-i18n="nast.exp.n">Export do souboru</b><span data-i18n="nast.exp.p">Textový soubor s přehledem her a daty pro pozdější import.</span></div>
+              <button class="ghost" id="expbtn" type="button" data-i18n="nast.exp.btn">Uložit</button>
+            </div>
+            <div class="setrow">
+              <div class="t"><b data-i18n="nast.kop.n">Zkopírovat do schránky</b><span data-i18n="nast.kop.p">Pro případ nefunkčního stahování.</span></div>
+              <button class="ghost" id="copybtn" type="button" data-i18n="nast.kop.btn">Kopírovat</button>
+            </div>
+            <div class="setrow">
+              <div class="t"><b data-i18n="nast.impf.n">Import ze souboru</b><span data-i18n="nast.impf.p">Načte zálohu a nabídne přidání nebo nahrazení.</span></div>
+              <button class="ghost" id="impbtn" type="button" data-i18n="nast.impf.btn">Vybrat soubor</button>
+            </div>
+            <div class="setrow">
+              <div class="t"><b data-i18n="nast.imps.n">Import ze schránky</b><span data-i18n="nast.imps.p">Vlož text zálohy do pole a načti ho.</span></div>
+              <button class="ghost" id="pastebtn" type="button" data-i18n="nast.imps.btn">Vložit text</button>
+            </div>
+            <div id="pastebox" hidden>
+              <textarea id="pastearea" data-i18n-ph="nast.vlozit.ph" placeholder="Sem vlož zkopírovanou zálohu"></textarea>
+              <div class="improw">
+                <button class="ghost" id="pasteload" type="button" data-i18n="nast.nacist">Načíst</button>
+                <button class="ghost" id="pastecancel" type="button" data-i18n="spol.zrusit">Zrušit</button>
+              </div>
+            </div>
+            <div id="impbox" hidden>
+              <div class="msg" id="impinfo"></div>
+              <div class="improw">
+                <button class="ghost" id="impadd" type="button" data-i18n="nast.pridatnove">Přidat nové</button>
+                <button class="ghost warn" id="imprep" type="button" data-i18n="nast.nahraditvse">Nahradit vše</button>
+              </div>
+            </div>
+            <div class="msg" id="zalmsg" hidden></div>
+          </div>
+        </details>
+
+        <details class="setsec" id="seczalrez">
+          <summary><span data-i18n="nast.zalrez">Záloha herních režimů</span></summary>
+          <div class="secbody">
+            <div class="setrow">
+              <div class="t"><b data-i18n="nast.exprez.n">Export do souboru</b><span data-i18n="nast.exprez.p">Textový soubor se všemi herními režimy pro pozdější import.</span></div>
+              <button class="ghost" id="expbtnrez" type="button" data-i18n="nast.exprez.btn">Uložit</button>
+            </div>
+            <div class="setrow">
+              <div class="t"><b data-i18n="nast.koprez.n">Zkopírovat do schránky</b><span data-i18n="nast.koprez.p">Pro případ nefunkčního stahování.</span></div>
+              <button class="ghost" id="copybtnrez" type="button" data-i18n="nast.koprez.btn">Kopírovat</button>
+            </div>
+            <div class="setrow">
+              <div class="t"><b data-i18n="nast.impfrez.n">Import ze souboru</b><span data-i18n="nast.impfrez.p">Načte zálohu herních režimů a nabídne přidání nebo nahrazení.</span></div>
+              <button class="ghost" id="impbtnrez" type="button" data-i18n="nast.impfrez.btn">Vybrat soubor</button>
+            </div>
+            <div class="setrow">
+              <div class="t"><b data-i18n="nast.impsrez.n">Import ze schránky</b><span data-i18n="nast.impsrez.p">Vlož text zálohy herních režimů do pole a načti ho.</span></div>
+              <button class="ghost" id="pastebtnrez" type="button" data-i18n="nast.impsrez.btn">Vložit text</button>
+            </div>
+            <div id="pasteboxrez" hidden>
+              <textarea id="pasteareazrez" data-i18n-ph="nast.vlozit.ph" placeholder="Sem vlož zkopírovanou zálohu"></textarea>
+              <div class="improw">
+                <button class="ghost" id="pasteloadrez" type="button" data-i18n="nast.nacist">Načíst</button>
+                <button class="ghost" id="pastecancelrez" type="button" data-i18n="spol.zrusit">Zrušit</button>
+              </div>
+            </div>
+            <div id="impboxrez" hidden>
+              <div class="msg" id="impinforez"></div>
+              <div class="improw">
+                <button class="ghost" id="impaddrez" type="button" data-i18n="nast.pridatnove">Přidat nové</button>
+                <button class="ghost warn" id="imprepzrez" type="button" data-i18n="nast.nahraditvse">Nahradit vše</button>
+              </div>
+            </div>
+            <div class="msg" id="zalmsgrez" hidden></div>
+          </div>
+        </details>
+
+        <div class="setrow mistorow" id="mistorow">
+          <div class="t"><b data-i18n="nast.misto.n">Zabrané místo</b><span id="mistocelkem" data-i18n="nast.misto.zjistuji">Zjišťuji&#8230;</span></div>
+          <button class="ghost" id="mistobtn" type="button" data-i18n="nast.misto.btn">Detail</button>
+        </div>
+        <div class="msg misto" hidden></div>
+        <input type="file" id="impfile" accept=".txt,text/plain" hidden>
+        <input type="file" id="impfileplna" accept=".txt,text/plain" hidden>
+        <input type="file" id="impfilerez" accept=".txt,text/plain" hidden>
       </div>
     </div>
     <!-- Pás rizika je při stavbě pravidel ten údaj, podle kterého se pozná,

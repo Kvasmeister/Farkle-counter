@@ -1,4 +1,4 @@
-/* Okno nastavení: panel hry, harmonika oddílů, dvě karty.
+/* Okno nastavení: panel hry, harmonika oddílů, tři karty.
 
    Závisí na: ui/prvky
    Sahá na: DOM
@@ -26,7 +26,7 @@ var setSekce = Array.prototype.slice.call(document.querySelectorAll("#setmodal .
 
 function zavriSekce(){ setSekce.forEach(function(x){ x.open = false; }); }
 
-/* ---------- dvě karty v okně nastavení ----------
+/* ---------- tři karty v okně nastavení ----------
    Stejný vzor jako dvě karty v okně s informacemi (#infoseg): přepínač
    přehazuje `hidden` a `.on`, obsah zůstává v DOMu, takže se nic
    nepřestavuje. Okno vždycky začíná na první kartě. */
@@ -87,7 +87,7 @@ export function initNastaveni(){
 
   (function(){
     var tlac = $("setseg").children;
-    var karty = [$("setcardobecne"), $("setcardrezimy")];
+    var karty = [$("setcardobecne"), $("setcardrezimy"), $("setcardzalohy")];
     naKartuNastaveni = function(i){
       karty.forEach(function(k, j){ k.hidden = j !== i; });
       Array.prototype.forEach.call(tlac, function(b, j){ b.classList.toggle("on", j === i); });

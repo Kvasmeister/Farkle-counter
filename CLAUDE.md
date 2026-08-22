@@ -34,15 +34,15 @@ stojí v hlavičce jejího modulu — každý soubor v `src/js/` začíná bloke
 
 ```
 npm run build     složí index.html ze src/
-npm test          ověří, že je aktuální, zkontroluje importy, pustí 20 sad
+npm test          ověří, že je aktuální, zkontroluje importy, pustí 22 sad
 ```
 
 ### Proč build vůbec je
 
-Všech 19 jsdom sad staví DOM z řetězce (`new JSDOM(html, …)` bez
+Všech 21 jsdom sad staví DOM z řetězce (`new JSDOM(html, …)` bez
 `resources: "usable"`). Takový jsdom **nenačte `<script src>`** a
 **`<script type="module">` neumí vůbec**. Servírovat aplikaci jako víc
-souborů by stálo celou testovací síť — 1 461 kontrol. Zdroj je proto
+souborů by stálo celou testovací síť — 1 529 kontrol. Zdroj je proto
 modulární a výstup zůstává jeden soubor — pro testy i pro `SOUBORY`
 v `sw.js` se tím nemění nic.
 
@@ -134,9 +134,10 @@ Tři vědomé odchylky, každá zapsaná v hlavičce svého modulu:
 | `zapis` | vrubovka, tabulka kol, režim oprav, oba koše |
 | `statistiky` · `statistiky-stranka` | co se počítá · jak se to ukazuje |
 | `filtry` | filtry, řazení, tři okna |
-| `nastaveni-obecne` · `nastaveni-rezimy` | dvě karty okna nastavení |
+| `nastaveni-obecne` · `nastaveni-rezimy` | tři karty okna nastavení |
 | `okno-pravidla` · `navod` | okno „i“, dvě karty |
-| `zaloha` · `misto` | export/import · zabrané místo |
+| `zaloha` · `zaloha-plna` · `misto` | záloha historie · kompletní záloha a záloha herních režimů · zabrané místo |
+| `sdileni-rezimu` | sdílení a import jednotlivých herních režimů, mimo zálohy |
 | `okna` · `stranky` | modály · tři stránky a dvě vnitřní |
 | `platforma` | motiv, orientace, fullscreen, nezhasínání, SW |
 | `autoulozeni` · `udalosti` | automatické uložení · navěšení tlačítek |
@@ -184,7 +185,10 @@ zápisu (`naSelhaniUlozeni`) a nedostupnou historii
   v historii a v zálohách. Jednička a pětka nesou `j` a `p` odjakživa;
   asymetrie proti `d2`–`d6` je záměrná.
 - **Formát zálohy** (TXT s řádkem `#DATA:` a JSONem) se nemění. Soubor
-  z kterékoli dřívější verze musí jít naimportovat i potom.
+  z kterékoli dřívější verze musí jít naimportovat i potom. Kompletní záloha
+  (`#PLNAZALOHA:`), záloha herních režimů (`#REZIMYZALOHA:`) a sdílení
+  jednotlivých režimů (`#SDILENIREZIMU:`) mají vlastní markery právě proto,
+  aby se na `#DATA:` nemuselo sahat — a jsou od svého vzniku stejně stabilní.
 - **Id `kcd2` a `klasika`** zůstávají i po přejmenování režimů.
 
 ### Escapování
@@ -253,12 +257,12 @@ Odůvodnění jednotlivých voleb drží `docs/plany/02`, `04` a `05`; verze hry
 ## 5. Testy
 
 ```
-node Testy/vse.mjs          všech 20 sad se souhrnem
+node Testy/vse.mjs          všech 22 sad se souhrnem
 node Testy/vse.mjs 18 19    jen vyjmenované
 npm test                    build --kontrola + kontrola importů + sady
 ```
 
-Dnes **1 461 kontrol**, poslední stav: vše prošlo. Rozpis sad drží
+Dnes **1 529 kontrol**, poslední stav: vše prošlo. Rozpis sad drží
 `Testy/TESTS_README.md`.
 
 ### Nástroje vedle sad
@@ -320,7 +324,7 @@ npm run deploy -- --zkouska
 
 Projde build, importy, testy i kontrolu verze a **nic neodešle**.
 
-`npm run deploy` složí `index.html`, ověří importy, pustí všech 20 sad,
+`npm run deploy` složí `index.html`, ověří importy, pustí všech 22 sad,
 porovná VERZE s nasazeným stavem a teprve pak commitne a pushne. Když
 kterýkoli krok selže, nic se neodešle.
 
