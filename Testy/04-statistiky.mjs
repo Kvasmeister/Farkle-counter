@@ -42,13 +42,16 @@ ok(a.$("histlist").textContent.includes("Historie je prázdná"), "historie hlá
 console.log("B) hodnoty statistik");
 let b = app(HRY);
 const r = b.radky();
-ok(r.length === 21, "21 řádků, je " + r.length);
+ok(r.length === 25, "25 řádků, je " + r.length);
 ok(r[0].n === "Odehráno her" && r[1].n === "Nejvíc her za den" &&
-   r[2].n === "Celkem nasbíráno bodů" && r[3].n === "Nejvíc bodů za hru",
-   "nahoře jsou součty, pod nimi rekordy: " + r.slice(0,4).map(x => x.n).join(" | "));
-ok(r[19].n === "Farklů na hru", "poslední je poměr farklů: " + r[19].n);
+   r[2].n === "Nejhranější režim" && r[3].n === "Celkem nasbíráno bodů",
+   "kategorie Obecné jako první čtyři: " + r.slice(0,4).map(x => x.n).join(" | "));
+ok(r[24].n === "Farklů na hru", "poslední je poměr farklů: " + r[24].n);
+const capy = [...b.$("statlist").children].filter(el => el.className === "seccap").map(el => el.textContent);
+ok(capy.join("|") === ["Obecné","Hry","Kola","Hody","Farkly"].join("|"),
+   "pět nadpisů kategorií ve správném pořadí: " + capy.join(" | "));
 const val = n => (r.find(x => x.n === n) || {}).v;
-ok(val("Nejvíc bodů za hru") === "2" + S + "100", "nejvíc bodů za hru: " + val("Nejvíc bodů za hru"));
+ok(val("Nejvíc bodů — celkem") === "2" + S + "100", "nejvíc bodů — celkem: " + val("Nejvíc bodů — celkem"));
 ok(val("Nejvíc bodů — hra na body") === "2" + S + "100", "nejvíc na body: " + val("Nejvíc bodů — hra na body"));
 ok(val("Nejvíc bodů — hra na kola") === "1" + S + "800", "nejvíc na kola: " + val("Nejvíc bodů — hra na kola"));
 ok(val("Nejlepší kolo") === "1" + S + "200", "nejlepší kolo: " + val("Nejlepší kolo"));
@@ -63,7 +66,12 @@ ok(val("Nejvíc hodů v jednom kole") === "1", "nejvíc hodů v kole: " + val("N
 ok(val("Nejvíc bodů ztraceno farklem") === "\u2014", "nulové farkle se nepočítají: " + val("Nejvíc bodů ztraceno farklem"));
 ok(val("Nejvíc her za den") === "1", "nejvíc her za den: " + val("Nejvíc her za den"));
 // 4700 bodů / 12 kol = 391,7 -> 392
-ok(val("Celkový průměr na kolo") === "392", "celkový průměr: " + val("Celkový průměr na kolo"));
+ok(val("Průměr na kolo — celkem") === "392", "celkový průměr: " + val("Průměr na kolo — celkem"));
+// každé kolo tu má jednodílný popis "jednička", tedy přesně jeden hod za
+// kolo (viz Nejvíc hodů v jednom kole níž) — Průměrný hod tak vyjde na
+// stejné číslo jako Průměr na kolo, a Nejlepší hod je vždy jen ta jednička
+ok(val("Nejlepší hod") === "100", "nejlepší hod je jednička: " + val("Nejlepší hod"));
+ok(val("Průměrný hod — celkem") === "392", "hod = kolo v této fixtuře, stejný průměr: " + val("Průměrný hod — celkem"));
 // body: (2100+800)/7 = 414,3 -> 414
 ok(val("Průměr na kolo — hra na body") === "414", "průměr na body: " + val("Průměr na kolo — hra na body"));
 ok(val("Průměr na kolo — hra na kola") === "360", "průměr na kola: " + val("Průměr na kolo — hra na kola"));
@@ -78,9 +86,9 @@ ok(!r.find(x => x.n === "Odehráno her").lze && !r.find(x => x.n === "Celkem nas
 ok(r.find(x => x.n === "Nejlepší kolo").lze, "rekord jde rozkliknout");
 
 console.log("D) žebříček");
-b.klik(r.find(x => x.n === "Nejvíc bodů za hru").el);
+b.klik(r.find(x => x.n === "Nejvíc bodů — celkem").el);
 ok(!b.$("p2detail").hidden && b.$("p2list").hidden, "otevřela se podstránka");
-ok(b.$("dettitle").textContent === "Nejvíc bodů za hru", "titulek: " + b.$("dettitle").textContent);
+ok(b.$("dettitle").textContent === "Nejvíc bodů — celkem", "titulek: " + b.$("dettitle").textContent);
 let bunky = [...b.$("detbody").querySelectorAll("tr")].map(tr => tr.querySelector("td.g").textContent);
 ok(bunky.join("|") === ["2"+S+"100","1"+S+"800","800"].join("|"), "seřazeno od nejlepší: " + bunky.join(" "));
 ok(/4 kol/.test(b.$("detbody").querySelector("td.d").textContent), "u her na kola je počet kol: " + b.$("detbody").querySelector("td.d").textContent);
@@ -125,7 +133,7 @@ console.log("H) zapsání hry statistiky rovnou přepočítá");
 let c = app(null);
 c.klik(c.d.querySelector('[data-single="1"]')); c.klik(c.$("bank"));
 c.klik(c.$("arch"));
-ok(c.$("statlist").querySelectorAll(".strow").length === 21, "statistiky se naplnily hned po zápisu");
+ok(c.$("statlist").querySelectorAll(".strow").length === 25, "statistiky se naplnily hned po zápisu");
 ok(c.radky().find(x => x.n === "Odehráno her").v === "1", "odehráno her: 1");
 
 console.log("I) smazaná zapsaná hra se z tlačítka vrací, nezapisuje znovu");
@@ -198,7 +206,7 @@ console.log("K) nejvíc her za den");
 console.log("L) typ hry v řádcích a proklik ze žebříčku do detailu");
 {
   const l = app(HRY);
-  const sd = l.radky().find(x => x.n === "Nejvíc bodů za hru").kdy;
+  const sd = l.radky().find(x => x.n === "Nejvíc bodů — celkem").kdy;
   ok(/1\. 7\. 2026/.test(sd) && /:/.test(sd), "podřádek nese datum i čas: " + sd);
   ok(sd.includes("do 2" + S + "000"), "a taky typ hry: " + sd);
   const sdKola = l.radky().find(x => x.n === "Nejvíc bodů — hra na kola").kdy;
@@ -206,7 +214,7 @@ console.log("L) typ hry v řádcích a proklik ze žebříčku do detailu");
   ok(l.radky().find(x => x.n === "Nejvíc her za den").kdy === "3. 7. 2026",
      "u statistiky dnů zůstává samotné datum: " + l.radky().find(x => x.n === "Nejvíc her za den").kdy);
 
-  l.klik(l.radky().find(x => x.n === "Nejvíc bodů za hru").el);
+  l.klik(l.radky().find(x => x.n === "Nejvíc bodů — celkem").el);
   const tr = [...l.$("detbody").querySelectorAll("tbody tr")];
   ok(tr[0].querySelector("td.d").textContent.includes("do 2" + S + "000"), "typ hry i v žebříčku: " + tr[0].querySelector("td.d").textContent);
   ok(tr[1].querySelector("td.d").textContent.includes("na kola \u00B7 limit 5"), "a u hry na kola vedle počtu kol: " + tr[1].querySelector("td.d").textContent);
@@ -217,13 +225,13 @@ console.log("L) typ hry v řádcích a proklik ze žebříčku do detailu");
   ok(/Hra z 1\. 7\. 2026/.test(l.$("dettitle").textContent), "otevřel se detail té hry: " + l.$("dettitle").textContent);
   ok(l.$("detbody").querySelectorAll("tbody tr").length === 4, "čtyři kola v tabulce");
   l.klik(l.$("detback"));
-  ok(!l.$("p2detail").hidden && l.$("dettitle").textContent === "Nejvíc bodů za hru",
+  ok(!l.$("p2detail").hidden && l.$("dettitle").textContent === "Nejvíc bodů — celkem",
      "Zpět vrátilo do žebříčku: " + l.$("dettitle").textContent);
   l.klik(l.$("detback"));
   ok(l.$("p2detail").hidden && !l.$("p2list").hidden, "druhé Zpět už vrátilo seznam");
 
   // klávesnice
-  l.klik(l.radky().find(x => x.n === "Nejvíc bodů za hru").el);
+  l.klik(l.radky().find(x => x.n === "Nejvíc bodů — celkem").el);
   const prvni = l.$("detbody").querySelector("tbody tr");
   prvni.dispatchEvent(new l.w.KeyboardEvent("keydown", { key:"Enter", bubbles:true }));
   ok(/Hra z /.test(l.$("dettitle").textContent), "Enter na řádku otevře detail: " + l.$("dettitle").textContent);
@@ -235,20 +243,20 @@ console.log("L) typ hry v řádcích a proklik ze žebříčku do detailu");
   // smazání hry otevřené ze žebříčku vrací na seznam, ne do žebříčku
   l.klik(l.$("delgame")); l.klik(l.$("delgame"));
   ok(l.$("p2detail").hidden && !l.$("p2list").hidden, "po smazání jsme na seznamu, ne v žebříčku");
-  ok(l.$("statlist").querySelectorAll(".strow").length === 21, "a je to seznam statistik");
+  ok(l.$("statlist").querySelectorAll(".strow").length === 25, "a je to seznam statistik");
 }
 
 console.log("M) zásobník návratu ruší přepnutí karty i přepínače");
 {
   const m = app(HRY);
-  m.klik(m.radky().find(x => x.n === "Nejvíc bodů za hru").el);
+  m.klik(m.radky().find(x => x.n === "Nejvíc bodů — celkem").el);
   m.klik(m.$("detbody").querySelector("tbody tr"));
   m.klik(m.$("tab0")); m.klik(m.$("tab2"));
   m.klik(m.$("detback"));
   ok(m.$("p2detail").hidden && !m.$("p2list").hidden, "po přepnutí karty vede Zpět rovnou na seznam");
 
   const n = app(HRY);
-  n.klik(n.radky().find(x => x.n === "Nejvíc bodů za hru").el);
+  n.klik(n.radky().find(x => x.n === "Nejvíc bodů — celkem").el);
   n.klik(n.$("detbody").querySelector("tbody tr"));
   n.klik(n.$("seg").children[1]);
   ok(n.$("p2detail").hidden && !n.$("histlist").hidden, "přepínač zavře detail a ukáže historii");

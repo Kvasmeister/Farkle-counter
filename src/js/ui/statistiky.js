@@ -16,9 +16,11 @@ import {
   gFarkle,
   gFarklePrvni,
   gFarklePrvniRekord,
+  gHoduCelkem,
   gKol,
   gKolKCili,
   gNejhorsiKolo,
+  gNejlepsiHod,
   gNejlepsiKolo,
   gNejvicHodu,
   gPrumer,
@@ -47,35 +49,46 @@ function renderStats(){ $("stats").innerHTML = statsHTML(snapshot()); }
 
 /* ---------- sledované statistiky ----------
    s: omezení na režim, m: hodnota jedné hry, a: způsob shrnutí,
-   f: formát, dir: směr žebříčku, kol: dopsat do žebříčku počet kol */
+   f: formát, dir: směr žebříčku, kol: dopsat do žebříčku počet kol,
+   kat: kategorie (nadpis v seznamu, viz renderStatList),
+   hod: žebříček na úrovni jednoho hodu, ne jedné hry (viz
+   otevriZebricekHodu ve statistiky-stranka.js) místo obvyklého zebricek().
+
+   Pořadí uvnitř kategorie je závazné — je to pořadí, ve kterém se
+   statistiky zobrazují. */
 var STATY = [
-  { n:"stat.n.pocet",                 a:"pocet",      f:cislo },
-  { n:"stat.n.denmax",                a:"denMax",     f:cislo },
-  { n:"stat.n.soucet",                a:"soucet",     f:fmt,      num:gBody },
-  { n:"stat.n.maxbody",               m:gBody,        a:"max",   f:fmt,      kol:true },
-  { n:"stat.n.maxbodybody",           m:gBody,        a:"max",   f:fmt,      s:"points" },
-  { n:"stat.n.maxbodykola",           m:gBody,        a:"max",   f:fmt,      s:"rounds", kol:true },
-  { n:"stat.n.prumer",                m:gPrumer,      a:"pomer", f:fmtR,     num:gBody, den:gKol },
-  { n:"stat.n.prumerbody",            m:gPrumer,      a:"pomer", f:fmtR,     num:gBody, den:gKol, s:"points" },
-  { n:"stat.n.prumerkola",            m:gPrumer,      a:"pomer", f:fmtR,     num:gBody, den:gKol, s:"rounds" },
-  { n:"stat.n.maxhodu",               m:gNejvicHodu,  a:"max",   f:cislo,    kol:true },
+  { n:"stat.n.pocet",                 a:"pocet",      f:cislo,    kat:"obecne" },
+  { n:"stat.n.denmax",                a:"denMax",     f:cislo,    kat:"obecne" },
+  { n:"stat.n.rezim",                 a:"rezimMax",   f:cislo,    kat:"obecne" },
+  { n:"stat.n.soucet",                a:"soucet",     f:fmt,      num:gBody,  kat:"obecne" },
+
+  { n:"stat.n.maxbody",               m:gBody,        a:"max",   f:fmt,      kol:true,   kat:"hry" },
+  { n:"stat.n.maxbodybody",           m:gBody,        a:"max",   f:fmt,      s:"points", kat:"hry" },
+  { n:"stat.n.maxbodykola",           m:gBody,        a:"max",   f:fmt,      s:"rounds", kol:true, kat:"hry" },
+
+  { n:"stat.n.prumer",                m:gPrumer,      a:"pomer", f:fmtR,     num:gBody, den:gKol, kat:"kola" },
+  { n:"stat.n.prumerbody",            m:gPrumer,      a:"pomer", f:fmtR,     num:gBody, den:gKol, s:"points", kat:"kola" },
+  { n:"stat.n.prumerkola",            m:gPrumer,      a:"pomer", f:fmtR,     num:gBody, den:gKol, s:"rounds", kat:"kola" },
   /* Obě „kola v jedné hře na body“ stojí na gKolKCili(), která u nedokončené
      hry vrací null — tím se počítají jen hry, které cíle doopravdy dosáhly,
      a žádný zvláštní výběr her k tomu není potřeba. */
-  { n:"stat.n.minkol",                m:gKolKCili,    a:"min",   f:cislo,    s:"points" },
-  { n:"stat.n.maxkol",                m:gKolKCili,    a:"max",   f:cislo,    s:"points" },
-  { n:"stat.n.nejlepsikolo",          m:gNejlepsiKolo,a:"max",   f:fmt },
-  { n:"stat.n.nejhorsikolo",          m:gNejhorsiKolo,a:"min",   f:fmt },
-  { n:"stat.n.maxfarklu",             m:gFarkle,      a:"max",   f:cislo,    kol:true },
-  { n:"stat.n.farkleprvni",           m:gFarklePrvniRekord, a:"soucet",f:cislo, num:gFarklePrvni, kol:true },
-  { n:"stat.n.maxfarkleprvni",        m:gFarklePrvniRekord, a:"max",   f:cislo, kol:true },
-  { n:"stat.n.ztraceno",              m:gZtraceno,    a:"max",   f:fmt,      kol:true },
-  { n:"stat.n.serie",                 m:gSerie,       a:"max",   f:cislo,    kol:true },
-  { n:"stat.n.farkluhra",             m:gFarkle,      a:"pomer", f:desetina, num:gFarkle, den:function(){ return 1; }, dir:"asc" },
-  /* Třetí druh shrnutí vedle her a dnů: seskupuje podle režimu. Hodnota
-     není číslo, ale název — formát se proto použije až v žebříčku,
-     na počty her. */
-  { n:"stat.n.rezim",                 a:"rezimMax",   f:cislo }
+  { n:"stat.n.minkol",                m:gKolKCili,    a:"min",   f:cislo,    s:"points", kat:"kola" },
+  { n:"stat.n.maxkol",                m:gKolKCili,    a:"max",   f:cislo,    s:"points", kat:"kola" },
+  { n:"stat.n.nejlepsikolo",          m:gNejlepsiKolo,a:"max",   f:fmt,      kat:"kola" },
+  { n:"stat.n.nejhorsikolo",          m:gNejhorsiKolo,a:"min",   f:fmt,      kat:"kola" },
+
+  { n:"stat.n.maxhodu",               m:gNejvicHodu,  a:"max",   f:cislo,    kol:true, kat:"hody" },
+  { n:"stat.n.nejlepsihod",           m:gNejlepsiHod, a:"max",   f:fmt,      hod:true, kat:"hody" },
+  { n:"stat.n.prumerhod",                             a:"pomer", f:fmtR,     num:gBody, den:gHoduCelkem, hod:true, kat:"hody" },
+  { n:"stat.n.prumerhodbody",                         a:"pomer", f:fmtR,     num:gBody, den:gHoduCelkem, s:"points", hod:true, kat:"hody" },
+  { n:"stat.n.prumerhodkola",                         a:"pomer", f:fmtR,     num:gBody, den:gHoduCelkem, s:"rounds", hod:true, kat:"hody" },
+
+  { n:"stat.n.maxfarklu",             m:gFarkle,      a:"max",   f:cislo,    kol:true, kat:"farkly" },
+  { n:"stat.n.farkleprvni",           m:gFarklePrvniRekord, a:"soucet",f:cislo, num:gFarklePrvni, kol:true, kat:"farkly" },
+  { n:"stat.n.maxfarkleprvni",        m:gFarklePrvniRekord, a:"max",   f:cislo, kol:true, kat:"farkly" },
+  { n:"stat.n.ztraceno",              m:gZtraceno,    a:"max",   f:fmt,      kol:true, kat:"farkly" },
+  { n:"stat.n.serie",                 m:gSerie,       a:"max",   f:cislo,    kol:true, kat:"farkly" },
+  { n:"stat.n.farkluhra",             m:gFarkle,      a:"pomer", f:desetina, num:gFarkle, den:function(){ return 1; }, dir:"asc", kat:"farkly" }
 ];
 
 /* ---------- seskupení podle herního režimu ----------

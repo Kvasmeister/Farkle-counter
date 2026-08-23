@@ -34,7 +34,7 @@ každého záznamu:
 
 | police | obsah |
 |---|---|
-| `souhrny` | `id, savedAt, mode, goal, roundGoal, banked` a předpočítané `kol, farklu, nejlepsi, nejhorsi, serie, kolKCili, hodu, ztraceno` |
+| `souhrny` | `id, savedAt, mode, goal, roundGoal, banked` a předpočítané `kol, farklu, nejlepsi, nejhorsi, serie, kolKCili, hodu, ztraceno, nejlepsihod, hoduCelkem` |
 | `detaily` | `id` a `turns` s popisy kol |
 
 Souhrny se natáhnou **celé při startu** (deset tisíc jich je v paměti kolem
@@ -47,10 +47,11 @@ podobné `g*` funkce: vrátí `g.farklu`, pokud je to číslo, jinak projdou
 `g.turns` a spočítají to samy. Díky tomu zůstávají `STATY`, `statHodnota()`,
 `zebricek()` i `renderHistList()` beze změny a počítají stejně nad souhrny,
 nad plnými záznamy v propadu na `localStorage` i nad importovanými daty.
-`gNejlepsiKolo()`, `gNejhorsiKolo()`, `gKolKCili()`, `gNejvicHodu()` a
-`gZtraceno()` se **nesmí** ptát na pravdivost — `null` je u nich platná
-hodnota (hra bez jediného bodovaného kola, hra bez farklu, hra bez jediného
-kola), takže se testuje `!== undefined`.
+`gNejlepsiKolo()`, `gNejhorsiKolo()`, `gKolKCili()`, `gNejvicHodu()`,
+`gZtraceno()` a `gNejlepsiHod()` se **nesmí** ptát na pravdivost — `null` je
+u nich platná hodnota (hra bez jediného bodovaného kola, hra bez farklu,
+hra bez jediného kola, hra bez jediného rozebratelného hodu), takže se
+testuje `!== undefined`.
 
 `popisHry()`, `statsHTML()` i `tallyInto()` proto taky nesahají na `turns`
 přímo, ale jdou přes `gKol()` a spol.
@@ -73,6 +74,25 @@ z aplikace takové kolo vzniknout nemůže.
 Kódy položek (`j`, `n35`, `s15`, `v`) svislítko neobsahují a položky uvnitř
 hodu se spojují čárkou, takže se dělení nerozbije ani na horkých kostkách.
 U starých záznamů platí totéž o tečce a `" + "`.
+
+**Body a počet kostek jednoho hodu (ne kola) se dopočítávají stejným
+popisem.** `stav/hody.js` (`rozlozKolo(tah, rez)`) jde dál, než `hodyVKole()`
+výš — rozebere `c`/`d` na jednotlivé hody s body a počtem fyzicky hozených
+kostek u každého z nich, pro statistiky Nejlepší hod a Průměrný hod.
+Kódy jako `j`, `n35`, postupky a kombinace navíc nesou počet kostek vždy
+(fixní nebo přímo v kódu); body u nich ale žádnou historickou sazbu
+neukládají, takže se dopočítávají podle **dnešní** tabulky režimu `rez` —
+pozdější úprava sazeb vlastního režimu tak zpětně mírně posune číslo
+u starších her (kolo/hru samotné to nemění, jde jen o rozpis po hodech).
+Počet fyzicky hozených kostek se u druhého a dalšího hodu v kole dopočítává
+rekurzivně ze zbytku po předchozím hodu (nebo se vrátí na plný počet při
+horkých kostkách) — stejný vzorec jako živé `rollOn()`/`left()` v `akce.js`.
+Kolo, které obsahuje ručně zadanou položku `v`, nebo patří k mezitím
+smazanému vlastnímu režimu, se rozebrat nedá — `rozlozKolo()` vrátí `null`
+a takové kolo se z hodových statistik jen vynechá, jinde se počítá dál beze
+změny. `gNejlepsiHod(g)`/`gHoduCelkem(g)` v `stav/zaznam.js` staví na tomhle
+rozboru (druhá bez potřeby `rez` — jen počet úseků, tedy stejně odolná jako
+`gNejvicHodu`) a jejich hodnoty nesou souhrny jako `nejlepsihod`/`hoduCelkem`.
 
 **Farkle se do dat neukládá, jen dokresluje.** Buňku popisu skládá pro obě
 tabulky jedna `bunkaPopisu()` jako popis kola + `" · farkle"`, u prázdného

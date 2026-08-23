@@ -14,9 +14,11 @@ import { HKEY, readList, writeList } from "./uloziste.js";
 import {
   gFarkle,
   gFarklePrvni,
+  gHoduCelkem,
   gKol,
   gKolKCili,
   gNejhorsiKolo,
+  gNejlepsiHod,
   gNejlepsiKolo,
   gNejvicHodu,
   gRezim,
@@ -41,7 +43,7 @@ import {
 var HIST = [];
 var UKEY  = "farkle-uloziste-v1";   /* "idb", jakmile migrace proběhla */
 var HZAL  = HKEY + "-zaloha";       /* přejmenovaný původní klíč */
-var IDB_JMENO = "kostky", IDB_VERZE = 4;
+var IDB_JMENO = "kostky", IDB_VERZE = 5;
 var SOUHRNY = "souhrny", DETAILY = "detaily";
 /* Firefox v soukromém okně umí na open() viset donekonečna, proto strop */
 var IDB_STROP = 3000;
@@ -66,7 +68,8 @@ function souhrnZ(rec){
     nejlepsi: gNejlepsiKolo(rec), nejhorsi: gNejhorsiKolo(rec),
     serie: gSerie(rec),
     kolKCili: kolKCili,
-    hodu: gNejvicHodu(rec), ztraceno: gZtraceno(rec)
+    hodu: gNejvicHodu(rec), ztraceno: gZtraceno(rec),
+    nejlepsihod: gNejlepsiHod(rec), hoduCelkem: gHoduCelkem(rec)
   };
 }
 function detailZ(rec){
@@ -115,20 +118,29 @@ function otevriIDB(hotovo){
   req.onblocked = function(){ konec(null); };
 }
 
-/* Doplnění polí `hodu`, `ztraceno` a `farkluprvni` do souhrnů uložených
-   starší verzí. Běží uvnitř versionchange transakce: když cokoli selže,
-   transakce se zruší celá a databáze zůstane na předchozí verzi —
-   nevznikne stav, kdy má polovina her nová pole a druhá ne. Mapa se staví
-   celá dopředu a teprve pak se sahá na souhrny; dva otevřené kurzory nad
-   dvěma policemi v téže transakci se nemíchají. Na čerstvé instalaci jsou
-   obě police prázdné, takže dopočet nestojí nic. */
+/* Doplnění polí `hodu`, `ztraceno`, `farkluprvni`, `nejlepsihod` a
+   `hoduCelkem` do souhrnů uložených starší verzí. Běží uvnitř versionchange
+   transakce: když cokoli selže, transakce se zruší celá a databáze zůstane
+   na předchozí verzi — nevznikne stav, kdy má polovina her nová pole
+   a druhá ne. Mapa se staví celá dopředu a teprve pak se sahá na souhrny;
+   dva otevřené kurzory nad dvěma policemi v téže transakci se nemíchají.
+   Na čerstvé instalaci jsou obě police prázdné, takže dopočet nestojí nic.
+
+   `nejlepsihod`/`hoduCelkem` potřebují na rozdíl od starší trojice i `rezim`
+   (jen na souhrnu, ne na detailu) — mapa proto nese i `turns` a dopočet
+   samotný běží až ve druhém průchodu nad syntetickým objektem
+   `{turns, rezim}`, stejnými funkcemi jako běžný zápis hry (gNejlepsiHod,
+   gHoduCelkem), aby nevznikla druhá, oddělená kopie rozborové logiky. */
 function dopoctiHody(tx){
   var mapa = {}, kd = tx.objectStore(DETAILY).openCursor();
   kd.onsuccess = function(){
     var c = kd.result;
     if(c){
       var d = c.value;
-      mapa[d.id] = { hodu: gNejvicHodu(d), ztraceno: gZtraceno(d), farkluprvni: gFarklePrvni(d) };
+      mapa[d.id] = {
+        hodu: gNejvicHodu(d), ztraceno: gZtraceno(d), farkluprvni: gFarklePrvni(d),
+        turns: d.turns
+      };
       c.continue();
       return;
     }
@@ -136,14 +148,21 @@ function dopoctiHody(tx){
     ks.onsuccess = function(){
       var s = ks.result;
       if(!s) return;
-      var v = s.value;
+      var v = s.value, zmena = false;
       if(v.hodu === undefined || v.ztraceno === undefined || v.farkluprvni === undefined){
         var m = mapa[v.id];
         v.hodu = m ? m.hodu : null;
         v.ztraceno = m ? m.ztraceno : null;
         v.farkluprvni = m ? m.farkluprvni : null;
-        s.update(v);
+        zmena = true;
       }
+      if(v.nejlepsihod === undefined || v.hoduCelkem === undefined){
+        var mt = mapa[v.id], turns = mt ? mt.turns : [];
+        v.nejlepsihod = gNejlepsiHod({ turns: turns, rezim: v.rezim });
+        v.hoduCelkem = gHoduCelkem({ turns: turns });
+        zmena = true;
+      }
+      if(zmena) s.update(v);
       s.continue();
     };
   };
@@ -185,6 +204,44 @@ function nactiDetail(id, hotovo){
     hotovo(d && Array.isArray(d.turns) ? d.turns : []);
   };
   req.onerror = function(){ hotovo(null); };
+}
+
+/* Všechny popisy kol najednou — jen pro žebříčky na úrovni hodu (Nejlepší
+   hod, Průměrný hod), kde je pro rozbor potřeba turns z KAŽDÉ hry, ne jen
+   z té rozkliknuté jako u nactiDetail(). V režimu ls jsou celé záznamy
+   v HIST už v paměti; v idb jde o jediné hromadné čtení police detaily
+   (getAll(), s propadem na kurzor), ne o stovky jednotlivých get().
+   hotovo(mapa) dostane { id: turns }, nebo {} při selhání. */
+function nactiVsechnyDetaily(hotovo){
+  if(rezim !== "idb"){
+    var mapa = {};
+    HIST.forEach(function(g){ if(Array.isArray(g.turns)) mapa[g.id] = g.turns; });
+    hotovo(mapa);
+    return;
+  }
+  if(!idb){ hotovo({}); return; }
+  var tx;
+  try{ tx = idb.transaction(DETAILY, "readonly"); }
+  catch(e){ hotovo({}); return; }
+  var st = tx.objectStore(DETAILY), req;
+  try{ req = st.getAll ? st.getAll() : null; }
+  catch(e){ hotovo({}); return; }
+  function zMapy(list){
+    var m = {};
+    list.forEach(function(d){ m[d.id] = d.turns; });
+    hotovo(m);
+  }
+  if(req){
+    req.onsuccess = function(){ zMapy(Array.isArray(req.result) ? req.result : []); };
+    req.onerror = function(){ hotovo({}); };
+    return;
+  }
+  var out = [], kur = st.openCursor();
+  kur.onsuccess = function(){
+    var c = kur.result;
+    if(c){ out.push(c.value); c.continue(); } else { zMapy(out); }
+  };
+  kur.onerror = function(){ hotovo({}); };
 }
 
 /* `souhrny` nese jen záznamy, které se opravdu mění (nové i upravené) —
@@ -353,4 +410,4 @@ function histWrite(list, hotovo, zaznamy){
    policích. */
 function proHistorii(rec){ return rezim === "idb" ? souhrnZ(rec) : rec; }
 
-export { DETAILY, HIST, HZAL, IDB_JMENO, IDB_STROP, IDB_VERZE, SOUHRNY, UKEY, ctiIDB, detailZ, dopoctiHody, histAll, histWrite, historieJeNedostupna, historieNedostupna, idb, klicSelhani, migruj, naNedostupnouHistorii, nactiDetail, otevriIDB, poNedostupnosti, pripravUloziste, proHistorii, rezim, souhrnZ, ukazNecteme, zapisIDB };
+export { DETAILY, HIST, HZAL, IDB_JMENO, IDB_STROP, IDB_VERZE, SOUHRNY, UKEY, ctiIDB, detailZ, dopoctiHody, histAll, histWrite, historieJeNedostupna, historieNedostupna, idb, klicSelhani, migruj, naNedostupnouHistorii, nactiDetail, nactiVsechnyDetaily, otevriIDB, poNedostupnosti, pripravUloziste, proHistorii, rezim, souhrnZ, ukazNecteme, zapisIDB };

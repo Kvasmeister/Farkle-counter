@@ -38,9 +38,10 @@ function app(pocet, krok){
 }
 const KROK = 50;
 /* Odehráno her a Celkem nasbíráno bodů jsou součty a rozkliknout se nedají;
-   první žebříček her je čtvrtý v pořadí — Nejvíc bodů za hru. Žebříček dnů
-   sedí hned druhý, pod Odehráno her. */
-const PRVNI = 3, DNY = 1;
+   první žebříček her je pátý v pořadí (po Odehráno her, Nejvíc her za den,
+   Nejhranější režim, Celkem nasbíráno bodů) — Nejvíc bodů — celkem. Žebříček
+   dnů sedí hned druhý, pod Odehráno her. */
+const PRVNI = 4, DNY = 1;
 
 console.log("A) krátká historie žádnou značku nemá");
 {
@@ -213,7 +214,7 @@ console.log("J) po návratu ze hry do žebříčku zůstává jediný pozorovate
   klik($("detbody").querySelector("tbody tr"));
   ok(w.__io.ziva === 0, "detail hry ho odpojil, zbylo " + w.__io.ziva);
   klik($("detback"));
-  ok($("dettitle").textContent === "Nejvíc bodů za hru", "Zpět vrátilo do žebříčku");
+  ok($("dettitle").textContent === "Nejvíc bodů — celkem", "Zpět vrátilo do žebříčku");
   ok(w.__io.ziva === 1, "a pozorovatel je zase právě jeden, je " + w.__io.ziva);
   klik($("detbody").querySelector("tbody tr"));
   klik($("detback"));

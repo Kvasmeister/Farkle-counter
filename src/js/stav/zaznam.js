@@ -1,6 +1,7 @@
 /* Odvozené údaje o jedné dohrané hře.
 
-   Závisí na: pravidla/rezimy, jazyky/jadro (jména režimů), spolecne
+   Závisí na: pravidla/rezimy, stav/hody (rozbor hodů), jazyky/jadro
+              (jména režimů), spolecne
    Nezávisí na: DOM, úložišti
 
    Každá funkce sáhne nejdřív po předpočítaném čísle ze souhrnu a teprve
@@ -11,9 +12,10 @@
    Leží pod UI, ne v něm: souhrnZ() v stav/historie.js je potřebuje při
    zápisu hry, takže by jinak historie závisela na statistikách. */
 import { t } from "../jazyky/jadro.js";
-import { VYCHOZI_REZIM, jePreset } from "../pravidla/rezimy.js";
+import { VYCHOZI_REZIM, jePreset, rezimPodleId } from "../pravidla/rezimy.js";
 import { NAZEV_MAX } from "../spolecne.js";
 import { HODY_ODD, HODY_TXT } from "./kody.js";
+import { rozlozKolo } from "./hody.js";
 
 /* ---------- odvozené údaje o jedné hře ----------
    Každá z nich sáhne nejdřív po předpočítaném čísle ze souhrnu a teprve
@@ -90,6 +92,33 @@ function gNejvicHodu(g){
   });
   return m;
 }
+/* Nejlepší jednotlivý hod (ne kolo) napříč hrou — null, když hra nemá ani
+   jeden rozebratelný hod (samé "v", nebo smazaný vlastní režim). Na rozdíl
+   od ostatních g* funkcí potřebuje pravidla režimu (rozlozKolo), ne jen
+   turns; ta se dohledávají podle gRezim(g), ne aktRezim() — kolo se rozebírá
+   podle pravidel PLATNÝCH PRO TU HRU. */
+function gNejlepsiHod(g){
+  if(g.nejlepsihod !== undefined) return g.nejlepsihod;
+  var rez = rezimPodleId(gRezim(g));
+  if(!rez) return null;
+  var m = null;
+  (g.turns || []).forEach(function(t){
+    var hody = rozlozKolo(t, rez);
+    if(hody === null) return;
+    hody.forEach(function(h){ if(m === null || h.p > m) m = h.p; });
+  });
+  return m;
+}
+/* Celkový počet hodů za hru — jmenovatel poměru pro Průměrný hod. Na rozdíl
+   od gNejlepsiHod nepotřebuje rez ani rozbor položek na body/kostky, jen
+   součet úseků (hodyVKole), takže je stejně odolný jako gNejvicHodu vůči
+   smazaným režimům i cizím datům. */
+function gHoduCelkem(g){
+  if(typeof g.hoduCelkem === "number") return g.hoduCelkem;
+  var n = 0;
+  (g.turns || []).forEach(function(t){ n += hodyVKole(t); });
+  return n;
+}
 /* Farkle, při kterém na stole nic neleželo, je nula — platná hodnota
    odlišná od null, která by v žebříčku ležela dole jako řada nul. Do téhle
    statistiky nepatří, takže nula a null splývají. Test na pravdivost je tu
@@ -121,4 +150,4 @@ function nazevRezimuZaznamu(g){
   return (typeof g.rezimN === "string" && g.rezimN) ? g.rezimN.slice(0, NAZEV_MAX) : t("rezim.neznamy");
 }
 
-export { gBody, gFarkle, gFarklePrvni, gFarklePrvniRekord, gKol, gKolKCili, gNejhorsiKolo, gNejlepsiKolo, gNejvicHodu, gPrumer, gRezim, gSerie, gZtraceno, hodyVKole, nazevRezimuZaznamu };
+export { gBody, gFarkle, gFarklePrvni, gFarklePrvniRekord, gHoduCelkem, gKol, gKolKCili, gNejhorsiKolo, gNejlepsiHod, gNejlepsiKolo, gNejvicHodu, gPrumer, gRezim, gSerie, gZtraceno, hodyVKole, nazevRezimuZaznamu };

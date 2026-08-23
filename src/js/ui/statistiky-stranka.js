@@ -1,16 +1,21 @@
 /* Stránka Statistiky: seznam, historie her, detail a stránkování.
 
-   Závisí na: stav, text, ui/statistiky, ui/filtry
+   Závisí na: stav, pravidla/rezimy (rezimPodleId — rozbor hodů), text,
+              ui/statistiky, ui/filtry
    Sahá na: DOM
 
    Statistiky i historie mají podstránku detailu (#p2list ↔ #p2detail),
-   ne další okno.
+   ne další okno. Nejlepší hod a Průměrný hod mají žebříček na úrovni
+   jednoho hodu, ne jedné hry — otevriZebricekHodu() vedle obvyklého
+   otevriZebricek().
 
    Dlouhé seznamy se sázejí po dávkách a značka pod seznamem je zároveň
    tlačítko „Zobrazit dalších…“ i bod, na kterém pozorovatel dosype další
    dávku. */
 import { t, tn } from "../jazyky/jadro.js";
-import { histAll, histWrite, klicSelhani, nactiDetail } from "../stav/historie.js";
+import { rezimPodleId } from "../pravidla/rezimy.js";
+import { histAll, histWrite, klicSelhani, nactiDetail, nactiVsechnyDetaily } from "../stav/historie.js";
+import { rozlozKolo } from "../stav/hody.js";
 import { kosHistAll, kosHistWrite } from "../stav/uloziste.js";
 import { gFarkle, gKol, gRezim, nazevRezimuZaznamu } from "../stav/zaznam.js";
 import { dt, dtDen, esc, fmt, popisTypuHry } from "../text/format.js";
@@ -22,6 +27,7 @@ import {
   jdeRozkliknout,
   statHodnota,
   statsHTML,
+  vyberHry,
   zebricek
 } from "./statistiky.js";
 import { render } from "./vykresleni.js";
@@ -156,7 +162,18 @@ function renderStatList(hry){
       esc(t(histAll().length ? "stat.filtrprazdno" : "stat.zadnahra")) + '</div>';
     return;
   }
+  /* Kategorie jde v STATY po sobě (viz statistiky.js), takže stačí hlídat
+     změnu oproti předchozí položce — stejný vzor jako .dsep o pár desítek
+     řádků níž v renderHistList(). */
+  var posledniKat = null;
   STATY.forEach(function(def, i){
+    if(def.kat !== posledniKat){
+      posledniKat = def.kat;
+      var cap = document.createElement("div");
+      cap.className = "seccap";
+      cap.textContent = t("stat.cap." + def.kat);
+      elStatList.appendChild(cap);
+    }
     var h = statHodnota(def, hry);
     var lze = jdeRozkliknout(def) && h;
     var b = document.createElement("button");
@@ -184,7 +201,9 @@ function renderStatList(hry){
 }
 
 function otevriZebricek(i){
-  var def = STATY[i], hry = histView(false), v = zebricek(def, hry);
+  var def = STATY[i];
+  if(def.hod){ otevriZebricekHodu(def, i); return; }
+  var hry = histView(false), v = zebricek(def, hry);
   navZpet = null;
   doDetailu(t(def.n));
   if(!v.length){
@@ -195,6 +214,106 @@ function otevriZebricek(i){
   vypisDavku(elDetBody.querySelector("tbody"), elDetBody, v, 0,
              def.a === "denMax" ? radekDne(def)
                                 : (def.a === "rezimMax" ? radekRezimu(def) : radekHry(def, i)));
+}
+
+/* ---------- žebříček na úrovni hodu (Nejlepší hod, Průměrný hod) ----------
+   Na rozdíl od otevriZebricek() výš je tu jeden řádek jeden HOD, ne jedna
+   hra — a navíc jde filtrovat podle počtu fyzicky hozených kostek. Potřebuje
+   turns z KAŽDÉ kvalifikující se hry najednou (nactiVsechnyDetaily), ne jen
+   z jedné rozkliknuté; kolo, které se nedá rozebrat (viz stav/hody.js),
+   se jen vynechá. Rozbor proběhne jednou při otevření a mezipaměť
+   (hoduRadky) se dál jen filtruje/třídí v paměti — klik na čip kostek proto
+   nic znovu nenačítá. */
+var hoduRadky = null;   // [{ g, thrown, p }, ...] aktuálně otevřeného žebříčku
+var KOSTKY_FILTR = [1, 2, 3, 4, 5, 6];
+
+function otevriZebricekHodu(def, i){
+  navZpet = null;
+  doDetailu(t(def.n));
+  elDetBody.innerHTML = '<div class="empty">' + esc(t("stat.pocitam")) + '</div>';
+  nactiVsechnyDetaily(function(mapa){
+    var hry = vyberHry(def, histView(false)), radky = [];
+    hry.forEach(function(g){
+      var turns = mapa[g.id];
+      if(!turns) return;
+      var rez = rezimPodleId(gRezim(g));
+      if(!rez) return;
+      turns.forEach(function(tah){
+        var hody = rozlozKolo(tah, rez);
+        if(hody === null) return;
+        hody.forEach(function(h){ radky.push({ g: g, thrown: h.thrown, p: h.p }); });
+      });
+    });
+    hoduRadky = radky;
+    vykresliZebricekHodu(def, i, null);
+  });
+}
+/* filtr === null znamená „Vše". U Průměrný hod (a:"pomer") se nad tabulkou
+   ukazuje souhrnné číslo přepočítané nad právě zobrazenou (vyfiltrovanou)
+   sadou — u Nejlepší hod (a:"max") to číslo je prostě první řádek žebříčku,
+   žádná zvláštní hlavička tam není potřeba. */
+function vykresliZebricekHodu(def, statIdx, filtr){
+  var zdroj = filtr === null ? hoduRadky : hoduRadky.filter(function(r){ return r.thrown === filtr; });
+  var v = zdroj.slice().sort(function(a, b){ return b.p - a.p; });
+  elDetBody.innerHTML = kostkyChipyHTML(filtr) + prumerHlavickaHTML(def, zdroj) +
+    (v.length ? '<table><tbody></tbody></table>' : '<div class="empty">' + esc(t("stat.beznadat")) + '</div>');
+  zapojKostkyChipy(elDetBody, function(novy){ vykresliZebricekHodu(def, statIdx, novy); });
+  if(v.length) vypisDavku(elDetBody.querySelector("tbody"), elDetBody, v, 0, radekHodu(def, statIdx));
+}
+function prumerHlavickaHTML(def, zdroj){
+  if(def.a !== "pomer") return "";
+  var soucet = 0;
+  zdroj.forEach(function(r){ soucet += r.p; });
+  var hodnota = zdroj.length ? def.f(soucet / zdroj.length) : "—";
+  return '<div class="detsum"><span>' + esc(t(def.n)) + '</span><b>' + hodnota + '</b></div>';
+}
+function kostkyChipyHTML(filtr){
+  var out = '<div class="row k7">' +
+    '<button type="button" class="chip' + (filtr === null ? ' sel' : '') + '" data-k="">' +
+      esc(t("stat.kostek.vse")) + '</button>';
+  KOSTKY_FILTR.forEach(function(n){
+    out += '<button type="button" class="chip' + (filtr === n ? ' sel' : '') + '" data-k="' + n + '">' + n + '</button>';
+  });
+  return out + '</div>';
+}
+function zapojKostkyChipy(kam, zmena){
+  Array.prototype.forEach.call(kam.querySelectorAll(".row.k7 .chip"), function(b){
+    b.addEventListener("click", function(){
+      var k = b.dataset.k;
+      zmena(k === "" ? null : Number(k));
+    });
+  });
+}
+/* Řádek žebříčku hodů: stejná role jako radekHry výš, jen místo počtu kol
+   ukazuje počet fyzicky hozených kostek. Klik naviguje do detailu hry, ne
+   kola — na úroveň jednotlivého hodu se v historii proklikávat nedá. */
+function radekHodu(def, statIdx){
+  return function(r, k){
+    var tr = document.createElement("tr");
+    tr.className = "klik";
+    tr.tabIndex = 0;
+    tr.setAttribute("role", "button");
+    tr.innerHTML =
+      '<td class="n">' + (k + 1) + '</td>' +
+      '<td class="d">' + dt(r.g.savedAt) + ' · ' + esc(nazevRezimuZaznamu(r.g)) +
+        ' · ' + esc(popisTypuHry(r.g)) +
+        ' · ' + esc(tn("slovo.kostek", r.thrown)) + '</td>' +
+      '<td class="g">' + def.f(r.p) + '</td>' +
+      '<td class="c">»</td>';
+    function jdi(){
+      scrollZebricek = $("page2").scrollTop;
+      navZpet = { statIdx: statIdx };
+      otevriHru(r.g.id);
+    }
+    tr.addEventListener("click", jdi);
+    tr.addEventListener("keydown", function(e){
+      if(e.key === "Enter" || e.key === " " || e.key === "Spacebar"){
+        e.preventDefault();
+        jdi();
+      }
+    });
+    return tr;
+  };
 }
 /* Stavitel se vybírá napřed, ne uvnitř šablony — žebříček dnů nese jiná
    data než žebříček her a míchat obojí v jednom innerHTML by bylo horší
@@ -392,4 +511,4 @@ function otevriHru(id){
    vidět, ví tahle stránka. */
 function nastavSeg(i){ segIdx = i; }
 
-export { KROK, delTimer, doDetailu, elDetBody, elDetTitle, elHistList, elP2Detail, elP2List, elSeg, elStatList, nastavSeg, navZpet, odpojPozorovatele, otevriHru, otevriZebricek, pozorovatel, pridejZnacku, radekDne, radekHry, radekRezimu, renderHistList, renderP2, renderStatList, scrollList, scrollZebricek, segIdx, sledujZnacku, vypisDavku, zpetNaSeznam, zrusNav };
+export { KROK, delTimer, doDetailu, elDetBody, elDetTitle, elHistList, elP2Detail, elP2List, elSeg, elStatList, nastavSeg, navZpet, odpojPozorovatele, otevriHru, otevriZebricek, otevriZebricekHodu, pozorovatel, pridejZnacku, radekDne, radekHodu, radekHry, radekRezimu, renderHistList, renderP2, renderStatList, scrollList, scrollZebricek, segIdx, sledujZnacku, vykresliZebricekHodu, vypisDavku, zpetNaSeznam, zrusNav };

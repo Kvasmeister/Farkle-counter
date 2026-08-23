@@ -79,7 +79,7 @@ for(let i = 0; i < 100; i++) hodne.push(hra(i, 12 + (i % 9)));
 const t0 = Date.now();
 let dd = app(w => w.localStorage.setItem("farkle-hist-v1", JSON.stringify(hodne)));
 const tStart = Date.now() - t0;
-ok(dd.$("statlist").querySelectorAll(".strow").length === 21, "statistiky spočítány");
+ok(dd.$("statlist").querySelectorAll(".strow").length === 25, "statistiky spočítány");
 const t1 = Date.now();
 dd.klik(dd.$("seg").children[1]);
 const tHist = Date.now() - t1;
@@ -90,7 +90,8 @@ ok(tStart < 3000 && tHist < 1500, `start ${tStart} ms, historie ${tHist} ms`);
 const velikost = JSON.stringify(hodne).length;
 ok(velikost < 400000, `sto her zabere ${Math.round(velikost/1024)} kB z ~5 MB`);
 dd.klik(dd.$("seg").children[0]);
-dd.klik(dd.$("statlist").querySelectorAll(".strow")[3]);
+const strowyD = [...dd.$("statlist").querySelectorAll(".strow")];
+dd.klik(strowyD.find(b => b.querySelector(".sn").firstChild.textContent.trim() === "Nejvíc bodů — celkem"));
 ok(dd.$("detbody").querySelectorAll("tbody tr").length === 50, "žebříček taky po dávkách");
 dd.klik(dd.$("detbody").querySelector(".morerow"));
 ok(dd.$("detbody").querySelectorAll("tbody tr").length === 100, "žebříček zvládl sto her");
@@ -113,7 +114,7 @@ const val = n => r.find(x => x.querySelector(".sn").firstChild.textContent.trim(
 ok(val("Nejlepší kolo") === "\u2014", "nejlepší kolo: pomlčka, je " + val("Nejlepší kolo"));
 ok(val("Nejhorší kolo bez farklu") === "\u2014", "nejhorší mimo farkle: pomlčka");
 ok(val("Nejdelší série bez farklu") === "0", "série 0");
-ok(val("Celkový průměr na kolo") === "0", "průměr 0");
+ok(val("Průměr na kolo — celkem") === "0", "průměr 0");
 
 console.log("G) přepínání stránek a záložek");
 let g = app();
@@ -138,7 +139,8 @@ ok(h.$("score").textContent === "0" && h.$("lock").hidden, "nová hra je odemče
 ok(JSON.parse(h.w.localStorage.getItem("farkle-kos-v1") || "[]").length === 0, "zapsaná hra nešla zbytečně do koše");
 h.klik(h.$("tab2"));
 const vv = [...h.$("statlist").querySelectorAll(".strow")];
-ok(vv.length === 21 && vv[2].querySelector(".sv").textContent === "200", "statistiky vidí zapsanou hru");
+const soucetVv = vv.find(b => b.querySelector(".sn").firstChild.textContent.trim() === "Celkem nasbíráno bodů");
+ok(vv.length === 25 && soucetVv.querySelector(".sv").textContent === "200", "statistiky vidí zapsanou hru");
 
 console.log("K) selhání zápisu se nesmí spolknout (B-2 až B-4)");
 /* zablokuje zápis jednoho klíče, ostatní nechá být */

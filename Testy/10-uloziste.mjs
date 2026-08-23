@@ -293,14 +293,14 @@ console.log("J) statistiky nad souhrny dají stejná čísla jako nad plnými z�
   const pi = prohlizec({ [HKEY]: JSON.stringify(hodne) });
   const nadSouhrny = cti(await pi.start());
 
-  ok(naPlnych.length === 21 && nadSouhrny.length === 21, "jednadvacet statistik na obou stranách");
+  ok(naPlnych.length === 25 && nadSouhrny.length === 25, "pětadvacet statistik na obou stranách");
   const rozdil = naPlnych.filter((v, i) => v !== nadSouhrny[i]);
-  ok(rozdil.length === 0, rozdil.length ? ("liší se: " + rozdil.join(" | ")) : "všech dvacet hodnot sedí");
+  ok(rozdil.length === 0, rozdil.length ? ("liší se: " + rozdil.join(" | ")) : "všechny hodnoty sedí");
 
-  /* a totéž v žebříčku — třetí položka je první rozklikávací */
+  /* a totéž v žebříčku — pátá položka (Nejvíc bodů — celkem) je první rozklikávací */
   const pl2 = await pl.start(), pi2 = await pi.start();
-  pl2.klik(pl2.$("statlist").querySelectorAll(".strow")[3]);
-  pi2.klik(pi2.$("statlist").querySelectorAll(".strow")[3]);
+  pl2.klik(pl2.$("statlist").querySelectorAll(".strow")[4]);
+  pi2.klik(pi2.$("statlist").querySelectorAll(".strow")[4]);
   const zl = [...pl2.$("detbody").querySelectorAll("td.g")].map(t => t.textContent).join("|");
   const zi = [...pi2.$("detbody").querySelectorAll("td.g")].map(t => t.textContent).join("|");
   ok(zl === zi && zl.length > 0, "žebříček dává stejné pořadí i hodnoty");
@@ -443,6 +443,14 @@ console.log("M) upgrade starší databáze dopočítá všechna nová pole");
   ok(sou.s1.farkluprvni === 0 && sou.s2.farkluprvni === 0 && sou.s3.farkluprvni === 0,
      "dopočteno: farkluprvni doplněno na 0: " + [sou.s1.farkluprvni, sou.s2.farkluprvni, sou.s3.farkluprvni].join(","));
   ok(sou.s1.kol === 2 && sou.s1.banked === 400, "ostatní pole souhrnu zůstala nedotčená");
+  /* nejlepsihod/hoduCelkem jsou nová pole ze stejného dopočtu — s1 má
+     dva hody v prvním kole (jednička, pětka: 100 a 50) a tři ve druhém
+     (3×5, jednička, farkle: 500, 100, 0), nejlepší je 500 z trojice pětek */
+  ok(sou.s1.nejlepsihod === 500, "dopočteno: nejlepší hod 500, je " + sou.s1.nejlepsihod);
+  ok(sou.s1.hoduCelkem === 5, "dopočteno: pět hodů celkem, je " + sou.s1.hoduCelkem);
+  ok(sou.s2.nejlepsihod === 100, "dopočteno: jediný hod je nejlepší, je " + sou.s2.nejlepsihod);
+  ok(sou.s2.hoduCelkem === 1, "dopočteno: jeden hod celkem, je " + sou.s2.hoduCelkem);
+  ok(sou.s3.nejlepsihod === null && sou.s3.hoduCelkem === 0, "dopočteno: hra bez kol nemá žádný hod");
   const det = await zPolice(a.w.indexedDB, "detaily");
   ok(det.length === 3, "police detailů se dopočtem nezměnila: " + det.length);
   a.klik(a.$("histlist").querySelector(".grow"));
@@ -457,7 +465,7 @@ console.log("N) souhrn s nulou uloženou dřív se čte jako null");
      čtecí strana, jinak by žebříček nesl řadu nul */
   const zapsana = new IDBFactory();
   await new Promise((r) => {
-    const q = zapsana.open("kostky", 4);
+    const q = zapsana.open("kostky", 5);
     q.onupgradeneeded = () => {
       q.result.createObjectStore("souhrny", { keyPath:"id" });
       q.result.createObjectStore("detaily", { keyPath:"id" });

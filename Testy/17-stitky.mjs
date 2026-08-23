@@ -295,5 +295,52 @@ console.log("I) počet hodů se rekonstruuje z obou tvarů");
      "u farklu se přičítá prohraný hod: " + r.querySelector(".sv").textContent);
 }
 
+console.log("J) rozbor kola na jednotlivé hody — Nejlepší hod a Průměrný hod");
+{
+  const S = " ";
+  /* g1, kolo1: dva cykly horkých kostek za sebou — 6×1 (8000), pak zase
+     šest kostek 6×2 (1600, horké znovu), pak jedna zbylá jednička (100).
+     Naivní součet „kept od začátku kola" by u třetího hodu spočítal
+     zbytek jako záporné číslo; správně se po druhém horkém resetu vrací
+     na plný počet podruhé. */
+  const g1 = hra("g1", [
+    { p: 9700, bust: false, c: "n61|n62|j" },
+    { p: 600,  bust: false, c: "n35|j" },      // 500 (3 kostky), pak 100 ze zbylých tří
+    { p: 50,   bust: true,  c: "p" }           // pětka na stole, pak farkle na zbylých pěti
+  ]);
+  /* g2: jedno kolo s ruční položkou "v" (nedá se rozebrat — celé kolo se
+     z Nejlepší hod/Průměrný hod jen vynechá), druhé kolo normální. */
+  const g2 = hra("g2", [
+    { p: 100, bust: false, c: "v" },
+    { p: 100, bust: false, c: "j" }
+  ], { savedAt: Date.UTC(2026, 6, 2, 10, 0) });
+
+  const a = app({ hry: [g1, g2] });
+  const radek = jmeno => [...a.$("statlist").querySelectorAll(".strow")]
+    .find(b => b.querySelector(".sn").firstChild.textContent.trim() === jmeno);
+  const hodnota = jmeno => { const r = radek(jmeno); return r ? r.querySelector(".sv").textContent : null; };
+
+  ok(hodnota("Nejlepší hod") === "8" + S + "000", "šest jedniček je 8000: " + hodnota("Nejlepší hod"));
+  /* banked g1 = 9700 + 600 (kolo3 je farkle, jeho 50 se nebankuje) = 10300;
+     hodů g1 = 3 + 2 + 2 = 7 (i prohraný hod se počítá).
+     banked g2 = 100 + 100 = 200; hodů g2 = 1 + 1 = 2 — kolo s "v" se do
+     POČTU hodů počítá (ten nepotřebuje rez), jen ne do rozpisu bodů.
+     pool: (10300+200) / (7+2) = 10500 / 9 = 1166,7 -> 1167 */
+  ok(hodnota("Průměrný hod — celkem") === "1" + S + "167",
+     "pooled průměr přes obě hry včetně nerozebratelného kola v počtu hodů: " + hodnota("Průměrný hod — celkem"));
+
+  a.klik(radek("Nejlepší hod"));
+  const bunky = () => [...a.$("detbody").querySelectorAll("tbody td.g")].map(td => td.textContent);
+  ok(bunky()[0] === "8" + S + "000", "žebříček seřazený od nejlepšího hodu: " + bunky().join(" "));
+  ok(bunky().length === 8,
+     "osm rozebratelných hodů (kolo s \"v\" v g2 do žebříčku nepřispělo): " + bunky().length);
+
+  a.klik(a.$("detbody").querySelector('.chip[data-k="3"]'));
+  ok(bunky().join("|") === "100", "filtr na 3 kostky nechá jen zbylou jedničku po trojici pětek: " + bunky().join(" "));
+
+  a.klik(a.$("detbody").querySelector('.chip[data-k=""]'));
+  ok(bunky().length === 8, "chip \"Vše\" vrátí celý žebříček zpátky: " + bunky().length);
+}
+
 console.log(fails ? `\n${fails} CHYB` : "\nvše prošlo");
 process.exit(fails ? 1 : 0);
