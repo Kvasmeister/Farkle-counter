@@ -141,7 +141,7 @@ g.klik(g.$("setbtn"));
 await g.soubor(text);
 g.klik(g.$("impadd"));
 const radky = [...g.$("statlist").querySelectorAll(".strow")];
-ok(radky.length === 25, "statistiky se přepočítaly");
+ok(radky.length === 31, "statistiky se přepočítaly");
 const nejvicBodu = radky.find(b => b.querySelector(".sn").firstChild.textContent.trim() === "Nejvíc bodů — celkem");
 ok(nejvicBodu.querySelector(".sv").textContent === "2 100", "nejvíc bodů — celkem: " + nejvicBodu.querySelector(".sv").textContent);
 

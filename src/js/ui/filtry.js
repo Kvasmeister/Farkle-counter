@@ -1,19 +1,24 @@
 /* Filtry a řazení historie: stav, výběr a tři okna.
 
-   Závisí na: stav, text, ui/okna
+   Závisí na: stav, text, ui/okna, ui/stat-filtry (STATFILTR — jen pro
+              histView a lištu, viz níž)
    Sahá na: DOM
 
-   Stav drží jen paměť, žádný localStorage: po zavření aplikace se resetuje,
-   aby se nikdo nedíval na osekanou historii a nevěděl proč.
+   Stav (FILTR, RAZENI) drží jen paměť, žádný localStorage: po zavření
+   aplikace se resetuje, aby se nikdo nedíval na osekanou historii a
+   nevěděl proč. STATFILTR (filtr Statistik podle režimu a typu hry) je
+   výjimka — ten se schválně ukládá a přežívá restart, viz stat-filtry.js.
 
    Nabídka hodnot se skládá z dat, ne z pevného seznamu — a vždycky z celé
    historie, ne z právě odfiltrované. Filtr typu hry platí jen tam, kde je
-   vidět jeho tlačítko. */
+   vidět jeho tlačítko — STATFILTR je naproti tomu plošný pro celou kartu
+   Statistiky, i pro početní statistiky. */
 import { kat, t, tn } from "../jazyky/jadro.js";
 import { histAll } from "../stav/historie.js";
 import { dtDen, esc, fmt } from "../text/format.js";
 import { otevriModal, zavriModal } from "./okna.js";
 import { $ } from "./prvky.js";
+import { STATFILTR, pouzijStatFiltr, seznamRezimuKFiltru, ulozStatFiltr, zrusStatFiltr } from "./stat-filtry.js";
 import { elSeg, renderP2, segIdx, zpetNaSeznam, zrusNav } from "./statistiky-stranka.js";
 import { denKlic } from "./statistiky.js";
 import { nastavSeg } from "./statistiky-stranka.js";
@@ -56,6 +61,7 @@ function hodnotyTypu(typ){
 function zrusFiltr(){
   FILTR.od = null; FILTR.do = null; FILTR.typ = null; FILTR.hodnota = null;
   RAZENI.podle = "datum"; RAZENI.smer = "desc";
+  zrusStatFiltr();
 }
 /* Poslední milisekunda dne, ve kterém ms leží. Přes konstruktor Date, ne
    přičtením 24 hodin — kolem přechodu na letní čas den 24 hodin nemá. */
@@ -63,12 +69,17 @@ function konecDne(ms){
   var d = new Date(ms);
   return new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1).getTime() - 1;
 }
-/* Filtr typu hry platí jen tam, kde je vidět jeho tlačítko, tedy na kartě
-   Historie — proto se o něj volající musí říct. Na kartě Statistiky by
-   půlka položek („hra na body", „hra na kola") zůstala prázdná a nic by
-   nenapovědělo proč; statistiky si režim řeší samy. Filtr data se naopak
-   uplatňuje všude. */
-function histView(sTypem){
+/* Filtr typu hry (FILTR.typ) platí jen tam, kde je vidět jeho tlačítko,
+   tedy na kartě Historie — proto se o něj volající musí říct. Na kartě
+   Statistiky by půlka položek („hra na body", „hra na kola") zůstala
+   prázdná a nic by nenapovědělo proč. Filtr data se naopak uplatňuje
+   všude.
+
+   proStatistiky je opačný případ: STATFILTR (režim a typ hry, viz
+   stat-filtry.js) je určený PRO Statistiky a plošně jim mění i početní
+   statistiky — volající, kteří stavějí data pro tuhle kartu, si o něj
+   řeknou samostatným parametrem, ne přes sTypem. */
+function histView(sTypem, proStatistiky){
   var v = histAll();
   if(FILTR.od !== null || FILTR.do !== null){
     v = v.filter(function(g){
@@ -85,6 +96,7 @@ function histView(sTypem){
       return cilHry(g) === FILTR.hodnota;
     });
   }
+  if(proStatistiky) v = pouzijStatFiltr(v);
   var smer = RAZENI.smer === "asc" ? 1 : -1;
   v.sort(function(a, b){
     if(RAZENI.podle === "body"){
@@ -100,7 +112,8 @@ function histView(sTypem){
    Popisek nese zvolený filtr, ať je vidět i bez otevření okna. Datum se
    píše co nejúsporněji: shodné části rozsahu se neopakují. */
 var elFbar = $("fbar"), elFdatum = $("fdatum"),
-    elFtyp = $("ftyp"), elFraz = $("frazeni");
+    elFtyp = $("ftyp"), elFraz = $("frazeni"),
+    elFsRezim = $("fsrezim"), elFsTyp = $("fstyp");
 function popisDatumu(){
   if(FILTR.od === null || FILTR.do === null) return t("filtr.datum");
   var a = new Date(FILTR.od), b = new Date(FILTR.do);
@@ -129,6 +142,27 @@ function popisRazeni(){
   var k = RAZENI.podle + ":" + RAZENI.smer;
   return (k === "datum:desc" || !RAZ_POPIS[k]) ? t("filtr.razeni") : t(RAZ_POPIS[k]);
 }
+/* STATFILTR.rezim, který v datech (mezitím) nemá jedinou hru — smazaná
+   poslední hra daného duchovního režimu — se chová jako bez filtru na
+   popisku; samotná hodnota se tím nemaže, jen se nemá co ukázat. */
+function popisRezimu(){
+  if(STATFILTR.rezim === null) return t("filtr.rezim");
+  var i, sez = seznamRezimuKFiltru();
+  for(i = 0; i < sez.length; i++){ if(sez[i].id === STATFILTR.rezim) return sez[i].nazev; }
+  return t("filtr.rezim");
+}
+/* Stejná logika jako popisTypu(), jen nad STATFILTR místo FILTR — obě
+   sdílejí stejné klíče pro znění hodnoty (typhry.*, filtr.nabody…), liší
+   se jen v tom, který stav čtou. */
+function popisTypuStat(){
+  if(STATFILTR.typ === null) return t("filtr.typhry");
+  if(STATFILTR.typ === "points")
+    return STATFILTR.hodnota === null ? t("filtr.nabody") : t("typhry.dobodu", { b: fmt(STATFILTR.hodnota) });
+  if(STATFILTR.hodnota === null) return t("typhry.nakola");
+  return STATFILTR.hodnota === 0
+    ? (t("typhry.nakola") + " · " + t("filtr.bezlimitu"))
+    : t("filtr.nakolan", { n: STATFILTR.hodnota });
+}
 /* Na tlačítku zůstává krátký stálý popisek, aby se všechna vešla na jeden
    řádek; zvolený filtr nese mosazný rám. Plné znění jde do aria-label —
    čtečka ho přečte a testy mají co kontrolovat. */
@@ -141,13 +175,19 @@ function renderFiltry(){
   elFbar.hidden = !jsou;
   if(!jsou) return;
   popisTlacitka(elFdatum, popisDatumu(), t("filtr.datum"));
-  /* Typ hry a řazení dávají smysl jen nad seznamem her. Skrytá tlačítka
-     z řádku vypadnou úplně a zbylá dvě se o jeho šířku podělí sama. */
+  /* Typ hry a řazení dávají smysl jen nad seznamem her — skrytá tlačítka
+     z řádku vypadnou úplně a zbylá dvě se o jeho šířku podělí sama. Režim
+     a typ hry PRO STATISTIKY (STATFILTR) dávají smysl jen nad statistikami,
+     tedy přesně opačná podmínka. */
   var vSeznamu = segIdx === 1;
   elFtyp.hidden = !vSeznamu;
   elFraz.hidden = !vSeznamu;
+  elFsRezim.hidden = vSeznamu;
+  elFsTyp.hidden = vSeznamu;
   popisTlacitka(elFtyp, popisTypu(), t("filtr.typhry"));
   popisTlacitka(elFraz, popisRazeni(), t("filtr.razeni"));
+  popisTlacitka(elFsRezim, popisRezimu(), t("filtr.rezim"));
+  popisTlacitka(elFsTyp, popisTypuStat(), t("filtr.typhry"));
 }
 
 /* Vedlejší efekty. Volá je app.js na místě, kde tenhle kód dřív stál —
@@ -269,6 +309,82 @@ export function initFiltry(){
     });
   })();
 
+  /* Okno výběru herního režimu pro Statistiky. Na rozdíl od typu hry nemá
+     vnořenou hodnotu — jeden plochý <select>, naplněný z dat (i smazané
+     vlastní režimy, viz stat-filtry.js). Volba se rovnou ukládá, na rozdíl
+     od FILTR. */
+  (function(){
+    var elVal = $("srezimval");
+    elFsRezim.addEventListener("click", function(){
+      var s = '<option value="">' + esc(t("typ.vsechny")) + '</option>';
+      seznamRezimuKFiltru().forEach(function(r){
+        s += '<option value="' + esc(r.id) + '">' + esc(r.nazev) + '</option>';
+      });
+      elVal.innerHTML = s;
+      elVal.value = STATFILTR.rezim === null ? "" : STATFILTR.rezim;
+      if(elVal.selectedIndex < 0) elVal.value = "";
+      otevriModal("srezimmodal", this);
+    });
+    $("srezimzpet").addEventListener("click", function(){ zavriModal(); });
+    $("srezimok").addEventListener("click", function(){
+      STATFILTR.rezim = elVal.value === "" ? null : elVal.value;
+      ulozStatFiltr();
+      zavriModal();
+      renderP2();
+    });
+  })();
+
+  /* Okno výběru typu hry pro Statistiky — stejný dvoustupňový tvar jako
+     u FILTR.typ výš (sdílené čisté funkce hodnotyTypu/cilHry/rezimHry),
+     ale vlastní stav a vlastní zápis do úložiště po Použít. Samostatné
+     zapojení, ne sdílené s oknem výš — to zůstává beze změny. */
+  (function(){
+    var typVolba = null,
+        elSegT = $("stypseg"), elVal = $("stypval"),
+        elValRow = $("stypvalrow"), elValL = $("stypvall");
+
+    function typZIndexu(i){ return i === 0 ? null : (i === 1 ? "points" : "rounds"); }
+
+    function nastavTyp(typ, hodnota){
+      typVolba = typ;
+      Array.prototype.forEach.call(elSegT.children, function(b, i){
+        b.classList.toggle("on", typZIndexu(i) === typ);
+      });
+      elValRow.hidden = typ === null;
+      if(typ === null){ elVal.innerHTML = ""; return; }
+      elValL.textContent = t(typ === "points" ? "typ.cil" : "typ.limit");
+      var s = '<option value="">' + esc(t("typ.vsechny")) + '</option>';
+      hodnotyTypu(typ).forEach(function(x){
+        s += '<option value="' + esc(String(x)) + '">' +
+          esc(typ === "rounds"
+            ? (x === 0 ? t("filtr.bezlimitu") : tn("slovo.kolo", x))
+            : fmt(x)) +
+          '</option>';
+      });
+      elVal.innerHTML = s;
+      elVal.value = (hodnota === null || hodnota === undefined) ? "" : String(hodnota);
+      if(elVal.selectedIndex < 0) elVal.value = "";
+    }
+
+    Array.prototype.forEach.call(elSegT.children, function(b, i){
+      b.addEventListener("click", function(){ nastavTyp(typZIndexu(i), null); });
+    });
+
+    elFsTyp.addEventListener("click", function(){
+      nastavTyp(STATFILTR.typ, STATFILTR.hodnota);
+      otevriModal("stypmodal", this);
+    });
+
+    $("stypzpet").addEventListener("click", function(){ zavriModal(); });
+    $("stypok").addEventListener("click", function(){
+      STATFILTR.typ = typVolba;
+      STATFILTR.hodnota = (typVolba === null || elVal.value === "") ? null : +elVal.value;
+      ulozStatFiltr();
+      zavriModal();
+      renderP2();
+    });
+  })();
+
   /* Okno řazení. Nemá Použít — klepnutí na možnost je samo o sobě volba,
      další potvrzení by bylo jen krok navíc. */
   (function(){
@@ -302,4 +418,4 @@ export function initFiltry(){
   $("detback").addEventListener("click", zpetNaSeznam);
 }
 
-export { FILTR, RAZENI, RAZ_POPIS, cilHry, elFbar, elFdatum, elFraz, elFtyp, histView, hodnotyTypu, konecDne, popisDatumu, popisRazeni, popisTlacitka, popisTypu, renderFiltry, rezimHry, zrusFiltr };
+export { FILTR, RAZENI, RAZ_POPIS, cilHry, elFbar, elFdatum, elFraz, elFsRezim, elFsTyp, elFtyp, histView, hodnotyTypu, konecDne, popisDatumu, popisRazeni, popisRezimu, popisTlacitka, popisTypu, popisTypuStat, renderFiltry, rezimHry, zrusFiltr };

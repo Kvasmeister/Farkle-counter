@@ -293,7 +293,7 @@ console.log("J) statistiky nad souhrny dají stejná čísla jako nad plnými z�
   const pi = prohlizec({ [HKEY]: JSON.stringify(hodne) });
   const nadSouhrny = cti(await pi.start());
 
-  ok(naPlnych.length === 25 && nadSouhrny.length === 25, "pětadvacet statistik na obou stranách");
+  ok(naPlnych.length === 31 && nadSouhrny.length === 31, "jedenatřicet statistik na obou stranách");
   const rozdil = naPlnych.filter((v, i) => v !== nadSouhrny[i]);
   ok(rozdil.length === 0, rozdil.length ? ("liší se: " + rozdil.join(" | ")) : "všechny hodnoty sedí");
 
@@ -485,7 +485,7 @@ console.log("N) souhrn s nulou uloženou dřív se čte jako null");
   p.nastavIDB(zapsana);
   const a = await p.start();
   const radek = [...a.$("statlist").querySelectorAll(".strow")]
-    .find(b => b.querySelector(".sn").firstChild.textContent.trim() === "Nejvíc bodů ztraceno farklem");
+    .find(b => b.querySelector(".sn").firstChild.textContent.trim() === "Nejvíc bodů ztraceno farklem — celkem");
   ok(!!radek, "položka je v seznamu");
   ok(radek.querySelector(".sv").textContent === "\u2014",
      "uložená nula se chová jako null: " + radek.querySelector(".sv").textContent);

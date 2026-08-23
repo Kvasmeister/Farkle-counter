@@ -145,7 +145,7 @@ function vypisDavku(kamRadky, kamZnacka, polozky, od, stavitel){
 
 function renderP2(){
   odpojPozorovatele();
-  var hry = histView(segIdx === 1);
+  var hry = histView(segIdx === 1, segIdx === 0);
   elStatList.hidden = segIdx !== 0;
   elHistList.hidden = segIdx !== 1;
   Array.prototype.forEach.call(elSeg.children, function(b, i){
@@ -203,7 +203,7 @@ function renderStatList(hry){
 function otevriZebricek(i){
   var def = STATY[i];
   if(def.hod){ otevriZebricekHodu(def, i); return; }
-  var hry = histView(false), v = zebricek(def, hry);
+  var hry = histView(false, true), v = zebricek(def, hry);
   navZpet = null;
   doDetailu(t(def.n));
   if(!v.length){
@@ -232,7 +232,7 @@ function otevriZebricekHodu(def, i){
   doDetailu(t(def.n));
   elDetBody.innerHTML = '<div class="empty">' + esc(t("stat.pocitam")) + '</div>';
   nactiVsechnyDetaily(function(mapa){
-    var hry = vyberHry(def, histView(false)), radky = [];
+    var hry = vyberHry(def, histView(false, true)), radky = [];
     hry.forEach(function(g){
       var turns = mapa[g.id];
       if(!turns) return;

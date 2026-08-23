@@ -42,7 +42,7 @@ npm test          ověří, že je aktuální, zkontroluje importy, pustí 22 sa
 Všech 21 jsdom sad staví DOM z řetězce (`new JSDOM(html, …)` bez
 `resources: "usable"`). Takový jsdom **nenačte `<script src>`** a
 **`<script type="module">` neumí vůbec**. Servírovat aplikaci jako víc
-souborů by stálo celou testovací síť — 1 563 kontrol. Zdroj je proto
+souborů by stálo celou testovací síť — 1 595 kontrol. Zdroj je proto
 modulární a výstup zůstává jeden soubor — pro testy i pro `SOUBORY`
 v `sw.js` se tím nemění nic.
 
@@ -86,7 +86,7 @@ src/
     pravidla/           skore, postupky, kombinace, rezimy, riziko
     stav/               stav, kody, hody, uloziste, historie, zaznam
     text/               format (fmt, esc, dt), stitky (kód → slova)
-    ui/                 18 modulů, viz níž
+    ui/                 19 modulů, viz níž
 ```
 
 **Servíruje se kořen repa:** `index.html`, `manifest.webmanifest`, `sw.js`
@@ -133,7 +133,8 @@ Tři vědomé odchylky, každá zapsaná v hlavičce svého modulu:
 | `klavesnice` | čipy hodnot, počtů, postupek a kombinací |
 | `zapis` | vrubovka, tabulka kol, režim oprav, oba koše |
 | `statistiky` · `statistiky-stranka` | co se počítá · jak se to ukazuje |
-| `filtry` | filtry, řazení, tři okna |
+| `filtry` | filtry Historie a řazení, plus lišta a okna filtru Statistik (STATFILTR žije v `stat-filtry`) |
+| `stat-filtry` | trvalý filtr stránky Statistiky podle herního režimu a typu hry — na rozdíl od `filtry` přežívá restart |
 | `nastaveni-obecne` · `nastaveni-rezimy` | tři karty okna nastavení |
 | `okno-pravidla` · `navod` | okno „i“, dvě karty |
 | `zaloha` · `zaloha-plna` · `misto` | záloha historie · kompletní záloha a záloha herních režimů · zabrané místo |
@@ -211,6 +212,7 @@ s přístupem k celé historii.
 | `farkle-rezimy-v1` | localStorage | herní režimy: zvolený, odchylky presetů, vlastní |
 | `farkle-kombinace-v1` | localStorage | **mrtvý klíč** — čte se jen při migraci, schválně se nemaže |
 | `farkle-navod-v1`, `-autoulozeni-v1`, `-jazyk-v1`, `-theme`, `-svit-v1` | localStorage | drobná nastavení |
+| `farkle-statfiltr-v1` | localStorage | filtr stránky Statistiky (režim, typ hry) — na rozdíl od filtru Historie přežívá restart |
 
 Do IndexedDB se stěhuje **jen historie**. Rozehraná hra a koše zůstávají
 v `localStorage`, protože jsou shora omezené a potřebují synchronní zápis.
@@ -262,7 +264,7 @@ node Testy/vse.mjs 18 19    jen vyjmenované
 npm test                    build --kontrola + kontrola importů + sady
 ```
 
-Dnes **1 563 kontrol**, poslední stav: vše prošlo. Rozpis sad drží
+Dnes **1 595 kontrol**, poslední stav: vše prošlo. Rozpis sad drží
 `Testy/TESTS_README.md`.
 
 ### Nástroje vedle sad

@@ -75,7 +75,11 @@ var STATY = [
   { n:"stat.n.minkol",                m:gKolKCili,    a:"min",   f:cislo,    s:"points", kat:"kola" },
   { n:"stat.n.maxkol",                m:gKolKCili,    a:"max",   f:cislo,    s:"points", kat:"kola" },
   { n:"stat.n.nejlepsikolo",          m:gNejlepsiKolo,a:"max",   f:fmt,      kat:"kola" },
+  { n:"stat.n.nejlepsikolobody",      m:gNejlepsiKolo,a:"max",   f:fmt,      s:"points", kat:"kola" },
+  { n:"stat.n.nejlepsikolokola",      m:gNejlepsiKolo,a:"max",   f:fmt,      s:"rounds", kat:"kola" },
   { n:"stat.n.nejhorsikolo",          m:gNejhorsiKolo,a:"min",   f:fmt,      kat:"kola" },
+  { n:"stat.n.nejhorsikolobody",      m:gNejhorsiKolo,a:"min",   f:fmt,      s:"points", kat:"kola" },
+  { n:"stat.n.nejhorsikolokola",      m:gNejhorsiKolo,a:"min",   f:fmt,      s:"rounds", kat:"kola" },
 
   { n:"stat.n.maxhodu",               m:gNejvicHodu,  a:"max",   f:cislo,    kol:true, kat:"hody" },
   { n:"stat.n.nejlepsihod",           m:gNejlepsiHod, a:"max",   f:fmt,      hod:true, kat:"hody" },
@@ -87,6 +91,8 @@ var STATY = [
   { n:"stat.n.farkleprvni",           m:gFarklePrvniRekord, a:"soucet",f:cislo, num:gFarklePrvni, kol:true, kat:"farkly" },
   { n:"stat.n.maxfarkleprvni",        m:gFarklePrvniRekord, a:"max",   f:cislo, kol:true, kat:"farkly" },
   { n:"stat.n.ztraceno",              m:gZtraceno,    a:"max",   f:fmt,      kol:true, kat:"farkly" },
+  { n:"stat.n.ztracenobody",          m:gZtraceno,    a:"max",   f:fmt,      kol:true, s:"points", kat:"farkly" },
+  { n:"stat.n.ztracenokola",          m:gZtraceno,    a:"max",   f:fmt,      kol:true, s:"rounds", kat:"farkly" },
   { n:"stat.n.serie",                 m:gSerie,       a:"max",   f:cislo,    kol:true, kat:"farkly" },
   { n:"stat.n.farkluhra",             m:gFarkle,      a:"pomer", f:desetina, num:gFarkle, den:function(){ return 1; }, dir:"asc", kat:"farkly" }
 ];

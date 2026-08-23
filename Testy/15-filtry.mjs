@@ -23,13 +23,16 @@ const HRY = [
   hra({id:"g4", savedAt:den(3,12,0),  turns:[150,250,400]}),                         // 3. 7., 800
 ];
 
-function app(hry){
+function app(hry, opt){
+  opt = opt || {};
   const dom = new JSDOM(html, { runScripts:"dangerously", pretendToBeVisual:true,
     url:"https://x.test/", virtualConsole: new VirtualConsole(),
     beforeParse(w){
       try { w.localStorage.setItem("farkle-navod-v1", "bez-verze"); } catch(e){}
       try { w.localStorage.setItem("farkle-jazyk-v1", "cs"); } catch(e){}
       if(hry) w.localStorage.setItem("farkle-hist-v1", JSON.stringify(hry));
+      if(opt.rezimy) w.localStorage.setItem("farkle-rezimy-v1", JSON.stringify(opt.rezimy));
+      if(opt.statfiltr) w.localStorage.setItem("farkle-statfiltr-v1", JSON.stringify(opt.statfiltr));
       w.__blob = null;
       w.URL.createObjectURL = b => { w.__blob = b; return "blob:test"; };
       w.URL.revokeObjectURL = () => {};
@@ -53,11 +56,18 @@ function app(hry){
     popisekR: () => $("frazeni").getAttribute("aria-label"),
     zvyraznenT: () => $("ftyp").classList.contains("on"),
     zvyraznenR: () => $("frazeni").classList.contains("on"),
+    popisekSR: () => $("fsrezim").getAttribute("aria-label"),
+    popisekST: () => $("fstyp").getAttribute("aria-label"),
+    zvyraznenSR: () => $("fsrezim").classList.contains("on"),
+    zvyraznenST: () => $("fstyp").classList.contains("on"),
     /* body her tak, jak leží v seznamu, a k nim dny — na rozlišení shody */
     body: () => [...$("histlist").querySelectorAll(".grow .gv")].map(x => x.textContent),
     dny: () => [...$("histlist").querySelectorAll(".grow .gn b")]
-                 .map(x => x.textContent.split(" \u00B7 ")[0]),
+                 .map(x => x.textContent.split(" · ")[0]),
     moznosti: () => [...$("typval").options].map(o => o.textContent),
+    moznostiRezim: () => [...$("srezimval").options].map(o => o.textContent),
+    statFiltrUlozeno: () => JSON.parse(w.localStorage.getItem("farkle-statfiltr-v1") || "null"),
+    filtrUlozeno: () => w.localStorage.getItem("farkle-filtr-v1"),
     /* projde oknem stejnou cestou jako člověk: otevřít, přepnout, vyplnit, použít */
     datum(od, doKdy){
       klik($("fdatum"));
@@ -72,6 +82,19 @@ function app(hry){
       klik($("typseg").children[i]);
       if(hodnota !== undefined) $("typval").value = hodnota;
       klik($("typok"));
+    },
+    /* stejný tvar jako typ(), ale pro filtr Statistik */
+    typStat(i, hodnota){
+      klik($("fstyp"));
+      klik($("stypseg").children[i]);
+      if(hodnota !== undefined) $("stypval").value = hodnota;
+      klik($("stypok"));
+    },
+    /* rezim === "" znamená Vše */
+    rezimStat(rezim){
+      klik($("fsrezim"));
+      $("srezimval").value = rezim;
+      klik($("srezimok"));
     },
     razeni(i){
       klik($("frazeni"));
@@ -293,6 +316,103 @@ ok(a.body().join("|") === "300|200|100", "řazení podle bodů platí i pod filt
 a.klik(a.$("freset"));
 ok(a.popisekR() === "Řazení" && a.popisek() === "Datum", "Reset vrátí i řazení");
 ok(a.body().length === 4 && a.cary().length === 4, "a s ním čáry i všechny hry");
+
+/* ---------- filtr Statistik podle herního režimu a typu hry ----------
+   Na rozdíl od FILTR výš je STATFILTR trvalý (localStorage) a plošný pro
+   celou kartu Statistiky, i pro početní statistiky. z3 běží pod živým
+   vlastním režimem, který od zápisu hry přejmenoval — nabídka má ukázat
+   dnešní jméno, ne to uložené u hry. z4 běží pod režimem, který v
+   REZIMY_SEED vůbec není (smazaný/nikdy neexistoval) — nabídka ho i tak
+   musí nabídnout, pod jménem uloženým u hry. */
+const REZIMY_SEED = { akt: "kcd2", p: {}, v: [{ id: "rlive1", nazev: "Dnešní jméno" }] };
+const REZIMY_HRY = [
+  hra({id:"z1", savedAt:den(10,9,0),  turns:[100,200]}),                               // kcd2, na body, cíl 4000
+  hra({id:"z2", savedAt:den(10,10,0), goal:2000, turns:[300]}),                        // kcd2, na body, cíl 2000
+  Object.assign(hra({id:"z3", savedAt:den(11,9,0), mode:"rounds", roundGoal:5, turns:[400]}),
+                {rezim:"rlive1", rezimN:"Staré jméno"}),
+  Object.assign(hra({id:"z4", savedAt:den(12,9,0), turns:[500]}),
+                {rezim:"rghost1", rezimN:"Smazaný duch"})
+];
+
+console.log("S) nová lišta na kartě Statistiky");
+{
+  const s = app(REZIMY_HRY, { rezimy: REZIMY_SEED });
+  ok(!s.$("fsrezim").hidden && !s.$("fstyp").hidden, "na kartě Statistiky jsou vidět Režim a Typ hry");
+  ok(s.$("ftyp").hidden && s.$("frazeni").hidden, "a pořád ne stará Typ hry/Řazení z Historie");
+  ok(s.popisekSR() === "Režim" && !s.zvyraznenSR(), "tlačítko bez filtru říká Režim: " + s.popisekSR());
+  ok(s.popisekST() === "Typ hry" && !s.zvyraznenST(), "a druhé Typ hry: " + s.popisekST());
+  s.naKartu(1);
+  ok(!s.$("ftyp").hidden && !s.$("frazeni").hidden, "na Historii naopak přibudou Typ hry a Řazení");
+  ok(s.$("fsrezim").hidden && s.$("fstyp").hidden, "a Režim/Typ hry Statistik zmizí");
+}
+
+console.log("T) filtr podle režimu — nabídka z dat");
+{
+  const t1 = app(REZIMY_HRY, { rezimy: REZIMY_SEED });
+  t1.klik(t1.$("fsrezim"));
+  ok(t1.moznostiRezim().join("|") === "Všechny|KCD|Smazaný duch|Dnešní jméno",
+     "nejhranější první, smazaný pod uloženým jménem, živý pod dnešním: " + t1.moznostiRezim().join("|"));
+  t1.klik(t1.$("srezimzpet"));
+  ok(t1.stat("Odehráno her") === "4", "Zpět filtr nezapne: " + t1.stat("Odehráno her"));
+}
+
+console.log("U) filtr podle režimu mění statistiky plošně");
+{
+  const u = app(REZIMY_HRY, { rezimy: REZIMY_SEED });
+  u.rezimStat("rghost1");
+  ok(u.popisekSR() === "Smazaný duch" && u.zvyraznenSR(), "popisek nese jméno vybraného režimu: " + u.popisekSR());
+  ok(u.stat("Odehráno her") === "1", "početní statistika se zúžila na jednu hru: " + u.stat("Odehráno her"));
+  ok(u.stat("Nejhranější režim") === "Smazaný duch", "i Nejhranější režim triviálně ukazuje jen vybraný: " + u.stat("Nejhranější režim"));
+  u.naKartu(1);
+  ok(u.hry().length === 4, "seznam historie STATFILTR ignoruje, ukazuje všechny čtyři: " + u.hry().length);
+}
+
+console.log("V) filtr typu hry pro Statistiky je nezávislý na filtru Historie");
+{
+  const v = app(REZIMY_HRY, { rezimy: REZIMY_SEED });
+  v.typStat(1);
+  ok(v.stat("Odehráno her") === "3", "tři hry na body (z1, z2, z4): " + v.stat("Odehráno her"));
+  ok(v.popisekT() === "Typ hry" && !v.zvyraznenT(), "filtr Typu na Historii zůstal netknutý: " + v.popisekT());
+  v.naKartu(1);
+  ok(v.hry().length === 4, "a seznam historie ukazuje pořád všechny hry: " + v.hry().length);
+  v.naKartu(0);
+  v.typStat(1, "4000");
+  ok(v.stat("Odehráno her") === "2", "zúžení i na konkrétní cíl (z1, z4): " + v.stat("Odehráno her"));
+  ok(v.popisekST() === "do 4" + S + "000", "popisek nese cíl: " + v.popisekST());
+  v.typ(2);
+  ok(v.popisekST() === "do 4" + S + "000" && v.zvyraznenST(),
+     "opačný směr: filtr Statistik zůstal netknutý po zásahu do filtru Historie: " + v.popisekST());
+  ok(v.stat("Odehráno her") === "2", "statistiky pořád ukazují dvě hry: " + v.stat("Odehráno her"));
+}
+
+console.log("W) trvalost: STATFILTR přežije restart, FILTR ne");
+{
+  const w1 = app(REZIMY_HRY, { rezimy: REZIMY_SEED });
+  w1.datum("2026-07-10");
+  w1.rezimStat("rghost1");
+  ok(w1.statFiltrUlozeno().rezim === "rghost1", "uložilo se do localStorage: " + JSON.stringify(w1.statFiltrUlozeno()));
+  ok(w1.filtrUlozeno() === null, "filtr Historie žádný localStorage klíč nepoužívá");
+
+  const w2 = app(REZIMY_HRY, { rezimy: REZIMY_SEED, statfiltr: w1.statFiltrUlozeno() });
+  ok(w2.popisekSR() === "Smazaný duch" && w2.zvyraznenSR(),
+     "po „restartu“ appky je filtr Statistik pořád nastavený: " + w2.popisekSR());
+  w2.naKartu(1);
+  ok(w2.hry().length === 4 && w2.popisek() === "Datum" && !w2.zvyraznen(),
+     "ale filtr Historie po restartu zase začíná od nuly");
+}
+
+console.log("X) Reset maže i filtr Statistik a ukládá vynulovaný stav");
+{
+  const x = app(REZIMY_HRY, { rezimy: REZIMY_SEED });
+  x.rezimStat("rghost1");
+  x.typStat(1);
+  x.klik(x.$("freset"));
+  ok(x.popisekSR() === "Režim" && !x.zvyraznenSR(), "režim je zase bez filtru: " + x.popisekSR());
+  ok(x.popisekST() === "Typ hry" && !x.zvyraznenST(), "typ hry taky: " + x.popisekST());
+  ok(x.stat("Odehráno her") === "4", "statistiky vidí zase všechny čtyři hry: " + x.stat("Odehráno her"));
+  ok(JSON.stringify(x.statFiltrUlozeno()) === JSON.stringify({ rezim:null, typ:null, hodnota:null }),
+     "vynulovaný stav se i uložil: " + JSON.stringify(x.statFiltrUlozeno()));
+}
 
 console.log(fails ? "\nCHYB: " + fails : "\nVše v pořádku");
 process.exit(fails ? 1 : 0);

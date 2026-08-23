@@ -1109,6 +1109,8 @@
     <button class="ghost" type="button" id="fdatum" data-i18n="filtr.datum">Datum</button>
     <button class="ghost" type="button" id="ftyp" hidden data-i18n="filtr.typ">Typ</button>
     <button class="ghost" type="button" id="frazeni" hidden data-i18n="filtr.razeni">Řazení</button>
+    <button class="ghost" type="button" id="fsrezim" hidden data-i18n="filtr.rezim">Režim</button>
+    <button class="ghost" type="button" id="fstyp" hidden data-i18n="filtr.typ">Typ</button>
     <button class="ghost" type="button" id="freset" data-i18n-aria="filtr.reset.aria" aria-label="Resetovat filtry" data-i18n="filtr.reset">Reset</button>
   </div>
   <div id="statlist"></div>
@@ -1644,6 +1646,49 @@
   </div>
 </div>
 
+<div class="modal" id="srezimmodal" hidden>
+  <div class="modalbox" role="dialog" aria-modal="true" aria-labelledby="srezimtitle">
+    <div class="modalhead">
+      <h2 id="srezimtitle" data-i18n="statfiltr.rezim.nadpis">Filtr statistik podle herního režimu</h2>
+      <button class="modalx" type="button" data-close data-i18n-aria="spol.zavrit" aria-label="Zavřít">×</button>
+    </div>
+    <div class="modalbody">
+      <div class="daterow">
+        <label for="srezimval" data-i18n="filtr.rezim">Režim</label>
+        <select id="srezimval"></select>
+      </div>
+      <div class="datebtns">
+        <button class="ghost arch" id="srezimok" type="button" data-i18n="spol.pouzit">Použít</button>
+        <button class="ghost bigbtn" id="srezimzpet" type="button" data-i18n="spol.zpet">Zpět</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="stypmodal" hidden>
+  <div class="modalbox" role="dialog" aria-modal="true" aria-labelledby="styptitle">
+    <div class="modalhead">
+      <h2 id="styptitle" data-i18n="typ.nadpis">Filtr podle typu hry</h2>
+      <button class="modalx" type="button" data-close data-i18n-aria="spol.zavrit" aria-label="Zavřít">×</button>
+    </div>
+    <div class="modalbody">
+      <div class="seg" id="stypseg">
+        <button type="button" class="on" data-i18n="typ.vse">Vše</button>
+        <button type="button" data-i18n="typ.nabody">Na body</button>
+        <button type="button" data-i18n="typ.nakola">Na kola</button>
+      </div>
+      <div class="daterow" id="stypvalrow" hidden>
+        <label for="stypval" id="stypvall" data-i18n="typ.cil">Cíl</label>
+        <select id="stypval"></select>
+      </div>
+      <div class="datebtns">
+        <button class="ghost arch" id="stypok" type="button" data-i18n="spol.pouzit">Použít</button>
+        <button class="ghost bigbtn" id="stypzpet" type="button" data-i18n="spol.zpet">Zpět</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="modal" id="sortmodal" hidden>
   <div class="modalbox" role="dialog" aria-modal="true" aria-labelledby="sorttitle">
     <div class="modalhead">
@@ -1954,12 +1999,18 @@
     "stat.n.prumerhodkola": "Průměrný hod — hra na kola",
     "stat.n.minkol": "Nejméně kol v jedné hře na body",
     "stat.n.maxkol": "Nejvíc kol v jedné hře na body",
-    "stat.n.nejlepsikolo": "Nejlepší kolo",
-    "stat.n.nejhorsikolo": "Nejhorší kolo bez farklu",
+    "stat.n.nejlepsikolo": "Nejlepší kolo — celkem",
+    "stat.n.nejlepsikolobody": "Nejlepší kolo — hra na body",
+    "stat.n.nejlepsikolokola": "Nejlepší kolo — hra na kola",
+    "stat.n.nejhorsikolo": "Nejhorší kolo bez farklu — celkem",
+    "stat.n.nejhorsikolobody": "Nejhorší kolo bez farklu — hra na body",
+    "stat.n.nejhorsikolokola": "Nejhorší kolo bez farklu — hra na kola",
     "stat.n.maxfarklu": "Nejvíc farklů za hru",
     "stat.n.farkleprvni": "Farklů prvním hodem",
     "stat.n.maxfarkleprvni": "Nejvíc farklů prvním hodem za hru",
-    "stat.n.ztraceno": "Nejvíc bodů ztraceno farklem",
+    "stat.n.ztraceno": "Nejvíc bodů ztraceno farklem — celkem",
+    "stat.n.ztracenobody": "Nejvíc bodů ztraceno farklem — hra na body",
+    "stat.n.ztracenokola": "Nejvíc bodů ztraceno farklem — hra na kola",
     "stat.n.serie": "Nejdelší série bez farklu",
     "stat.n.farkluhra": "Farklů na hru",
     /* seznamy statistik a historie */
@@ -2113,6 +2164,8 @@
     "filtr.razeni": "Sort",
     "filtr.reset": "Reset",
     "filtr.reset.aria": "Reset filters",
+    "filtr.rezim": "Mode",
+    "statfiltr.rezim.nadpis": "Filter statistics by game mode",
     /* pravidla */
     "pravidla.nadpis": "Rules & how to play",
     "pravidla.seg.pravidla": "Rules",
@@ -2542,12 +2595,18 @@
     "stat.n.prumerhodkola": "Average roll — game by turns",
     "stat.n.minkol": "Fewest turns in one game to points",
     "stat.n.maxkol": "Most turns in one game to points",
-    "stat.n.nejlepsikolo": "Best turn",
-    "stat.n.nejhorsikolo": "Worst turn without a farkle",
+    "stat.n.nejlepsikolo": "Best turn — total",
+    "stat.n.nejlepsikolobody": "Best turn — game to points",
+    "stat.n.nejlepsikolokola": "Best turn — game by turns",
+    "stat.n.nejhorsikolo": "Worst turn without a farkle — total",
+    "stat.n.nejhorsikolobody": "Worst turn without a farkle — game to points",
+    "stat.n.nejhorsikolokola": "Worst turn without a farkle — game by turns",
     "stat.n.maxfarklu": "Most farkles in a game",
     "stat.n.farkleprvni": "First-roll farkles in total",
     "stat.n.maxfarkleprvni": "Most first-roll farkles in a game",
-    "stat.n.ztraceno": "Most points lost to a farkle",
+    "stat.n.ztraceno": "Most points lost to a farkle — total",
+    "stat.n.ztracenobody": "Most points lost to a farkle — game to points",
+    "stat.n.ztracenokola": "Most points lost to a farkle — game by turns",
     "stat.n.serie": "Longest run without a farkle",
     "stat.n.farkluhra": "Farkles per game",
     /* seznamy statistik a historie */
@@ -4913,7 +4972,11 @@
     { n: "stat.n.minkol", m: gKolKCili, a: "min", f: cislo, s: "points", kat: "kola" },
     { n: "stat.n.maxkol", m: gKolKCili, a: "max", f: cislo, s: "points", kat: "kola" },
     { n: "stat.n.nejlepsikolo", m: gNejlepsiKolo, a: "max", f: fmt, kat: "kola" },
+    { n: "stat.n.nejlepsikolobody", m: gNejlepsiKolo, a: "max", f: fmt, s: "points", kat: "kola" },
+    { n: "stat.n.nejlepsikolokola", m: gNejlepsiKolo, a: "max", f: fmt, s: "rounds", kat: "kola" },
     { n: "stat.n.nejhorsikolo", m: gNejhorsiKolo, a: "min", f: fmt, kat: "kola" },
+    { n: "stat.n.nejhorsikolobody", m: gNejhorsiKolo, a: "min", f: fmt, s: "points", kat: "kola" },
+    { n: "stat.n.nejhorsikolokola", m: gNejhorsiKolo, a: "min", f: fmt, s: "rounds", kat: "kola" },
     { n: "stat.n.maxhodu", m: gNejvicHodu, a: "max", f: cislo, kol: true, kat: "hody" },
     { n: "stat.n.nejlepsihod", m: gNejlepsiHod, a: "max", f: fmt, hod: true, kat: "hody" },
     { n: "stat.n.prumerhod", a: "pomer", f: fmtR, num: gBody, den: gHoduCelkem, hod: true, kat: "hody" },
@@ -4923,6 +4986,8 @@
     { n: "stat.n.farkleprvni", m: gFarklePrvniRekord, a: "soucet", f: cislo, num: gFarklePrvni, kol: true, kat: "farkly" },
     { n: "stat.n.maxfarkleprvni", m: gFarklePrvniRekord, a: "max", f: cislo, kol: true, kat: "farkly" },
     { n: "stat.n.ztraceno", m: gZtraceno, a: "max", f: fmt, kol: true, kat: "farkly" },
+    { n: "stat.n.ztracenobody", m: gZtraceno, a: "max", f: fmt, kol: true, s: "points", kat: "farkly" },
+    { n: "stat.n.ztracenokola", m: gZtraceno, a: "max", f: fmt, kol: true, s: "rounds", kat: "farkly" },
     { n: "stat.n.serie", m: gSerie, a: "max", f: cislo, kol: true, kat: "farkly" },
     { n: "stat.n.farkluhra", m: gFarkle, a: "pomer", f: desetina, num: gFarkle, den: function() {
       return 1;
@@ -6188,6 +6253,63 @@
     })();
   }
 
+  // src/js/ui/stat-filtry.js
+  var SFKEY = "farkle-statfiltr-v1";
+  var STATFILTR = { rezim: null, typ: null, hodnota: null };
+  function nactiStatFiltr() {
+    var raw = null;
+    try {
+      raw = localStorage.getItem(SFKEY);
+    } catch (e) {
+    }
+    if (!raw) return;
+    var o = null;
+    try {
+      o = JSON.parse(raw);
+    } catch (e) {
+      o = null;
+    }
+    if (!o || typeof o !== "object") return;
+    STATFILTR.rezim = typeof o.rezim === "string" && o.rezim ? o.rezim : null;
+    STATFILTR.typ = o.typ === "points" || o.typ === "rounds" ? o.typ : null;
+    STATFILTR.hodnota = typeof o.hodnota === "number" ? o.hodnota : null;
+  }
+  nactiStatFiltr();
+  function ulozStatFiltr() {
+    try {
+      localStorage.setItem(SFKEY, JSON.stringify(STATFILTR));
+    } catch (e) {
+    }
+  }
+  function zrusStatFiltr() {
+    STATFILTR.rezim = null;
+    STATFILTR.typ = null;
+    STATFILTR.hodnota = null;
+    ulozStatFiltr();
+  }
+  function seznamRezimuKFiltru() {
+    return rezimyPodleHer(histAll()).map(function(r) {
+      var rez = rezimPodleId(r.id);
+      return { id: r.id, nazev: rez ? nazevRezimu(rez) : r.nazev, pocet: r.pocet };
+    });
+  }
+  function pouzijStatFiltr(hry) {
+    var v = hry;
+    if (STATFILTR.rezim !== null) {
+      v = v.filter(function(g) {
+        return gRezim(g) === STATFILTR.rezim;
+      });
+    }
+    if (STATFILTR.typ !== null) {
+      v = v.filter(function(g) {
+        if (rezimHry(g) !== STATFILTR.typ) return false;
+        if (STATFILTR.hodnota === null) return true;
+        return cilHry(g) === STATFILTR.hodnota;
+      });
+    }
+    return v;
+  }
+
   // src/js/ui/filtry.js
   var FILTR = { od: null, do: null, typ: null, hodnota: null };
   var RAZENI = { podle: "datum", smer: "desc" };
@@ -6224,12 +6346,13 @@
     FILTR.hodnota = null;
     RAZENI.podle = "datum";
     RAZENI.smer = "desc";
+    zrusStatFiltr();
   }
   function konecDne(ms) {
     var d = new Date(ms);
     return new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1).getTime() - 1;
   }
-  function histView(sTypem) {
+  function histView(sTypem, proStatistiky) {
     var v = histAll();
     if (FILTR.od !== null || FILTR.do !== null) {
       v = v.filter(function(g) {
@@ -6246,6 +6369,7 @@
         return cilHry(g) === FILTR.hodnota;
       });
     }
+    if (proStatistiky) v = pouzijStatFiltr(v);
     var smer = RAZENI.smer === "asc" ? 1 : -1;
     v.sort(function(a, b) {
       if (RAZENI.podle === "body") {
@@ -6261,6 +6385,8 @@
   var elFdatum = $("fdatum");
   var elFtyp = $("ftyp");
   var elFraz = $("frazeni");
+  var elFsRezim = $("fsrezim");
+  var elFsTyp = $("fstyp");
   function popisDatumu() {
     if (FILTR.od === null || FILTR.do === null) return t("filtr.datum");
     var a = new Date(FILTR.od), b = new Date(FILTR.do);
@@ -6284,6 +6410,21 @@
     var k = RAZENI.podle + ":" + RAZENI.smer;
     return k === "datum:desc" || !RAZ_POPIS[k] ? t("filtr.razeni") : t(RAZ_POPIS[k]);
   }
+  function popisRezimu() {
+    if (STATFILTR.rezim === null) return t("filtr.rezim");
+    var i, sez = seznamRezimuKFiltru();
+    for (i = 0; i < sez.length; i++) {
+      if (sez[i].id === STATFILTR.rezim) return sez[i].nazev;
+    }
+    return t("filtr.rezim");
+  }
+  function popisTypuStat() {
+    if (STATFILTR.typ === null) return t("filtr.typhry");
+    if (STATFILTR.typ === "points")
+      return STATFILTR.hodnota === null ? t("filtr.nabody") : t("typhry.dobodu", { b: fmt(STATFILTR.hodnota) });
+    if (STATFILTR.hodnota === null) return t("typhry.nakola");
+    return STATFILTR.hodnota === 0 ? t("typhry.nakola") + " · " + t("filtr.bezlimitu") : t("filtr.nakolan", { n: STATFILTR.hodnota });
+  }
   function popisTlacitka(el, txt, holy) {
     el.setAttribute("aria-label", txt);
     el.classList.toggle("on", txt !== holy);
@@ -6296,8 +6437,12 @@
     var vSeznamu = segIdx === 1;
     elFtyp.hidden = !vSeznamu;
     elFraz.hidden = !vSeznamu;
+    elFsRezim.hidden = vSeznamu;
+    elFsTyp.hidden = vSeznamu;
     popisTlacitka(elFtyp, popisTypu(), t("filtr.typhry"));
     popisTlacitka(elFraz, popisRazeni(), t("filtr.razeni"));
+    popisTlacitka(elFsRezim, popisRezimu(), t("filtr.rezim"));
+    popisTlacitka(elFsTyp, popisTypuStat(), t("filtr.typhry"));
   }
   function initFiltry() {
     $("freset").addEventListener("click", function() {
@@ -6403,6 +6548,72 @@
       $("typok").addEventListener("click", function() {
         FILTR.typ = typVolba;
         FILTR.hodnota = typVolba === null || elVal.value === "" ? null : +elVal.value;
+        zavriModal();
+        renderP2();
+      });
+    })();
+    (function() {
+      var elVal = $("srezimval");
+      elFsRezim.addEventListener("click", function() {
+        var s = '<option value="">' + esc(t("typ.vsechny")) + "</option>";
+        seznamRezimuKFiltru().forEach(function(r) {
+          s += '<option value="' + esc(r.id) + '">' + esc(r.nazev) + "</option>";
+        });
+        elVal.innerHTML = s;
+        elVal.value = STATFILTR.rezim === null ? "" : STATFILTR.rezim;
+        if (elVal.selectedIndex < 0) elVal.value = "";
+        otevriModal("srezimmodal", this);
+      });
+      $("srezimzpet").addEventListener("click", function() {
+        zavriModal();
+      });
+      $("srezimok").addEventListener("click", function() {
+        STATFILTR.rezim = elVal.value === "" ? null : elVal.value;
+        ulozStatFiltr();
+        zavriModal();
+        renderP2();
+      });
+    })();
+    (function() {
+      var typVolba = null, elSegT = $("stypseg"), elVal = $("stypval"), elValRow = $("stypvalrow"), elValL = $("stypvall");
+      function typZIndexu(i) {
+        return i === 0 ? null : i === 1 ? "points" : "rounds";
+      }
+      function nastavTyp(typ, hodnota) {
+        typVolba = typ;
+        Array.prototype.forEach.call(elSegT.children, function(b, i) {
+          b.classList.toggle("on", typZIndexu(i) === typ);
+        });
+        elValRow.hidden = typ === null;
+        if (typ === null) {
+          elVal.innerHTML = "";
+          return;
+        }
+        elValL.textContent = t(typ === "points" ? "typ.cil" : "typ.limit");
+        var s = '<option value="">' + esc(t("typ.vsechny")) + "</option>";
+        hodnotyTypu(typ).forEach(function(x) {
+          s += '<option value="' + esc(String(x)) + '">' + esc(typ === "rounds" ? x === 0 ? t("filtr.bezlimitu") : tn("slovo.kolo", x) : fmt(x)) + "</option>";
+        });
+        elVal.innerHTML = s;
+        elVal.value = hodnota === null || hodnota === void 0 ? "" : String(hodnota);
+        if (elVal.selectedIndex < 0) elVal.value = "";
+      }
+      Array.prototype.forEach.call(elSegT.children, function(b, i) {
+        b.addEventListener("click", function() {
+          nastavTyp(typZIndexu(i), null);
+        });
+      });
+      elFsTyp.addEventListener("click", function() {
+        nastavTyp(STATFILTR.typ, STATFILTR.hodnota);
+        otevriModal("stypmodal", this);
+      });
+      $("stypzpet").addEventListener("click", function() {
+        zavriModal();
+      });
+      $("stypok").addEventListener("click", function() {
+        STATFILTR.typ = typVolba;
+        STATFILTR.hodnota = typVolba === null || elVal.value === "" ? null : +elVal.value;
+        ulozStatFiltr();
         zavriModal();
         renderP2();
       });
@@ -6530,7 +6741,7 @@
   }
   function renderP2() {
     odpojPozorovatele();
-    var hry = histView(segIdx === 1);
+    var hry = histView(segIdx === 1, segIdx === 0);
     elStatList.hidden = segIdx !== 0;
     elHistList.hidden = segIdx !== 1;
     Array.prototype.forEach.call(elSeg.children, function(b, i) {
@@ -6577,7 +6788,7 @@
       otevriZebricekHodu(def, i);
       return;
     }
-    var hry = histView(false), v = zebricek(def, hry);
+    var hry = histView(false, true), v = zebricek(def, hry);
     navZpet = null;
     doDetailu(t(def.n));
     if (!v.length) {
@@ -6600,7 +6811,7 @@
     doDetailu(t(def.n));
     elDetBody.innerHTML = '<div class="empty">' + esc(t("stat.pocitam")) + "</div>";
     nactiVsechnyDetaily(function(mapa) {
-      var hry = vyberHry(def, histView(false)), radky = [];
+      var hry = vyberHry(def, histView(false, true)), radky = [];
       hry.forEach(function(g) {
         var turns = mapa[g.id];
         if (!turns) return;

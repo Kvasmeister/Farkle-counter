@@ -437,7 +437,7 @@ console.log("M) statistika Nejhranější režim");
   const a = app({ hry: hry });
   a.doStatistik();
   const radky = a.staty();
-  ok(radky.length === 25, "pětadvacet statistik: " + radky.length);
+  ok(radky.length === 31, "jedenatřicet statistik: " + radky.length);
   const posledni = radky.find(b => b.querySelector(".sn").textContent.indexOf("Nejhranější režim") === 0);
   ok(posledni.querySelector(".sn").textContent.indexOf("Nejhranější režim") === 0,
      "a poslední je nejhranější režim: " + posledni.querySelector(".sn").textContent);

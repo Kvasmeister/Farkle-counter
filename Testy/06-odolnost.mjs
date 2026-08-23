@@ -79,7 +79,7 @@ for(let i = 0; i < 100; i++) hodne.push(hra(i, 12 + (i % 9)));
 const t0 = Date.now();
 let dd = app(w => w.localStorage.setItem("farkle-hist-v1", JSON.stringify(hodne)));
 const tStart = Date.now() - t0;
-ok(dd.$("statlist").querySelectorAll(".strow").length === 25, "statistiky spočítány");
+ok(dd.$("statlist").querySelectorAll(".strow").length === 31, "statistiky spočítány");
 const t1 = Date.now();
 dd.klik(dd.$("seg").children[1]);
 const tHist = Date.now() - t1;
@@ -111,8 +111,8 @@ let f = app(w => w.localStorage.setItem("farkle-hist-v1", JSON.stringify([
     turns:[{p:0,bust:true,d:""},{p:0,bust:true,d:""}] }])));
 const r = [...f.$("statlist").querySelectorAll(".strow")];
 const val = n => r.find(x => x.querySelector(".sn").firstChild.textContent.trim() === n).querySelector(".sv").textContent;
-ok(val("Nejlepší kolo") === "\u2014", "nejlepší kolo: pomlčka, je " + val("Nejlepší kolo"));
-ok(val("Nejhorší kolo bez farklu") === "\u2014", "nejhorší mimo farkle: pomlčka");
+ok(val("Nejlepší kolo — celkem") === "\u2014", "nejlepší kolo: pomlčka, je " + val("Nejlepší kolo — celkem"));
+ok(val("Nejhorší kolo bez farklu — celkem") === "\u2014", "nejhorší mimo farkle: pomlčka");
 ok(val("Nejdelší série bez farklu") === "0", "série 0");
 ok(val("Průměr na kolo — celkem") === "0", "průměr 0");
 
@@ -140,7 +140,7 @@ ok(JSON.parse(h.w.localStorage.getItem("farkle-kos-v1") || "[]").length === 0, "
 h.klik(h.$("tab2"));
 const vv = [...h.$("statlist").querySelectorAll(".strow")];
 const soucetVv = vv.find(b => b.querySelector(".sn").firstChild.textContent.trim() === "Celkem nasbíráno bodů");
-ok(vv.length === 25 && soucetVv.querySelector(".sv").textContent === "200", "statistiky vidí zapsanou hru");
+ok(vv.length === 31 && soucetVv.querySelector(".sv").textContent === "200", "statistiky vidí zapsanou hru");
 
 console.log("K) selhání zápisu se nesmí spolknout (B-2 až B-4)");
 /* zablokuje zápis jednoho klíče, ostatní nechá být */

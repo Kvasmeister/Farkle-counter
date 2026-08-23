@@ -49,6 +49,49 @@
   </div>
 </div>
 
+<div class="modal" id="srezimmodal" hidden>
+  <div class="modalbox" role="dialog" aria-modal="true" aria-labelledby="srezimtitle">
+    <div class="modalhead">
+      <h2 id="srezimtitle" data-i18n="statfiltr.rezim.nadpis">Filtr statistik podle herního režimu</h2>
+      <button class="modalx" type="button" data-close data-i18n-aria="spol.zavrit" aria-label="Zavřít">×</button>
+    </div>
+    <div class="modalbody">
+      <div class="daterow">
+        <label for="srezimval" data-i18n="filtr.rezim">Režim</label>
+        <select id="srezimval"></select>
+      </div>
+      <div class="datebtns">
+        <button class="ghost arch" id="srezimok" type="button" data-i18n="spol.pouzit">Použít</button>
+        <button class="ghost bigbtn" id="srezimzpet" type="button" data-i18n="spol.zpet">Zpět</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="stypmodal" hidden>
+  <div class="modalbox" role="dialog" aria-modal="true" aria-labelledby="styptitle">
+    <div class="modalhead">
+      <h2 id="styptitle" data-i18n="typ.nadpis">Filtr podle typu hry</h2>
+      <button class="modalx" type="button" data-close data-i18n-aria="spol.zavrit" aria-label="Zavřít">×</button>
+    </div>
+    <div class="modalbody">
+      <div class="seg" id="stypseg">
+        <button type="button" class="on" data-i18n="typ.vse">Vše</button>
+        <button type="button" data-i18n="typ.nabody">Na body</button>
+        <button type="button" data-i18n="typ.nakola">Na kola</button>
+      </div>
+      <div class="daterow" id="stypvalrow" hidden>
+        <label for="stypval" id="stypvall" data-i18n="typ.cil">Cíl</label>
+        <select id="stypval"></select>
+      </div>
+      <div class="datebtns">
+        <button class="ghost arch" id="stypok" type="button" data-i18n="spol.pouzit">Použít</button>
+        <button class="ghost bigbtn" id="stypzpet" type="button" data-i18n="spol.zpet">Zpět</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="modal" id="sortmodal" hidden>
   <div class="modalbox" role="dialog" aria-modal="true" aria-labelledby="sorttitle">
     <div class="modalhead">
