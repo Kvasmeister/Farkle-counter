@@ -10,7 +10,9 @@
    stávajícího, jehož hlavička výslovně říká, že se po zavření resetuje.
    Statistiky si tenhle filtr aplikují plošně na celou kartu (na rozdíl od
    FILTR.typ, který statistiky schválně ignorují — ten je jen pro seznam
-   historie).
+   historie). Výjimka: filtr typu hry (ne režimu) se nepromítá do
+   "celkem" varianty statistik rozdělených na celkem/body/kola — viz
+   pouzijTypFiltr() a jeho volání ve statistiky.js.
 
    Nabídka režimů se staví z DAT (rezimyPodleHer nad celou historií), ne ze
    živého REZIMY.sez — smazaný vlastní režim tak zůstává ve filtru
@@ -49,7 +51,7 @@ function zrusStatFiltr(){
 }
 
 /* Nabídka pro <select> ve filtru: [{id, nazev, pocet}], seřazená stejně
-   jako žebříček "Nejhranější режим" (podle počtu her, pak podle novosti). */
+   jako žebříček "Nejhranější režim" (podle počtu her, pak podle novosti). */
 function seznamRezimuKFiltru(){
   return rezimyPodleHer(histAll()).map(function(r){
     var rez = rezimPodleId(r.id);
@@ -57,22 +59,26 @@ function seznamRezimuKFiltru(){
   });
 }
 
-/* Zúží pole her podle STATFILTR. Volá se z filtry.js/histView(), jediných
-   dveří k datům pro zobrazení — proto tahle funkce sama nečte histAll(),
-   jen filtruje, co dostane. */
-function pouzijStatFiltr(hry){
-  var v = hry;
-  if(STATFILTR.rezim !== null){
-    v = v.filter(function(g){ return gRezim(g) === STATFILTR.rezim; });
-  }
-  if(STATFILTR.typ !== null){
-    v = v.filter(function(g){
-      if(rezimHry(g) !== STATFILTR.typ) return false;
-      if(STATFILTR.hodnota === null) return true;
-      return cilHry(g) === STATFILTR.hodnota;
-    });
-  }
-  return v;
+/* Filtr podle STATFILTR se dělí na dvě nezávislé funkce, ne jednu
+   pouzijStatFiltr() — režimy mají různé bodovací tabulky, takže napříč
+   nimi nejde srovnávat vůbec (tvrdá nesrovnatelnost, filtruje se plošně
+   v histView()). Typ hry je jiná osa: kolo/hod/žádaná statistika je
+   uvnitř JEDNOHO režimu mezi typy srovnatelná, jen "celkem" a "typ"
+   varianta téže statistiky by se filtrem promítnutým plošně smrskly na
+   stejné číslo. Filtr typu proto aplikuje až vyberHry() v statistiky.js,
+   podle toho, jestli statistika `def.celkem` je, nebo ne — histView() ho
+   sem už neprotlačuje. */
+function pouzijRezimFiltr(hry){
+  if(STATFILTR.rezim === null) return hry;
+  return hry.filter(function(g){ return gRezim(g) === STATFILTR.rezim; });
+}
+function pouzijTypFiltr(hry){
+  if(STATFILTR.typ === null) return hry;
+  return hry.filter(function(g){
+    if(rezimHry(g) !== STATFILTR.typ) return false;
+    if(STATFILTR.hodnota === null) return true;
+    return cilHry(g) === STATFILTR.hodnota;
+  });
 }
 
-export { STATFILTR, pouzijStatFiltr, seznamRezimuKFiltru, ulozStatFiltr, zrusStatFiltr };
+export { STATFILTR, pouzijRezimFiltr, pouzijTypFiltr, seznamRezimuKFiltru, ulozStatFiltr, zrusStatFiltr };

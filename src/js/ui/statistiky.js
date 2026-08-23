@@ -1,12 +1,22 @@
 /* Sledované statistiky: co se počítá a jak se to shrnuje.
 
-   Závisí na: stav/zaznam, text, pravidla
+   Závisí na: stav/zaznam, text, pravidla, ui/stat-filtry (pouzijTypFiltr
+              — jen ve vyberHry, viz níž; stat-filtry naopak importuje
+              rezimyPodleHer odsud, vzájemný import mezi dvěma moduly
+              ui/ jako u filtry.js/statistiky-stranka.js)
    Nezávisí na: DOM (kromě statsHTML, které vrací řetězec)
 
    STATY je jediný seznam, ze kterého se berou dlaždice, seznam statistik
    i žebříčky. Nejhranější režim je třetí druh shrnutí vedle her a dnů
    a jeho žebříček se neproklikává — filtr podle režimu není, takže by
    proklik neměl kam vést.
+
+   `celkem: true` u položky znamená, že jde o „celkem" variantu trojice
+   celkem/body/kola — vyberHry() pro ni schválně vynechá filtr typu hry
+   (STATFILTR.typ), aby „celkem" zůstalo napříč oběma typy i pod filtrem,
+   místo aby splynulo s právě zobrazenou variantou. Filtr podle režimu se
+   týká i „celkem" položek beze změny — různé režimy mají různé bodovací
+   tabulky, takže se přes ně srovnávat nedá vůbec, na rozdíl od typu hry.
 
    POZOR: délka STATY je zadrátovaná v několika testovacích sadách. */
 import { t, tn } from "../jazyky/jadro.js";
@@ -31,6 +41,7 @@ import {
 } from "../stav/zaznam.js";
 import { cislo, desetina, esc, fmt, fmtR } from "../text/format.js";
 import { $ } from "./prvky.js";
+import { pouzijTypFiltr } from "./stat-filtry.js";
 
 function statsHTML(rec){
   var busts = gFarkle(rec);
@@ -62,11 +73,11 @@ var STATY = [
   { n:"stat.n.rezim",                 a:"rezimMax",   f:cislo,    kat:"obecne" },
   { n:"stat.n.soucet",                a:"soucet",     f:fmt,      num:gBody,  kat:"obecne" },
 
-  { n:"stat.n.maxbody",               m:gBody,        a:"max",   f:fmt,      kol:true,   kat:"hry" },
+  { n:"stat.n.maxbody",               m:gBody,        a:"max",   f:fmt,      kol:true, celkem:true, kat:"hry" },
   { n:"stat.n.maxbodybody",           m:gBody,        a:"max",   f:fmt,      s:"points", kat:"hry" },
   { n:"stat.n.maxbodykola",           m:gBody,        a:"max",   f:fmt,      s:"rounds", kol:true, kat:"hry" },
 
-  { n:"stat.n.prumer",                m:gPrumer,      a:"pomer", f:fmtR,     num:gBody, den:gKol, kat:"kola" },
+  { n:"stat.n.prumer",                m:gPrumer,      a:"pomer", f:fmtR,     num:gBody, den:gKol, celkem:true, kat:"kola" },
   { n:"stat.n.prumerbody",            m:gPrumer,      a:"pomer", f:fmtR,     num:gBody, den:gKol, s:"points", kat:"kola" },
   { n:"stat.n.prumerkola",            m:gPrumer,      a:"pomer", f:fmtR,     num:gBody, den:gKol, s:"rounds", kat:"kola" },
   /* Obě „kola v jedné hře na body“ stojí na gKolKCili(), která u nedokončené
@@ -74,23 +85,23 @@ var STATY = [
      a žádný zvláštní výběr her k tomu není potřeba. */
   { n:"stat.n.minkol",                m:gKolKCili,    a:"min",   f:cislo,    s:"points", kat:"kola" },
   { n:"stat.n.maxkol",                m:gKolKCili,    a:"max",   f:cislo,    s:"points", kat:"kola" },
-  { n:"stat.n.nejlepsikolo",          m:gNejlepsiKolo,a:"max",   f:fmt,      kat:"kola" },
+  { n:"stat.n.nejlepsikolo",          m:gNejlepsiKolo,a:"max",   f:fmt,      celkem:true, kat:"kola" },
   { n:"stat.n.nejlepsikolobody",      m:gNejlepsiKolo,a:"max",   f:fmt,      s:"points", kat:"kola" },
   { n:"stat.n.nejlepsikolokola",      m:gNejlepsiKolo,a:"max",   f:fmt,      s:"rounds", kat:"kola" },
-  { n:"stat.n.nejhorsikolo",          m:gNejhorsiKolo,a:"min",   f:fmt,      kat:"kola" },
+  { n:"stat.n.nejhorsikolo",          m:gNejhorsiKolo,a:"min",   f:fmt,      celkem:true, kat:"kola" },
   { n:"stat.n.nejhorsikolobody",      m:gNejhorsiKolo,a:"min",   f:fmt,      s:"points", kat:"kola" },
   { n:"stat.n.nejhorsikolokola",      m:gNejhorsiKolo,a:"min",   f:fmt,      s:"rounds", kat:"kola" },
 
   { n:"stat.n.maxhodu",               m:gNejvicHodu,  a:"max",   f:cislo,    kol:true, kat:"hody" },
   { n:"stat.n.nejlepsihod",           m:gNejlepsiHod, a:"max",   f:fmt,      hod:true, kat:"hody" },
-  { n:"stat.n.prumerhod",                             a:"pomer", f:fmtR,     num:gBody, den:gHoduCelkem, hod:true, kat:"hody" },
+  { n:"stat.n.prumerhod",                             a:"pomer", f:fmtR,     num:gBody, den:gHoduCelkem, hod:true, celkem:true, kat:"hody" },
   { n:"stat.n.prumerhodbody",                         a:"pomer", f:fmtR,     num:gBody, den:gHoduCelkem, s:"points", hod:true, kat:"hody" },
   { n:"stat.n.prumerhodkola",                         a:"pomer", f:fmtR,     num:gBody, den:gHoduCelkem, s:"rounds", hod:true, kat:"hody" },
 
   { n:"stat.n.maxfarklu",             m:gFarkle,      a:"max",   f:cislo,    kol:true, kat:"farkly" },
   { n:"stat.n.farkleprvni",           m:gFarklePrvniRekord, a:"soucet",f:cislo, num:gFarklePrvni, kol:true, kat:"farkly" },
   { n:"stat.n.maxfarkleprvni",        m:gFarklePrvniRekord, a:"max",   f:cislo, kol:true, kat:"farkly" },
-  { n:"stat.n.ztraceno",              m:gZtraceno,    a:"max",   f:fmt,      kol:true, kat:"farkly" },
+  { n:"stat.n.ztraceno",              m:gZtraceno,    a:"max",   f:fmt,      kol:true, celkem:true, kat:"farkly" },
   { n:"stat.n.ztracenobody",          m:gZtraceno,    a:"max",   f:fmt,      kol:true, s:"points", kat:"farkly" },
   { n:"stat.n.ztracenokola",          m:gZtraceno,    a:"max",   f:fmt,      kol:true, s:"rounds", kat:"farkly" },
   { n:"stat.n.serie",                 m:gSerie,       a:"max",   f:cislo,    kol:true, kat:"farkly" },
@@ -135,10 +146,19 @@ function dnyPodleHer(hry){
 }
 
 function vyberHry(def, hry){
-  if(!def.s) return hry;
-  return hry.filter(function(g){
-    return def.s === "rounds" ? g.mode === "rounds" : g.mode !== "rounds";
-  });
+  var v = hry;
+  if(def.s){
+    v = v.filter(function(g){
+      return def.s === "rounds" ? g.mode === "rounds" : g.mode !== "rounds";
+    });
+  }
+  /* "Celkem" varianta trojice celkem/body/kola schválně přeskakuje filtr
+     typu hry (viz hlavička souboru) — položky s def.s ho v praxi mají
+     jako no-op (do vykreslení se dostanou, jen když def.s odpovídá
+     zapnutému STATFILTR.typ), pouzijTypFiltr jim navíc dovolí zúžení na
+     konkrétní hodnotu (cíl/limit). */
+  if(!def.celkem) v = pouzijTypFiltr(v);
+  return v;
 }
 function statHodnota(def, hry){
   var v = vyberHry(def, hry);

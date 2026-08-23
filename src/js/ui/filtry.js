@@ -18,7 +18,7 @@ import { histAll } from "../stav/historie.js";
 import { dtDen, esc, fmt } from "../text/format.js";
 import { otevriModal, zavriModal } from "./okna.js";
 import { $ } from "./prvky.js";
-import { STATFILTR, pouzijStatFiltr, seznamRezimuKFiltru, ulozStatFiltr, zrusStatFiltr } from "./stat-filtry.js";
+import { STATFILTR, pouzijRezimFiltr, seznamRezimuKFiltru, ulozStatFiltr, zrusStatFiltr } from "./stat-filtry.js";
 import { elSeg, renderP2, segIdx, zpetNaSeznam, zrusNav } from "./statistiky-stranka.js";
 import { denKlic } from "./statistiky.js";
 import { nastavSeg } from "./statistiky-stranka.js";
@@ -75,10 +75,15 @@ function konecDne(ms){
    prázdná a nic by nenapovědělo proč. Filtr data se naopak uplatňuje
    všude.
 
-   proStatistiky je opačný případ: STATFILTR (režim a typ hry, viz
-   stat-filtry.js) je určený PRO Statistiky a plošně jim mění i početní
-   statistiky — volající, kteří stavějí data pro tuhle kartu, si o něj
-   řeknou samostatným parametrem, ne přes sTypem. */
+   proStatistiky je opačný případ: STATFILTR.rezim (viz stat-filtry.js) je
+   určený PRO Statistiky a plošně jim mění i početní statistiky —
+   volající, kteří stavějí data pro tuhle kartu, si o něj řeknou
+   samostatným parametrem, ne přes sTypem. STATFILTR.typ/hodnota se sem
+   naschvál NEpromítá — na rozdíl od režimu (různé bodovací tabulky, tvrdá
+   nesrovnatelnost) je typ hry osa, na které "celkem" varianta statistiky
+   musí zůstat srovnatelná i pod filtrem; jeho aplikace proto čeká až na
+   vyberHry() v statistiky.js, kde se už ví, jestli jde o `celkem`
+   položku, nebo ne. */
 function histView(sTypem, proStatistiky){
   var v = histAll();
   if(FILTR.od !== null || FILTR.do !== null){
@@ -96,7 +101,7 @@ function histView(sTypem, proStatistiky){
       return cilHry(g) === FILTR.hodnota;
     });
   }
-  if(proStatistiky) v = pouzijStatFiltr(v);
+  if(proStatistiky) v = pouzijRezimFiltr(v);
   var smer = RAZENI.smer === "asc" ? 1 : -1;
   v.sort(function(a, b){
     if(RAZENI.podle === "body"){

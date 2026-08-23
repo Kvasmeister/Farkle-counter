@@ -440,5 +440,31 @@ console.log("Y) filtr typu hry schová irelevantní rozdělené statistiky");
   ok(radky().length === 31, "vrácení na Vše ukáže zase všech 31: " + radky().length);
 }
 
+console.log("Z) „celkem“ zůstává napříč typy hry i pod filtrem typu");
+{
+  const z = app(REZIMY_HRY, { rezimy: REZIMY_SEED });
+  z.typStat(2);   // na kola — v REZIMY_HRY je to jediná hra z3 (400 bodů, 1 kolo)
+  ok(z.stat("Odehráno her") === "1",
+     "regrese rozsahu: nedělená statistika se filtrem typu pořád zužuje: " + z.stat("Odehráno her"));
+
+  /* Nejlepší kolo: celkem počítá přes všechny čtyři hry (max je 500 ze
+     hry na body z4), „hra na kola“ jen přes z3 (400) — musí se lišit. */
+  ok(z.stat("Nejlepší kolo — celkem") === "500",
+     "celkem vidí i hry na body i pod filtrem: " + z.stat("Nejlepší kolo — celkem"));
+  ok(z.stat("Nejlepší kolo — hra na kola") === "400",
+     "hra na kola vidí jen z3: " + z.stat("Nejlepší kolo — hra na kola"));
+
+  /* Průměrný hod: pool přes všechny čtyři hry je (300+300+400+500)/(2+1+1+1) = 300,
+     pool jen přes z3 je 400/1 = 400. */
+  ok(z.stat("Průměrný hod — celkem") === "300",
+     "celkem je pool přes obě typy: " + z.stat("Průměrný hod — celkem"));
+  ok(z.stat("Průměrný hod — hra na kola") === "400",
+     "hra na kola je pool jen přes z3: " + z.stat("Průměrný hod — hra na kola"));
+
+  z.typStat(0);
+  ok(z.stat("Nejlepší kolo — celkem") === "500" && z.stat("Průměrný hod — celkem") === "300",
+     "bez filtru vychází celkem stejně jako pod ním — je na typu hry nezávislé napořád");
+}
+
 console.log(fails ? "\nCHYB: " + fails : "\nVše v pořádku");
 process.exit(fails ? 1 : 0);
