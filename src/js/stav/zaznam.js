@@ -92,32 +92,60 @@ function gNejvicHodu(g){
   });
   return m;
 }
-/* Nejlepší jednotlivý hod (ne kolo) napříč hrou — null, když hra nemá ani
-   jeden rozebratelný hod (samé "v", nebo smazaný vlastní režim). Na rozdíl
-   od ostatních g* funkcí potřebuje pravidla režimu (rozlozKolo), ne jen
-   turns; ta se dohledávají podle gRezim(g), ne aktRezim() — kolo se rozebírá
-   podle pravidel PLATNÝCH PRO TU HRU. */
-function gNejlepsiHod(g){
-  if(g.nejlepsihod !== undefined) return g.nejlepsihod;
+/* ---------- statistiky na úrovni jednoho hodu ----------
+   Jediný průchod koly, ze kterého vypadnou všechny tři údaje najednou:
+   nejlepší hod, součet bodů za hody a jejich počet. Že se počítají spolu, je
+   podstatné — dlaždice „Průměrný hod" i hlavička jeho žebříčku musí dát
+   totéž číslo, a to jde jen tehdy, když čitatel a jmenovatel pocházejí z téhož
+   výčtu hodů.
+
+   Kolo, které rozebrat nejde (ručně zadaná hodnota "v", cizí kód), se vynechá
+   celé — přesně jako ho vynechá žebříček hodů. Proto se nedá vzít hodyVKole()
+   jako jmenovatel: ta počítá úseky ve VŠECH kolech a u hry s jedním ručním
+   zápisem by čitatel a jmenovatel mluvily o jiných kolech.
+
+   Pravidla se dohledávají podle gRezim(g), ne aktRezim() — kolo se rozebírá
+   podle pravidel PLATNÝCH PRO TU HRU. null znamená „režim hry tady není"
+   (smazaný vlastní režim, hra z cizí zálohy před importem režimů); je to
+   stav, který jde spravit doimportováním režimu, takže se dopočet dá
+   zopakovat, viz prepocitejHodove() v stav/historie.js. */
+function rozborHodu(g){
   var rez = rezimPodleId(gRezim(g));
   if(!rez) return null;
-  var m = null;
+  var nej = null, body = 0, hodu = 0;
   (g.turns || []).forEach(function(t){
     var hody = rozlozKolo(t, rez);
     if(hody === null) return;
-    hody.forEach(function(h){ if(m === null || h.p > m) m = h.p; });
+    hody.forEach(function(h){
+      if(nej === null || h.p > nej) nej = h.p;
+      body += h.p;
+      hodu++;
+    });
   });
-  return m;
+  return { nej: nej, body: body, hodu: hodu };
 }
-/* Celkový počet hodů za hru — jmenovatel poměru pro Průměrný hod. Na rozdíl
-   od gNejlepsiHod nepotřebuje rez ani rozbor položek na body/kostky, jen
-   součet úseků (hodyVKole), takže je stejně odolný jako gNejvicHodu vůči
-   smazaným režimům i cizím datům. */
+/* Nejlepší jednotlivý hod (ne kolo) napříč hrou — null, když hra nemá ani
+   jeden rozebratelný hod. */
+function gNejlepsiHod(g){
+  if(g.nejlepsihod !== undefined) return g.nejlepsihod;
+  var r = rozborHodu(g);
+  return r ? r.nej : null;
+}
+/* Čitatel poměru pro Průměrný hod. Není to totéž co gBody: `banked` nezná
+   body, které propadly farklem, kdežto hod je odložil a v žebříčku hodů se
+   ukazují. Dokud dlaždice počítala gBody/gHoduCelkem a hlavička žebříčku
+   součet hodů, ukazovala ta dvě místa u téže statistiky jiné číslo. */
+function gBodyHodu(g){
+  if(typeof g.bodyHodu === "number") return g.bodyHodu;
+  var r = rozborHodu(g);
+  return r ? r.body : 0;
+}
+/* Jmenovatel téhož poměru — počet rozebratelných hodů. Nula znamená
+   „do poměru se tahle hra nezapočítá"; statHodnota() na to má test d > 0. */
 function gHoduCelkem(g){
   if(typeof g.hoduCelkem === "number") return g.hoduCelkem;
-  var n = 0;
-  (g.turns || []).forEach(function(t){ n += hodyVKole(t); });
-  return n;
+  var r = rozborHodu(g);
+  return r ? r.hodu : 0;
 }
 /* Farkle, při kterém na stole nic neleželo, je nula — platná hodnota
    odlišná od null, která by v žebříčku ležela dole jako řada nul. Do téhle
@@ -150,4 +178,4 @@ function nazevRezimuZaznamu(g){
   return (typeof g.rezimN === "string" && g.rezimN) ? g.rezimN.slice(0, NAZEV_MAX) : t("rezim.neznamy");
 }
 
-export { gBody, gFarkle, gFarklePrvni, gFarklePrvniRekord, gHoduCelkem, gKol, gKolKCili, gNejhorsiKolo, gNejlepsiHod, gNejlepsiKolo, gNejvicHodu, gPrumer, gRezim, gSerie, gZtraceno, hodyVKole, nazevRezimuZaznamu };
+export { gBody, gBodyHodu, gFarkle, gFarklePrvni, gFarklePrvniRekord, gHoduCelkem, gKol, gKolKCili, gNejhorsiKolo, gNejlepsiHod, gNejlepsiKolo, gNejvicHodu, gPrumer, gRezim, gSerie, gZtraceno, hodyVKole, nazevRezimuZaznamu, rozborHodu };

@@ -327,7 +327,12 @@ ok(a.body().length === 4 && a.cary().length === 4, "a s ním čáry i všechny h
 const REZIMY_SEED = { akt: "kcd2", p: {}, v: [{ id: "rlive1", nazev: "Dnešní jméno" }] };
 const REZIMY_HRY = [
   hra({id:"z1", savedAt:den(10,9,0),  turns:[100,200]}),                               // kcd2, na body, cíl 4000
-  hra({id:"z2", savedAt:den(10,10,0), goal:2000, turns:[300]}),                        // kcd2, na body, cíl 2000
+  /* z2 má kolo zapsané kódem (tři pětky = 500 v kcd2), ne popisem „jednička"
+     jako zbytek fixtury — bez toho by každý hod ve všech hrách platil stejně
+     a Průměrný hod by pod filtrem typu hry vyšel stejně jako celkem, takže
+     by ta dvojice asertací níž nic neověřila. `banked` se tím nemění. */
+  Object.assign(hra({id:"z2", savedAt:den(10,10,0), goal:2000, turns:[300]}),
+                {turns:[{p:300, bust:false, c:"n35"}]}),                              // kcd2, na body, cíl 2000
   Object.assign(hra({id:"z3", savedAt:den(11,9,0), mode:"rounds", roundGoal:5, turns:[400]}),
                 {rezim:"rlive1", rezimN:"Staré jméno"}),
   Object.assign(hra({id:"z4", savedAt:den(12,9,0), turns:[500]}),
@@ -454,15 +459,18 @@ console.log("Z) „celkem“ zůstává napříč typy hry i pod filtrem typu");
   ok(z.stat("Nejlepší kolo — hra na kola") === "400",
      "hra na kola vidí jen z3: " + z.stat("Nejlepší kolo — hra na kola"));
 
-  /* Průměrný hod: pool přes všechny čtyři hry je (300+300+400+500)/(2+1+1+1) = 300,
-     pool jen přes z3 je 400/1 = 400. */
-  ok(z.stat("Průměrný hod — celkem") === "300",
+  /* Průměrný hod se počítá z ROZEBRANÝCH hodů, ne z banked: z1 dva hody po
+     100, z2 jeden hod za 500 (n35), z3 jeden hod za 100. z4 vypadává celé —
+     jeho režim „rghost1" tady není, takže se kolo nemá podle čeho rozebrat.
+     celkem: (200+500+100) / (2+1+1) = 800 / 4 = 200
+     hra na kola: jen z3, tedy 100 / 1 = 100 */
+  ok(z.stat("Průměrný hod — celkem") === "200",
      "celkem je pool přes obě typy: " + z.stat("Průměrný hod — celkem"));
-  ok(z.stat("Průměrný hod — hra na kola") === "400",
+  ok(z.stat("Průměrný hod — hra na kola") === "100",
      "hra na kola je pool jen přes z3: " + z.stat("Průměrný hod — hra na kola"));
 
   z.typStat(0);
-  ok(z.stat("Nejlepší kolo — celkem") === "500" && z.stat("Průměrný hod — celkem") === "300",
+  ok(z.stat("Nejlepší kolo — celkem") === "500" && z.stat("Průměrný hod — celkem") === "200",
      "bez filtru vychází celkem stejně jako pod ním — je na typu hry nezávislé napořád");
 }
 

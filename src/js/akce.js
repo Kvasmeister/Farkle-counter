@@ -19,14 +19,14 @@ import { S, cur, gameEmpty, left, potTotal } from "./stav/stav.js";
 import { fmt } from "./text/format.js";
 import { stitek } from "./text/stitky.js";
 import { zkusAutoUlozit } from "./ui/autoulozeni.js";
+import { zrusVolbuKombinace } from "./ui/klavesnice.js";
 import { renderRezimy } from "./ui/nastaveni-rezimy.js";
 import { otevriModal } from "./ui/okna.js";
 import { prekresliPravidla } from "./ui/okno-pravidla.js";
 import { $ } from "./ui/prvky.js";
 import { goTo } from "./ui/stranky.js";
 import { render } from "./ui/vykresleni.js";
-import { fixMode, kdeZaznam, kosPush, pendingDel } from "./ui/zapis.js";
-import { zrusOpravy } from "./ui/zapis.js";
+import { kdeZaznam, kosPush, zrusOpravy } from "./ui/zapis.js";
 
 /* Jediné dveře ke změně pravidel: uloží a překreslí obojí — nastavení
    i klávesnici (tu přes render()). Cache rizika se nezahazuje, je klíčovaná
@@ -100,6 +100,7 @@ function bank(){
   var p = potTotal();
   if(p <= 0 || locked()) return;
   S.dirty = true;
+  zrusVolbuKombinace();
   zapisKolo(p, false);
   S.banked += p;
   S.rolls = [{thrown:kostek(), hot:false, items:[]}];
@@ -109,6 +110,7 @@ function bank(){
 function bust(){
   if(locked()) return;
   S.dirty = true;
+  zrusVolbuKombinace();
   zapisKolo(potTotal(), true);
   S.rolls = [{thrown:kostek(), hot:false, items:[]}];
   render();
@@ -127,6 +129,7 @@ function undo(){
 }
 function wipe(){
   zrusOpravy();
+  zrusVolbuKombinace();
   S.banked = 0; S.turns = []; S.rolls = [{thrown:kostek(), hot:false, items:[]}];
   S.archivedId = null; S.dirty = false; S.autoUlozeno = false;
   render();

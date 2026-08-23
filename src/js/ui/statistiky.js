@@ -23,6 +23,7 @@ import { t, tn } from "../jazyky/jadro.js";
 import { snapshot } from "../stav/stav.js";
 import {
   gBody,
+  gBodyHodu,
   gFarkle,
   gFarklePrvni,
   gFarklePrvniRekord,
@@ -94,9 +95,9 @@ var STATY = [
 
   { n:"stat.n.maxhodu",               m:gNejvicHodu,  a:"max",   f:cislo,    kol:true, kat:"hody" },
   { n:"stat.n.nejlepsihod",           m:gNejlepsiHod, a:"max",   f:fmt,      hod:true, kat:"hody" },
-  { n:"stat.n.prumerhod",                             a:"pomer", f:fmtR,     num:gBody, den:gHoduCelkem, hod:true, celkem:true, kat:"hody" },
-  { n:"stat.n.prumerhodbody",                         a:"pomer", f:fmtR,     num:gBody, den:gHoduCelkem, s:"points", hod:true, kat:"hody" },
-  { n:"stat.n.prumerhodkola",                         a:"pomer", f:fmtR,     num:gBody, den:gHoduCelkem, s:"rounds", hod:true, kat:"hody" },
+  { n:"stat.n.prumerhod",                             a:"pomer", f:fmtR,     num:gBodyHodu, den:gHoduCelkem, hod:true, celkem:true, kat:"hody" },
+  { n:"stat.n.prumerhodbody",                         a:"pomer", f:fmtR,     num:gBodyHodu, den:gHoduCelkem, s:"points", hod:true, kat:"hody" },
+  { n:"stat.n.prumerhodkola",                         a:"pomer", f:fmtR,     num:gBodyHodu, den:gHoduCelkem, s:"rounds", hod:true, kat:"hody" },
 
   { n:"stat.n.maxfarklu",             m:gFarkle,      a:"max",   f:cislo,    kol:true, kat:"farkly" },
   { n:"stat.n.farkleprvni",           m:gFarklePrvniRekord, a:"soucet",f:cislo, num:gFarklePrvni, kol:true, kat:"farkly" },
@@ -201,6 +202,12 @@ function statHodnota(def, hry){
 function zebricek(def, hry){
   if(def.a === "denMax") return dnyPodleHer(vyberHry(def, hry));
   if(def.a === "rezimMax") return rezimyPodleHer(vyberHry(def, hry));
+  /* Poměrová statistika nemusí mít `m` — hodnotu jedné hry pak nemá jak dát
+     a žebříček po hrách nedává smysl. Dnes jsou takové tři (Průměrný hod
+     a jeho dvě varianty) a nesou `hod`, takže je otevriZebricek() odbočí
+     na otevriZebricekHodu() dřív, než sem dojde. Čtvrtá by tady spadla na
+     def.m(g); tohle je ta pojistka. */
+  if(typeof def.m !== "function") return [];
   var dir = def.dir || (def.a === "min" ? "asc" : "desc");
   var v = vyberHry(def, hry).map(function(g){ return { g:g, x:def.m(g) }; })
     .filter(function(r){ return r.x !== null && r.x !== undefined; });

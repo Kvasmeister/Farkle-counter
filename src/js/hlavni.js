@@ -9,249 +9,49 @@
         před vším ostatním, včetně platformních přepínačů
      2. pravidla (nactiRezimy) dřív než klávesnice a vykreslení, protože
         podle režimu se řídí, které čipy vůbec existují
-     3. sondy pro testy až po obojím
+     3. sondy pro testy stojí vždy hned za krokem, který vystavují —
+        window.__i18n za jazykem, window.__pravidla za pravidly
      4. init* moduly navěsí posluchače na hotový DOM
      5. load() na konci: dotáhne rozehranou hru a překreslí
 
    INVARIANT: složený skript sedí na KONCI <body>. Prvky se sbírají hned
    při načtení (ui/prvky.js), takže v <head> nebo s defer by tu byly null.
 */
+/* Importuje se JEN to, co tenhle soubor opravdu volá. Je to jediné místo,
+   kde je vidět pořadí startu, takže seznam závislostí v hlavičce musí být
+   ten skutečný — dlouhý výčet jmen, která se dole nikde nevyskytují, ho
+   dělá nečitelným. Hlídá to Testy/kontrola-modulu.mjs. */
 import { t, tn, kat, naJazyk, nastavJazyk, sberCestinu, zjistiJazyk,
          jazyk, JAZYKY, NAZVY, VYCHOZI, I18N } from "./jazyky/jadro.js";
 import { RUCNI } from "./jazyky/cs.js";
-import { NAZEV_MAX, naCislo, newId } from "./spolecne.js";
-import { POST_PORADI, STRAIGHTS } from "./pravidla/postupky.js";
-import {
-  BODY_MAX,
-  PRESETY,
-  PRESET_PORADI,
-  VLASTNI_MAX,
-  VZORU_MAX,
-  cistyTvar,
-  kombVRezimu,
-  kombZap,
-  kombinaceZap,
-  pocetKombinaci,
-  pocetKostekVzoru,
-  poctyKostekKombinace,
-  rozbalPocty,
-  sazba,
-  sediKombinace,
-  sediVzor,
-  zapisKombinace,
-  zapisVzoru
-} from "./pravidla/kombinace.js";
+import { PRESETY, sediKombinace, sediVzor, zapisVzoru } from "./pravidla/kombinace.js";
+import { STRAIGHTS } from "./pravidla/postupky.js";
+import { POCTY_STEJ, PRESET_REZIMY, REZIMY, aktRezim, nactiRezimy } from "./pravidla/rezimy.js";
+import { RIZIKO, RIZIKO_2P, RIZIKO_3P, naRizikoHotovo, poctyZHodu, tabulkaRizika } from "./pravidla/riziko.js";
 import { kindPoints } from "./pravidla/skore.js";
-import {
-  NAD_DRUHY,
-  POCTY_STEJ,
-  PRAH_ZAKLAD,
-  PRESET_REZIMY,
-  PRESET_REZ_PORADI,
-  REZIMY,
-  REZIMY_MAX,
-  SAMOSTATNE_V_RADE,
-  SAM_ZAKLAD,
-  TROJ_ZAKLAD,
-  VYCHOZI_REZIM,
-  aktRezim,
-  cistyRezim,
-  jePreset,
-  kostek,
-  nactiRezimy,
-  nejvyssiStej,
-  novyIdRezimu,
-  odchylkyRezimu,
-  pocetSamostatnych,
-  poctyStej,
-  prahStej,
-  rezimPodleId,
-  sestiZap,
-  stejZap,
-  ulozRezimy,
-  venRezim,
-  zPresetu
-} from "./pravidla/rezimy.js";
-import {
-  RIZIKO,
-  RIZIKO_2P,
-  RIZIKO_3P,
-  naRizikoHotovo,
-  poctyZHodu,
-  rizikoHotovo,
-  tabulkaRizika
-} from "./pravidla/riziko.js";
-import { nazevRezimu } from "./pravidla/rezimy.js";
-import {
-  DETAILY,
-  HIST,
-  histAll,
-  histWrite,
-  idb,
-  klicSelhani,
-  naNedostupnouHistorii,
-  nactiDetail,
-  pripravUloziste,
-  proHistorii,
-  rezim
-} from "./stav/historie.js";
-import {
-  HODY_ODD,
-  HODY_TXT,
-  KKOD,
-  KODY,
-  NKOD,
-  POLOZKY_ODD,
-  POLOZKY_TXT,
-  SAM_KODY,
-  kodStejnych,
-  kodyZPopisu
-} from "./stav/kody.js";
-import {
-  S,
-  cur,
-  gameEmpty,
-  kopieKola,
-  left,
-  load,
-  makeRecord,
-  naSelhaniUlozeni,
-  neukladame,
-  potTotal,
-  rollPoints,
-  save,
-  snapshot,
-  usedInRoll
-} from "./stav/stav.js";
-import {
-  HKEY,
-  KEY,
-  KHKEY,
-  KKEY,
-  KOSH_MAX,
-  KOS_MAX,
-  kosAll,
-  kosHistAll,
-  kosHistWrite,
-  kosWrite
-} from "./stav/uloziste.js";
-import {
-  gBody,
-  gFarkle,
-  gFarklePrvni,
-  gFarklePrvniRekord,
-  gKol,
-  gKolKCili,
-  gNejhorsiKolo,
-  gNejlepsiKolo,
-  gNejvicHodu,
-  gPrumer,
-  gRezim,
-  gSerie,
-  gZtraceno,
-  nazevRezimuZaznamu
-} from "./stav/zaznam.js";
-import {
-  cislo,
-  desetina,
-  dt,
-  dtDen,
-  esc,
-  fmt,
-  fmtR,
-  popisHry,
-  popisTypuHry
-} from "./text/format.js";
-import { popisKola, stitek, textKodu } from "./text/stitky.js";
-import { $, elDataSingle, elRest, elRestLabel, elScore, elTotal } from "./ui/prvky.js";
-import {
-  elAddKind,
-  elArch,
-  elBank,
-  elBust,
-  elBustRiz,
-  elCounts,
-  elDataKombi,
-  elDataStr,
-  elEmpty,
-  elFix,
-  elGoalNum,
-  elGoalSel,
-  elKosHistList,
-  elKosList,
-  elLock,
-  elMToggle,
-  elManual,
-  elMkost,
-  elMnum,
-  elModeSel,
-  elPips,
-  elPot,
-  elRollLine,
-  elRollOn,
-  elRoundNum,
-  elRoundSel,
-  elRows,
-  elSingleCap,
-  elSingleRow,
-  elStrCap,
-  elStrRow,
-  elTally,
-  elTallyCap,
-  elTurnLabel,
-  elUndo
-} from "./ui/prvky.js";
-import { bank, bust, keep, novaHra, reset, rollOn, undo } from "./akce.js";
-import { AUKEY, autoZap, schovejToast, zkusAutoUlozit } from "./ui/autoulozeni.js";
+import { naNedostupnouHistorii, pripravUloziste } from "./stav/historie.js";
+import { load, naSelhaniUlozeni } from "./stav/stav.js";
+import { $ } from "./ui/prvky.js";
+import { autoZap, prepniAuto, schovejToast } from "./ui/autoulozeni.js";
 import { initFiltry } from "./ui/filtry.js";
-import {
-  initKlavesnice,
-  manualDice,
-  renderKind,
-  selCount,
-  selValue
-} from "./ui/klavesnice.js";
+import { initKlavesnice } from "./ui/klavesnice.js";
 import { resetMisto, zajistiTrvalost } from "./ui/misto.js";
-import { initNastaveni, naKartuNastaveni, syncGoalUI } from "./ui/nastaveni-obecne.js";
-import {
-  editRezim,
-  initKartaRezimy,
-  kombEdit,
-  ptamSeRezim,
-  ptamSeTvar,
-  ptamSeVzor,
-  renderRezPruh,
-  renderRezimy,
-  rezEdit
-} from "./ui/nastaveni-rezimy.js";
+import { initNastaveni, syncGoalUI } from "./ui/nastaveni-obecne.js";
+import { editRezim, initKartaRezimy, renderRezPruh, renderRezimy } from "./ui/nastaveni-rezimy.js";
 import { zkontrolujNavod } from "./ui/navod.js";
-import { initOkna, zavriModal } from "./ui/okna.js";
+import { initOkna } from "./ui/okna.js";
 import { initKartyPravidel, prekresliPravidla } from "./ui/okno-pravidla.js";
-import { initPlatforma } from "./ui/platforma.js";
+import { initPlatforma, initServiceWorker } from "./ui/platforma.js";
+import { initSdileniRezimu } from "./ui/sdileni-rezimu.js";
+import { nactiStatFiltr } from "./ui/stat-filtry.js";
 import { renderP2 } from "./ui/statistiky-stranka.js";
 import { initStranky } from "./ui/stranky.js";
-import { render } from "./ui/vykresleni.js";
-import { initZaloha, renderZaloha, renderZaloha2 } from "./ui/zaloha.js";
-import { initZalohaPlna } from "./ui/zaloha-plna.js";
-import { initSdileniRezimu } from "./ui/sdileni-rezimu.js";
-import {
-  archive,
-  fixMode,
-  hlaskaNaTlacitku,
-  pendingDel,
-  ptamSeKos,
-  ptamSeKosHist,
-  renderArch,
-  renderKos,
-  renderRows,
-  zapisHru
-} from "./ui/zapis.js";
-import { prepniAuto } from "./ui/autoulozeni.js";
-import { pridatKostku, ubratKostku, zrusVyber } from "./ui/klavesnice.js";
-import { zrusRozdelaneRezimy } from "./ui/nastaveni-rezimy.js";
-import { prepniOpravy, zrusPtaniKosu } from "./ui/zapis.js";
-import { initServiceWorker } from "./ui/platforma.js";
 import { initUdalosti } from "./ui/udalosti.js";
+import { render } from "./ui/vykresleni.js";
+import { initZaloha, renderZaloha2 } from "./ui/zaloha.js";
+import { initZalohaPlna } from "./ui/zaloha-plna.js";
+import { renderArch, renderKos } from "./ui/zapis.js";
+
 
 (function(){
   "use strict";
@@ -282,14 +82,12 @@ import { initUdalosti } from "./ui/udalosti.js";
                       kod: function(){ return jazyk; } };
   }catch(e){}
 
-
-
-
-
-
-
-  /* ---------- 2. pravidla ---------- */
+  /* ---------- 2. pravidla ----------
+     Trvalý filtr stránky Statistiky se čte tady vedle režimů: je to táž
+     kategorie (volba uložená v localStorage, ne stav hry) a renderP2() na
+     konci startu už ho musí mít v ruce. */
   nactiRezimy();
+  nactiStatFiltr();
 
   /* Líný výčet rizika doběhne až po setTimeout a pak se musí překreslit.
      Pravidla ale render() znát nesmí, tak jen ohlásí dopočet a poslouchá se
@@ -316,14 +114,11 @@ import { initUdalosti } from "./ui/udalosti.js";
                           tabulka: function(rez){ return tabulkaRizika(rez); } };
   }catch(e){}
 
-
   /* ---------- 4. moduly rozhraní ----------
      Pořadí mezi nimi nerozhoduje: každý si jen navěsí posluchače a
      přečte svůj kus DOMu. Rozhoduje jen to, že běží AŽ TEĎ — platformní
      přepínače volají t() a katalog je hotový od kroku 1. */
   initKlavesnice();
-
-
   initKartyPravidel();
   initKartaRezimy();
   initNastaveni();

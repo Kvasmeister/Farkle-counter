@@ -45,6 +45,47 @@ function zavedeneV(uzel) {
   return kam;
 }
 
+/* Opačný směr než volnaJmena(): importované jméno, které se v souboru nikde
+   nepoužije. Esbuild ho tiše zahodí, takže nic nespadne — jenže seznam
+   importů je hlavička modulu a čte se jako výčet jeho závislostí. Když se do
+   něj nastřádá dvě stě jmen, která tam nepatří (a přesně to zbylo po
+   automatickém doplňování importů při refaktoru), přestane hlavička říkat
+   pravdu.
+
+   Za použití se nepočítá jméno vlastnosti (`a.foo`) ani klíč v objektovém
+   literálu (`{ foo: 1 }`) — to jsou jiné `foo` než to importované.
+   Reexport (`export { foo }`) použití JE. */
+export function nepouziteImporty(zdroj) {
+  const strom = acorn.parse(zdroj, { ecmaVersion: 2022, sourceType: "module", locations: true });
+  const importovane = new Map();
+  for (const uzel of strom.body) {
+    if (uzel.type !== "ImportDeclaration") continue;
+    for (const s of uzel.specifiers) {
+      if (!importovane.has(s.local.name)) importovane.set(s.local.name, s.local.loc.start.line);
+    }
+  }
+  if (!importovane.size) return [];
+
+  const pouzite = new Set();
+  walk.ancestor(strom, {
+    Identifier(uzel, _stav, predci) {
+      const rodic = predci[predci.length - 2];
+      if (!rodic) { pouzite.add(uzel.name); return; }
+      if (rodic.type === "ImportSpecifier" || rodic.type === "ImportDefaultSpecifier" ||
+          rodic.type === "ImportNamespaceSpecifier") return;
+      if (rodic.type === "MemberExpression" && rodic.property === uzel && !rodic.computed) return;
+      if (rodic.type === "Property" && rodic.key === uzel && !rodic.computed && !rodic.shorthand) return;
+      pouzite.add(uzel.name);
+    },
+    ExportSpecifier(uzel) { pouzite.add(uzel.local.name); }
+  });
+
+  return [...importovane]
+    .filter(([n]) => !pouzite.has(n))
+    .map(([n, radek]) => ({ jmeno: n, radek }))
+    .sort((a, b) => a.radek - b.radek || (a.jmeno < b.jmeno ? -1 : 1));
+}
+
 export function volnaJmena(zdroj) {
   const strom = acorn.parse(zdroj, { ecmaVersion: 2022, sourceType: "module", locations: true });
   const volna = new Map();

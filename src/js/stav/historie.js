@@ -12,6 +12,7 @@
 import { kopieKola } from "./stav.js";
 import { HKEY, readList, writeList } from "./uloziste.js";
 import {
+  gBodyHodu,
   gFarkle,
   gFarklePrvni,
   gHoduCelkem,
@@ -23,7 +24,8 @@ import {
   gNejvicHodu,
   gRezim,
   gSerie,
-  gZtraceno
+  gZtraceno,
+  rozborHodu
 } from "./zaznam.js";
 
 /* ---------- úložiště historie ----------
@@ -43,7 +45,7 @@ import {
 var HIST = [];
 var UKEY  = "farkle-uloziste-v1";   /* "idb", jakmile migrace proběhla */
 var HZAL  = HKEY + "-zaloha";       /* přejmenovaný původní klíč */
-var IDB_JMENO = "kostky", IDB_VERZE = 5;
+var IDB_JMENO = "kostky", IDB_VERZE = 6;
 var SOUHRNY = "souhrny", DETAILY = "detaily";
 /* Firefox v soukromém okně umí na open() viset donekonečna, proto strop */
 var IDB_STROP = 3000;
@@ -69,7 +71,8 @@ function souhrnZ(rec){
     serie: gSerie(rec),
     kolKCili: kolKCili,
     hodu: gNejvicHodu(rec), ztraceno: gZtraceno(rec),
-    nejlepsihod: gNejlepsiHod(rec), hoduCelkem: gHoduCelkem(rec)
+    /* trojice z jednoho rozboru — viz rozborHodu() v stav/zaznam.js */
+    nejlepsihod: gNejlepsiHod(rec), bodyHodu: gBodyHodu(rec), hoduCelkem: gHoduCelkem(rec)
   };
 }
 function detailZ(rec){
@@ -118,19 +121,37 @@ function otevriIDB(hotovo){
   req.onblocked = function(){ konec(null); };
 }
 
-/* Doplnění polí `hodu`, `ztraceno`, `farkluprvni`, `nejlepsihod` a
-   `hoduCelkem` do souhrnů uložených starší verzí. Běží uvnitř versionchange
-   transakce: když cokoli selže, transakce se zruší celá a databáze zůstane
-   na předchozí verzi — nevznikne stav, kdy má polovina her nová pole
-   a druhá ne. Mapa se staví celá dopředu a teprve pak se sahá na souhrny;
-   dva otevřené kurzory nad dvěma policemi v téže transakci se nemíchají.
-   Na čerstvé instalaci jsou obě police prázdné, takže dopočet nestojí nic.
+/* Zapsání hodové trojice do souhrnu z jednoho rozboru. Vrací true, když se
+   něco změnilo. Sdílí ho migrace i pozdější dopočet po importu režimů, ať
+   nevznikne druhá, oddělená kopie rozborové logiky.
 
-   `nejlepsihod`/`hoduCelkem` potřebují na rozdíl od starší trojice i `rezim`
-   (jen na souhrnu, ne na detailu) — mapa proto nese i `turns` a dopočet
-   samotný běží až ve druhém průchodu nad syntetickým objektem
-   `{turns, rezim}`, stejnými funkcemi jako běžný zápis hry (gNejlepsiHod,
-   gHoduCelkem), aby nevznikla druhá, oddělená kopie rozborové logiky. */
+   `null` u nejlepsihod znamená „nebylo z čeho počítat" — a rozlišit se to
+   nedá, jestli proto, že hra nemá rozebratelné kolo, nebo proto, že tady
+   není její režim. Druhý případ se ale spraví doimportováním režimu, proto
+   se přepočet dá spustit znovu (prepocitejHodove() níž). */
+function hodoveDo(v, turns){
+  var r = rozborHodu({ turns: turns || [], rezim: v.rezim });
+  var nej = r ? r.nej : null, body = r ? r.body : 0, hodu = r ? r.hodu : 0;
+  if(v.nejlepsihod === nej && v.bodyHodu === body && v.hoduCelkem === hodu) return false;
+  v.nejlepsihod = nej; v.bodyHodu = body; v.hoduCelkem = hodu;
+  return true;
+}
+
+/* Doplnění polí `hodu`, `ztraceno`, `farkluprvni` a hodové trojice
+   (`nejlepsihod`, `bodyHodu`, `hoduCelkem`) do souhrnů uložených starší
+   verzí. Běží uvnitř versionchange transakce: když cokoli selže, transakce
+   se zruší celá a databáze zůstane na předchozí verzi — nevznikne stav, kdy
+   má polovina her nová pole a druhá ne. Mapa se staví celá dopředu a teprve
+   pak se sahá na souhrny; dva otevřené kurzory nad dvěma policemi v téže
+   transakci se nemíchají. Na čerstvé instalaci jsou obě police prázdné,
+   takže dopočet nestojí nic.
+
+   Hodová trojice se přepočítává VŽDY, ne jen když chybí: verze 6 změnila
+   význam `hoduCelkem` z „úseků ve všech kolech" na „hodů v rozebratelných
+   kolech", aby seděl k `bodyHodu` v témž poměru. Stará hodnota by mlčky
+   zůstala a poměr by u her s ručně zadanou položkou nesouhlasil. Trojice
+   potřebuje na rozdíl od starší trojice i `rezim` (jen na souhrnu, ne na
+   detailu), proto mapa nese i `turns`. */
 function dopoctiHody(tx){
   var mapa = {}, kd = tx.objectStore(DETAILY).openCursor();
   kd.onsuccess = function(){
@@ -156,16 +177,56 @@ function dopoctiHody(tx){
         v.farkluprvni = m ? m.farkluprvni : null;
         zmena = true;
       }
-      if(v.nejlepsihod === undefined || v.hoduCelkem === undefined){
-        var mt = mapa[v.id], turns = mt ? mt.turns : [];
-        v.nejlepsihod = gNejlepsiHod({ turns: turns, rezim: v.rezim });
-        v.hoduCelkem = gHoduCelkem({ turns: turns });
-        zmena = true;
-      }
+      var mt = mapa[v.id];
+      if(hodoveDo(v, mt ? mt.turns : [])) zmena = true;
       if(zmena) s.update(v);
       s.continue();
     };
   };
+}
+
+/* Přepočet hodové trojice mimo migraci. Volá se po přidání herních režimů
+   (záloha, sdílení): hra naimportovaná dřív, než tady byl její vlastní
+   režim, má v souhrnu `nejlepsihod: null` a nulový poměr, a samo se to
+   nespraví — g* funkce se ptají `!== undefined` a uložená null tou
+   podmínkou projde.
+
+   Sahá jen na souhrny, kterým se hodnota opravdu změní, a jen na ty, které
+   ještě žádný hod nemají; hru s hotovým rozborem není proč přepisovat
+   a projít tisíce záznamů kvůli ničemu taky ne. Selhání se neřeší — je to
+   dopočet pohodlí, ne zápis dat, a další import ho zkusí znovu. */
+function prepocitejHodove(hotovo){
+  hotovo = hotovo || function(){};
+  if(rezim !== "idb" || !idb){ hotovo(0); return; }
+  var tx;
+  try{ tx = idb.transaction([SOUHRNY, DETAILY], "readwrite"); }
+  catch(e){ hotovo(0); return; }
+  var zmeneno = 0;
+  tx.oncomplete = function(){
+    /* HIST drží tytéž souhrny, které se právě přepsaly v polici — bez
+       obnovy by stránka Statistiky ukazovala stará čísla až do restartu */
+    if(zmeneno){ ctiIDB(idb, function(z){ if(z !== null) HIST = z; hotovo(zmeneno); }); }
+    else hotovo(0);
+  };
+  tx.onerror = function(){ hotovo(0); };
+  tx.onabort = function(){ hotovo(0); };
+  try{
+    var mapa = {}, kd = tx.objectStore(DETAILY).openCursor();
+    kd.onsuccess = function(){
+      var c = kd.result;
+      if(c){ mapa[c.value.id] = c.value.turns || []; c.continue(); return; }
+      var ks = tx.objectStore(SOUHRNY).openCursor();
+      ks.onsuccess = function(){
+        var s = ks.result;
+        if(!s) return;
+        var v = s.value;
+        if(v.nejlepsihod === null && hodoveDo(v, mapa[v.id])){ s.update(v); zmeneno++; }
+        s.continue();
+      };
+    };
+  }catch(e){
+    try{ tx.abort(); }catch(e2){}
+  }
 }
 
 /* null znamená „nepodařilo se přečíst", ne „nic tam není" — ten rozdíl je
@@ -410,4 +471,4 @@ function histWrite(list, hotovo, zaznamy){
    policích. */
 function proHistorii(rec){ return rezim === "idb" ? souhrnZ(rec) : rec; }
 
-export { DETAILY, HIST, HZAL, IDB_JMENO, IDB_STROP, IDB_VERZE, SOUHRNY, UKEY, ctiIDB, detailZ, dopoctiHody, histAll, histWrite, historieJeNedostupna, historieNedostupna, idb, klicSelhani, migruj, naNedostupnouHistorii, nactiDetail, nactiVsechnyDetaily, otevriIDB, poNedostupnosti, pripravUloziste, proHistorii, rezim, souhrnZ, ukazNecteme, zapisIDB };
+export { DETAILY, HIST, HZAL, IDB_JMENO, IDB_STROP, IDB_VERZE, SOUHRNY, UKEY, ctiIDB, detailZ, dopoctiHody, histAll, histWrite, historieJeNedostupna, historieNedostupna, hodoveDo, idb, klicSelhani, migruj, naNedostupnouHistorii, nactiDetail, nactiVsechnyDetaily, otevriIDB, poNedostupnosti, prepocitejHodove, pripravUloziste, proHistorii, rezim, souhrnZ, ukazNecteme, zapisIDB };

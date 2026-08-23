@@ -234,7 +234,20 @@ function otevriZebricek(i){
    (hoduRadky) se dál jen filtruje/třídí v paměti — klik na čip kostek proto
    nic znovu nenačítá. */
 var hoduRadky = null;   // [{ g, thrown, p }, ...] aktuálně otevřeného žebříčku
-var KOSTKY_FILTR = [1, 2, 3, 4, 5, 6];
+/* Počty kostek pro čipy se berou z dat, ne z pevného seznamu 1–6: v
+   pětikostkovém režimu by čip „6" byl trvale prázdný a se zapnutým filtrem
+   režimu prázdné všechny nad jeho počtem kostek. Stejná úvaha jako
+   u hodnotyTypu() ve filtry.js — jen se tu počítá z už rozebraných řádků,
+   takže to nic nestojí navíc. */
+function poctyKostekVZebricku(radky){
+  var videno = {}, out = [], i, n;
+  for(i = 0; i < radky.length; i++){
+    n = radky[i].thrown;
+    if(!videno[n]){ videno[n] = true; out.push(n); }
+  }
+  out.sort(function(a, b){ return a - b; });
+  return out;
+}
 
 function otevriZebricekHodu(def, i){
   navZpet = null;
@@ -277,16 +290,22 @@ function prumerHlavickaHTML(def, zdroj){
   return '<div class="detsum"><span>' + esc(t(def.n)) + '</span><b>' + hodnota + '</b></div>';
 }
 function kostkyChipyHTML(filtr){
-  var out = '<div class="row k7">' +
+  var pocty = poctyKostekVZebricku(hoduRadky || []);
+  /* Jediný počet kostek znamená, že není z čeho vybírat — řada čipů by byla
+     jen ozdoba nad tabulkou. */
+  if(pocty.length < 2) return "";
+  /* kN řídí jen zalomení řady, stejně jako v klávesnici; hledá se podle
+     stabilní třídy kostkyrow, aby na počtu čipů nezáleželo. */
+  var out = '<div class="row kostkyrow k' + Math.min(9, pocty.length + 1) + '">' +
     '<button type="button" class="chip' + (filtr === null ? ' sel' : '') + '" data-k="">' +
       esc(t("stat.kostek.vse")) + '</button>';
-  KOSTKY_FILTR.forEach(function(n){
+  pocty.forEach(function(n){
     out += '<button type="button" class="chip' + (filtr === n ? ' sel' : '') + '" data-k="' + n + '">' + n + '</button>';
   });
   return out + '</div>';
 }
 function zapojKostkyChipy(kam, zmena){
-  Array.prototype.forEach.call(kam.querySelectorAll(".row.k7 .chip"), function(b){
+  Array.prototype.forEach.call(kam.querySelectorAll(".kostkyrow .chip"), function(b){
     b.addEventListener("click", function(){
       var k = b.dataset.k;
       zmena(k === "" ? null : Number(k));
@@ -520,4 +539,4 @@ function otevriHru(id){
    vidět, ví tahle stránka. */
 function nastavSeg(i){ segIdx = i; }
 
-export { KROK, delTimer, doDetailu, elDetBody, elDetTitle, elHistList, elP2Detail, elP2List, elSeg, elStatList, nastavSeg, navZpet, odpojPozorovatele, otevriHru, otevriZebricek, otevriZebricekHodu, pozorovatel, pridejZnacku, radekDne, radekHodu, radekHry, radekRezimu, renderHistList, renderP2, renderStatList, scrollList, scrollZebricek, segIdx, sledujZnacku, vykresliZebricekHodu, vypisDavku, zpetNaSeznam, zrusNav };
+export { KROK, delTimer, doDetailu, elDetBody, elDetTitle, elHistList, elP2Detail, elP2List, elSeg, elStatList, nastavSeg, navZpet, odpojPozorovatele, otevriHru, otevriZebricek, otevriZebricekHodu, poctyKostekVZebricku, pozorovatel, pridejZnacku, radekDne, radekHodu, radekHry, radekRezimu, renderHistList, renderP2, renderStatList, scrollList, scrollZebricek, segIdx, sledujZnacku, vykresliZebricekHodu, vypisDavku, zpetNaSeznam, zrusNav };

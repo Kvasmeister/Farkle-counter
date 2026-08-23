@@ -1,5 +1,11 @@
 import { JSDOM, VirtualConsole } from "jsdom";
 import fs from "fs";
+/* Rozbor kola na hody je čistá funkce bez DOMu, takže se dá volat přímo ze
+   zdroje — a podle CLAUDE.md §1 se na kód ptáme src/, ne sestaveného
+   index.html, kde si esbuild přejmenovává, co chce. Zbytek sady jde dál
+   přes jsdom, protože se ptá na chování. */
+import { rozlozKolo, rozlozPolozku } from "../src/js/stav/hody.js";
+import { zPresetu } from "../src/js/pravidla/rezimy.js";
 const html = fs.readFileSync(new URL("../index.html", import.meta.url), "utf8");
 let fails = 0;
 const ok = (c, m) => { if (!c) { fails++; console.log("  CHYBA:", m); } else console.log("  ok:", m); };
@@ -321,13 +327,16 @@ console.log("J) rozbor kola na jednotlivé hody — Nejlepší hod a Průměrný
   const hodnota = jmeno => { const r = radek(jmeno); return r ? r.querySelector(".sv").textContent : null; };
 
   ok(hodnota("Nejlepší hod") === "8" + S + "000", "šest jedniček je 8000: " + hodnota("Nejlepší hod"));
-  /* banked g1 = 9700 + 600 (kolo3 je farkle, jeho 50 se nebankuje) = 10300;
-     hodů g1 = 3 + 2 + 2 = 7 (i prohraný hod se počítá).
-     banked g2 = 100 + 100 = 200; hodů g2 = 1 + 1 = 2 — kolo s "v" se do
-     POČTU hodů počítá (ten nepotřebuje rez), jen ne do rozpisu bodů.
-     pool: (10300+200) / (7+2) = 10500 / 9 = 1166,7 -> 1167 */
-  ok(hodnota("Průměrný hod — celkem") === "1" + S + "167",
-     "pooled průměr přes obě hry včetně nerozebratelného kola v počtu hodů: " + hodnota("Průměrný hod — celkem"));
+  /* Čitatel i jmenovatel pocházejí z TÉHOŽ výčtu hodů, jinak by se dlaždice
+     a hlavička jejího žebříčku nemohly shodnout. Kolo, které se rozebrat
+     nedá, se proto vynechá celé — z bodů i z počtu hodů.
+     g1: 8000+1600+100 | 500+100 | 50+0 = 10350 bodů v 3+2+2 = 7 hodech
+         (prohraný hod farklu se počítá, přinese nula bodů; jeho 50 se
+         nebankuje, ale hod je odložil, takže do součtu patří).
+     g2: kolo s "v" vypadává celé, zbývá 100 bodů v 1 hodu.
+     pool: (10350+100) / (7+1) = 10450 / 8 = 1306,25 -> 1306 */
+  ok(hodnota("Průměrný hod — celkem") === "1" + S + "306",
+     "pooled průměr přes rozebratelné hody obou her: " + hodnota("Průměrný hod — celkem"));
 
   a.klik(radek("Nejlepší hod"));
   const bunky = () => [...a.$("detbody").querySelectorAll("tbody td.g")].map(td => td.textContent);
@@ -340,6 +349,80 @@ console.log("J) rozbor kola na jednotlivé hody — Nejlepší hod a Průměrný
 
   a.klik(a.$("detbody").querySelector('.chip[data-k=""]'));
   ok(bunky().length === 8, "chip \"Vše\" vrátí celý žebříček zpátky: " + bunky().length);
+
+  /* Jádro věci: dlaždice a hlavička jejího žebříčku musí říkat totéž číslo.
+     Dokud dlaždice počítala banked/hodů a hlavička součet rozebraných hodů,
+     lišily se pokaždé, když v některém kole propadly body farklem. */
+  const b = app({ hry: [g1, g2] });
+  const dlazdice = [...b.$("statlist").querySelectorAll(".strow")]
+    .find(x => x.querySelector(".sn").firstChild.textContent.trim() === "Průměrný hod — celkem");
+  const zDlazdice = dlazdice.querySelector(".sv").textContent;
+  b.klik(dlazdice);
+  const zHlavicky = b.$("detbody").querySelector(".detsum b").textContent;
+  ok(zDlazdice === zHlavicky && zDlazdice === "1" + S + "306",
+     "dlaždice a hlavička žebříčku dávají stejné číslo: " + zDlazdice + " vs " + zHlavicky);
+
+  /* a s filtrem počtu kostek se hlavička přepočítá jen nad zobrazenými hody */
+  b.klik(b.$("detbody").querySelector('.chip[data-k="3"]'));
+  ok(b.$("detbody").querySelector(".detsum b").textContent === "100",
+     "pod filtrem počítá hlavička jen ze zobrazených hodů: " +
+     b.$("detbody").querySelector(".detsum b").textContent);
+}
+
+/* Rozbor kola napřímo, bez jsdom. Přes aplikaci se dá ověřit jen výsledek
+   žebříčku; tady jde vidět i `thrown` u každého hodu, což je ta část, kterou
+   se nejsnáz rozbije — dopočítává se heuristikou z popisu kola, ne z dat. */
+console.log("K) rozlozKolo/rozlozPolozku napřímo ze zdroje");
+{
+  const kcd = zPresetu("kcd2");     // šest kostek, x2 nad trojicí
+  const pet = zPresetu("pet");      // pět kostek, násobek
+  const kolo = (t, rez) => rozlozKolo(t, rez || kcd);
+  const zapis = h => h === null ? "null" : h.map(x => x.thrown + ":" + x.p).join(" ");
+
+  ok(zapis(kolo({ p:100, bust:false, c:"j" })) === "6:100",
+     "první hod jde vždycky všemi kostkami režimu: " + zapis(kolo({ p:100, bust:false, c:"j" })));
+
+  /* dva hody po sobě, ubývá po jedné kostce */
+  ok(zapis(kolo({ p:200, bust:false, c:"j|j" })) === "6:100 5:100",
+     "druhý hod jde zbytkem: " + zapis(kolo({ p:200, bust:false, c:"j|j" })));
+
+  /* horké kostky: hod, který spotřeboval všechny, vrací na plný počet —
+     a platí to i podruhé za sebou v témž kole */
+  const horke = kolo({ p:9700, bust:false, c:"n61|n62|j" });
+  ok(zapis(horke) === "6:8000 6:1600 6:100",
+     "dvakrát po sobě horké kostky vrací na šest: " + zapis(horke));
+
+  /* farkle nenese v popisu položku — hod navíc se dopočítá ze zbytku */
+  const farkle = kolo({ p:50, bust:true, c:"p" });
+  ok(zapis(farkle) === "6:50 5:0",
+     "prohraný hod farklu se dopočítá ze zbytku: " + zapis(farkle));
+  ok(zapis(kolo({ p:0, bust:true, c:"" })) === "6:0",
+     "farkle prvním hodem je jediný prázdný hod: " + zapis(kolo({ p:0, bust:true, c:"" })));
+  ok(zapis(kolo({ p:8000, bust:true, c:"n61" })) === "6:8000 6:0",
+     "farkle po horkých kostkách hází zase všemi: " + zapis(kolo({ p:8000, bust:true, c:"n61" })));
+
+  /* pětikostkový režim počítá od pěti a jinak extrapoluje (násobek, ne x2) */
+  ok(zapis(kolo({ p:1000, bust:false, c:"n51" }, pet)) === "5:3000",
+     "pět jedniček v pětikostkovém režimu: " + zapis(kolo({ p:1000, bust:false, c:"n51" }, pet)));
+
+  /* co se rozebrat nedá */
+  ok(kolo({ p:100, bust:false, c:"v" }) === null, "ruční položka \"v\" shodí celé kolo na null");
+  ok(kolo({ p:100, bust:false, c:"j,zzz" }) === null, "neznámý kód taky");
+  ok(rozlozKolo({ p:100, bust:false, c:"j" }, null) === null, "chybějící režim taky");
+  ok(zapis(kolo({ p:100, bust:false, d:"jednička" })) === "6:100",
+     "starý textový popis se přeloží na kódy: " + zapis(kolo({ p:100, bust:false, d:"jednička" })));
+  ok(kolo({ p:100, bust:false, d:"něco, čemu nerozumím" }) === null,
+     "nepřeložitelný textový popis je null");
+
+  /* jednotlivé položky: čtyři tvary kódu, které se v historii vyskytují */
+  const pol = k => { const r = rozlozPolozku(k, kcd); return r ? r.p + "/" + r.d : "null"; };
+  ok(pol("j") === "100/1" && pol("p") === "50/1", "samostatná jednička a pětka: " + pol("j") + " " + pol("p"));
+  ok(pol("d3") === "0/1", "trojka samostatně v KCD neboduje, ale kostku bere: " + pol("d3"));
+  ok(pol("n35") === "500/3", "tři pětky: " + pol("n35"));
+  ok(pol("s16") === "1500/6", "postupka 1–6: " + pol("s16"));
+  ok(pol("c3p") === "500/6", "tři dvojice berou sazbu presetu: " + pol("c3p"));
+  ok(pol("k1500x5") === "1500/5", "vlastní kombinace veze body i kostky v kódu: " + pol("k1500x5"));
+  ok(pol("v") === "null" && pol("nic") === "null", "\"v\" ani neznámý kód nejdou rozebrat");
 }
 
 console.log(fails ? `\n${fails} CHYB` : "\nvše prošlo");

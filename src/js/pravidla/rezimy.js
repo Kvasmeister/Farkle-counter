@@ -202,8 +202,12 @@ function cistyRezim(x, id, zaklad){
   rez.vlastni = !jePreset(id);
   if(!x || typeof x !== "object") return rez;
   if(typeof x.nazev === "string") rez.nazev = x.nazev.slice(0, NAZEV_MAX);
+  /* Pět nebo šest, nic mezi tím. Editor v nastavení nabízí právě tyhle dvě
+     hodnoty ($("rezkostek") v ui/nastaveni-rezimy.js), takže širší rozsah
+     by znamenal režim, který se otevřením detailu tiše překlopí na šest —
+     a čtyřkostkový Farkle stejně nikdo nehraje. */
   b = Math.floor(naCislo(x.kostek, 0));
-  if(b >= 2 && b <= 6) rez.kostek = b;
+  if(b === 5 || b === 6) rez.kostek = b;
   /* Dokud tabulka měla jen jedničku a pětku, ukládaly se pod jed/pet.
      Čte se to dál, aby se režim uložený tehdejší verzí nerozbil. */
   if(x.sam === undefined && (x.jed !== undefined || x.pet !== undefined)){

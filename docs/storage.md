@@ -34,7 +34,7 @@ každého záznamu:
 
 | police | obsah |
 |---|---|
-| `souhrny` | `id, savedAt, mode, goal, roundGoal, banked` a předpočítané `kol, farklu, nejlepsi, nejhorsi, serie, kolKCili, hodu, ztraceno, nejlepsihod, hoduCelkem` |
+| `souhrny` | `id, savedAt, mode, goal, roundGoal, rezim, rezimN, banked` a předpočítané `kol, farklu, farkluprvni, nejlepsi, nejhorsi, serie, kolKCili, hodu, ztraceno, nejlepsihod, bodyHodu, hoduCelkem` |
 | `detaily` | `id` a `turns` s popisy kol |
 
 Souhrny se natáhnou **celé při startu** (deset tisíc jich je v paměti kolem
@@ -90,9 +90,34 @@ horkých kostkách) — stejný vzorec jako živé `rollOn()`/`left()` v `akce.j
 Kolo, které obsahuje ručně zadanou položku `v`, nebo patří k mezitím
 smazanému vlastnímu režimu, se rozebrat nedá — `rozlozKolo()` vrátí `null`
 a takové kolo se z hodových statistik jen vynechá, jinde se počítá dál beze
-změny. `gNejlepsiHod(g)`/`gHoduCelkem(g)` v `stav/zaznam.js` staví na tomhle
-rozboru (druhá bez potřeby `rez` — jen počet úseků, tedy stejně odolná jako
-`gNejvicHodu`) a jejich hodnoty nesou souhrny jako `nejlepsihod`/`hoduCelkem`.
+změny.
+
+**Tři hodové údaje vypadnou z jednoho průchodu.** `rozborHodu(g)`
+v `stav/zaznam.js` projde kola jednou a vrátí `{ nej, body, hodu }`; nad ním
+sedí `gNejlepsiHod`, `gBodyHodu` a `gHoduCelkem` a souhrny to nesou jako
+`nejlepsihod`, `bodyHodu` a `hoduCelkem`. Že se počítají spolu, není úspora,
+ale podmínka správnosti: dlaždice *Průměrný hod* dělí `bodyHodu` číslem
+`hoduCelkem` a hlavička jejího žebříčku počítá totéž z vypsaných řádků —
+shodnout se můžou jen tehdy, když čitatel i jmenovatel mluví o **týchž**
+hodech. Proto se kolo, které rozebrat nejde, vynechá z obojího; jmenovatel
+se nesmí brát z `hodyVKole()`, která počítá úseky ve všech kolech.
+
+Do verze 5 to tak nebylo: čitatelem byl `banked` (tedy bez bodů propadlých
+farklem) a jmenovatelem `hodyVKole()` přes všechna kola. Dlaždice tím
+ukazovala jiné číslo než žebříček, na který se prokliká. Verze 6 přidala
+`bodyHodu` a předefinovala `hoduCelkem`; `dopoctiHody()` proto tuhle trojici
+přepisuje **vždycky**, ne jen když chybí.
+
+Hodnota `nejlepsihod: null` znamená „nebylo z čeho počítat“ — a když je důvod
+chybějící herní režim (hra z cizí zálohy, jejíž vlastní režim ještě nebyl
+naimportovaný), spraví se to doimportováním režimu. Samo se to nestane,
+protože `g*` funkce se ptají `!== undefined` a uložená `null` tou podmínkou
+projde; `prepocitejHodove()` v `stav/historie.js` proto po přidání režimů ze
+zálohy projede souhrny s `nejlepsihod === null` a co jde, dopočítá. Běží mimo
+`versionchange`, jako obyčejná `readwrite` transakce, a po zápisu obnoví
+`HIST`, aby statistiky nedržely stará čísla až do restartu. Sdílení
+jednotlivých režimů to nespouští: sdílený režim dostává vždycky nové id,
+takže se do `rezim` uložené hry nemá jak trefit.
 
 **Farkle se do dat neukládá, jen dokresluje.** Buňku popisu skládá pro obě
 tabulky jedna `bunkaPopisu()` jako popis kola + `" · farkle"`, u prázdného

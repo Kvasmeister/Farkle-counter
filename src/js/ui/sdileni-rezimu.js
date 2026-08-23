@@ -77,7 +77,7 @@ import {
   vypniVyberRezimu
 } from "./nastaveni-rezimy.js";
 import { $ } from "./prvky.js";
-import { datumCasProNazev, doSchranky, stahni } from "./zaloha.js";
+import { bezUzkeMezery, datumCasProNazev, doSchranky, stahni } from "./zaloha.js";
 
 var ZNACKA_SDIL = "#SDILENIREZIMU:";
 
@@ -106,7 +106,7 @@ function sestavVyber(){
 function exportTextSdileni(sez){
   var r = [t("sdil.nadpis"), t("sdil.vytvoreno", { kdy: dt(Date.now()), n: tn("slovo.rezim", sez.length) }), ""];
   sez.forEach(function(rez, i){ r.push((i + 1) + ") " + nazevRezimu(rez)); });
-  return r.join("\n") +
+  return bezUzkeMezery(r.join("\n")) +
          "\n" + t("exp.oddelovac") + "\n" + ZNACKA_SDIL + JSON.stringify(sez.map(venRezimSdileny));
 }
 
@@ -266,6 +266,11 @@ export function initSdileniRezimu(){
     nacteneKandidati.forEach(function(v){
       if(v.prijme){ REZIMY.sez.push(v.rez); pridano++; }
     });
+    /* Bez prepocitejHodove(), na rozdíl od pridatRezimy() v ui/zaloha-plna.js:
+       sdílený režim dostává vždycky NOVÉ id (novyIdRezimu() v zpracujKandidaty
+       výš), takže se nemá jak trefit do `rezim` už uložené hry a hodové
+       statistiky, které kvůli chybějícímu režimu zůstaly prázdné, odemknout
+       neumí. To dokáže jen záloha, která id veze s sebou. */
     if(pridano) ulozRezimy();
     zavriImpNahled();
     renderRezimy();

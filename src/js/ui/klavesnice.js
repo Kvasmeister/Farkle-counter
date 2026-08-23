@@ -233,6 +233,11 @@ function zrusVyber(){
   selValue = null;
   renderKind();
 }
+/* Rozepsaná volba počtu kostek patří rozehranému kolu: Farkle i Nová hra
+   ji musí shodit. Sama od sebe zmizí jen tehdy, když se kombinace přestane
+   nabízet (jiný režim, vypnutí) — po farklu by jinak řada zůstala viset ve
+   stavu volby, případně i bez jediného počtu, ze kterého se dá vybrat. */
+function zrusVolbuKombinace(){ vybiramKombi = null; }
 function ubratKostku(){ manualDice = Math.max(1, manualDice - 1); }
 function pridatKostku(){ manualDice = Math.min(Math.max(1, left()), manualDice + 1); }
 
@@ -242,4 +247,4 @@ function orezKostky(zbyva){
   if(manualDice > Math.max(1, zbyva)) manualDice = Math.max(1, zbyva);
 }
 
-export { kodVzoru, kombiVolbaCip, manualDice, orezKostky, pocetBoduje, pridatKostku, renderKind, renderKombi, renderVlastniCipy, selCount, selValue, ubratKostku, vybiramKombi, zrusVyber };
+export { kodVzoru, kombiVolbaCip, manualDice, orezKostky, pocetBoduje, pridatKostku, renderKind, renderKombi, renderVlastniCipy, selCount, selValue, ubratKostku, vybiramKombi, zrusVolbuKombinace, zrusVyber };

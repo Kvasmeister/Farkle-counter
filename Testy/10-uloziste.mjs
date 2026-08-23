@@ -494,5 +494,90 @@ console.log("N) souhrn s nulou uloženou dřív se čte jako null");
   ok(sou[0].ztraceno === 0, "v polici nula zůstala, dopočet kvůli tomu neběžel");
 }
 
+/* Export skládá záznamy ze dvou polic, a nesmí přitom ztratit herní režim.
+   Když ho ztratil, import ze všech her udělal KCD2 — a oddíl K) to nepoznal,
+   protože obě úložiště ho neuváděla shodně. Tady se proto neporovnávají dvě
+   zálohy proti sobě, ale záloha proti tomu, co do ní vstoupilo. */
+console.log("O) export z IndexedDB veze herní režim hry i jeho jméno");
+{
+  const vlastni = { id:"gv", savedAt: Date.UTC(2026,0,2), mode:"points",
+                    goal:4000, roundGoal:null, rezim:"rXYZ", rezimN:"Doma u babičky",
+                    banked:300, turns:[{ p:300, bust:false, c:"j,j,j" }] };
+  const p = prohlizec({ [HKEY]: JSON.stringify([hra(1), vlastni]) });
+  const a = await p.start();
+  a.klik(a.$("setbtn"));
+  let text = null;
+  a.w.navigator.clipboard = { writeText: (t) => { text = t; return Promise.resolve(); } };
+  a.klik(a.$("copybtn"));
+  await pauza();
+  const data = JSON.parse(text.slice(text.lastIndexOf("#DATA:") + 6));
+  const v = data.find(g => g.id === "gv");
+  ok(!!v, "hra je v datovém řádku");
+  ok(v && v.rezim === "rXYZ", "režim přežil cestu přes police: " + (v && v.rezim));
+  ok(v && v.rezimN === "Doma u babičky", "a jeho jméno taky: " + (v && v.rezimN));
+  /* hra bez `rezim` (uložená před herními režimy) se dopočítá na KCD2,
+     ne aby v záloze chybělo pole, které import čte */
+  const stara = data.find(g => g.id === "g1");
+  ok(stara && stara.rezim === "kcd2", "starý záznam se dopočítá na kcd2: " + (stara && stara.rezim));
+
+  /* a zpátky: import té zálohy musí hru vrátit pod stejným režimem */
+  const p2 = prohlizec();
+  const b = await p2.start();
+  b.klik(b.$("setbtn"));
+  b.klik(b.$("pastebtn"));
+  b.$("pastearea").value = text;
+  b.klik(b.$("pasteload"));
+  await pauza();
+  b.klik(b.$("impadd"));
+  await pauza(250);
+  const sou = await zPolice(b.w.indexedDB, "souhrny");
+  const s = sou.find(g => g.id === "gv");
+  ok(s && s.rezim === "rXYZ" && s.rezimN === "Doma u babičky",
+     "po importu sedí režim i jméno: " + (s && s.rezim + "/" + s.rezimN));
+}
+
+/* Hra naimportovaná dřív, než tady byl její vlastní režim, nemá podle čeho
+   rozebrat kola na hody — v souhrnu jí zůstane nejlepsihod null a nulový
+   poměr. Doimportování režimu to musí spravit; samo se to nespraví, protože
+   g* funkce se ptají `!== undefined` a uložená null tou podmínkou projde. */
+console.log("P) doimportovaný režim odemkne hodové statistiky uložené naprázdno");
+{
+  const cizi = { id:"gc", savedAt: Date.UTC(2026,0,3), mode:"points",
+                 goal:4000, roundGoal:null, rezim:"rpozde", rezimN:"Přijde později",
+                 banked:300, turns:[{ p:300, bust:false, c:"j,j,j" }] };
+  const p = prohlizec({ [HKEY]: JSON.stringify([cizi]) });
+  const a = await p.start();
+  const pred = await zPolice(a.w.indexedDB, "souhrny");
+  ok(pred[0].nejlepsihod === null, "bez režimu se hod nedá spočítat: " + pred[0].nejlepsihod);
+  ok(pred[0].hoduCelkem === 0, "a do poměru se hra nezapočítá: " + pred[0].hoduCelkem);
+
+  /* záloha herních režimů veze id s sebou (na rozdíl od sdílení, které
+     vždycky přiděluje nové), takže se trefí do `rezim` uložené hry */
+  const rezim = { id:"rpozde", nazev:"Přijde později", kostek:6,
+    sam:[0,100,0,0,0,50,0], stej:{3:[0,1000,200,300,400,500,600]}, rozs:false,
+    nad:"x2", nadP:[0,0,0,1000,1000,2000,3000],
+    post:{"15":500,"26":750,"16":1500}, p:{}, v:[] };
+  a.klik(a.$("setbtn"));
+  a.klik(a.$("pastebtnrez"));
+  a.$("pasteareazrez").value =
+    "Kostky\n#REZIMYZALOHA:" + JSON.stringify({ akt:"kcd2", p:{}, v:[rezim] });
+  a.klik(a.$("pasteloadrez"));
+  await pauza();
+  a.klik(a.$("impaddrez"));
+  await pauza(250);
+
+  const po = await zPolice(a.w.indexedDB, "souhrny");
+  ok(po[0].nejlepsihod === 300, "po doimportování režimu je hod spočítaný: " + po[0].nejlepsihod);
+  ok(po[0].bodyHodu === 300 && po[0].hoduCelkem === 1,
+     "a poměr má z čeho počítat: " + po[0].bodyHodu + "/" + po[0].hoduCelkem);
+
+  /* HIST se musí obnovit hned, jinak stránka Statistiky drží stará čísla */
+  a.klik(a.$("tab2"));
+  const radek = [...a.$("statlist").querySelectorAll(".strow")]
+    .find(b => b.querySelector(".sn").firstChild.textContent.trim() === "Nejlepší hod");
+  ok(radek && radek.querySelector(".sv").textContent === "300",
+     "a statistika to ukazuje bez restartu: " + (radek && radek.querySelector(".sv").textContent));
+}
+
 console.log(fails ? `\n${fails} CHYB` : "\nvše prošlo");
 process.exit(fails ? 1 : 0);

@@ -73,11 +73,13 @@ ok(val("Nejvíc bodů ztraceno farklem — hra na body") === "—" && val("Nejv�
 ok(val("Nejvíc her za den") === "1", "nejvíc her za den: " + val("Nejvíc her za den"));
 // 4700 bodů / 12 kol = 391,7 -> 392
 ok(val("Průměr na kolo — celkem") === "392", "celkový průměr: " + val("Průměr na kolo — celkem"));
-// každé kolo tu má jednodílný popis "jednička", tedy přesně jeden hod za
-// kolo (viz Nejvíc hodů v jednom kole níž) — Průměrný hod tak vyjde na
-// stejné číslo jako Průměr na kolo, a Nejlepší hod je vždy jen ta jednička
+// Hodové statistiky NEČTOU t.p, ale rozebírají popis kola — a ten je tu
+// u každého bodovaného kola "jednička", ať kolo zapsalo cokoli. Každý hod
+// tedy platí 100 a farkle 0. Devět bodovaných kol a tři farkle: 900 / 12 = 75.
+// Že to není 392 (= banked/hodů), je právě ten smysl: dlaždice teď říká
+// totéž co žebříček hodů, který z t.p taky nikdy nevycházel.
 ok(val("Nejlepší hod") === "100", "nejlepší hod je jednička: " + val("Nejlepší hod"));
-ok(val("Průměrný hod — celkem") === "392", "hod = kolo v této fixtuře, stejný průměr: " + val("Průměrný hod — celkem"));
+ok(val("Průměrný hod — celkem") === "75", "průměr z rozebraných hodů, ne z banked: " + val("Průměrný hod — celkem"));
 // body: (2100+800)/7 = 414,3 -> 414
 ok(val("Průměr na kolo — hra na body") === "414", "průměr na body: " + val("Průměr na kolo — hra na body"));
 ok(val("Průměr na kolo — hra na kola") === "360", "průměr na kola: " + val("Průměr na kolo — hra na kola"));

@@ -26,7 +26,7 @@ import {
   slozRezimy,
   ulozRezimy
 } from "../pravidla/rezimy.js";
-import { histAll, histWrite, klicSelhani, proHistorii } from "../stav/historie.js";
+import { histAll, histWrite, klicSelhani, prepocitejHodove, proHistorii } from "../stav/historie.js";
 import { gameEmpty } from "../stav/stav.js";
 import { dt } from "../text/format.js";
 import { $ } from "./prvky.js";
@@ -34,6 +34,7 @@ import { renderRezimy } from "./nastaveni-rezimy.js";
 import { renderP2 } from "./statistiky-stranka.js";
 import { render } from "./vykresleni.js";
 import {
+  bezUzkeMezery,
   cistaHra,
   datumProNazev,
   doSchranky,
@@ -62,20 +63,27 @@ function novychRezimu(sez){
   return sez.filter(function(r){ return r.vlastni && !mame[r.id]; });
 }
 /* Jen přidá — diffy presetů a REZIMY.akt nechává být, stejná úvaha jako
-   u „Přidat nové“ v Záloze historie: nedotčené se nemá co rozbít. */
+   u „Přidat nové“ v Záloze historie: nedotčené se nemá co rozbít.
+
+   Přírůstek režimů může odemknout hodové statistiky u her, které se
+   naimportovaly dřív, než jejich vlastní režim existoval — bez rozboru kol
+   podle pravidel té hry nejde spočítat ani nejlepší, ani průměrný hod.
+   Proto po každém přidání běží prepocitejHodove(); když není co spravit,
+   nestojí to nic (dotčené souhrny se poznají podle nejlepsihod === null). */
 function pridatRezimy(sez){
   var nove = novychRezimu(sez);
   var volno = PRESET_REZ_PORADI.length + REZIMY_MAX - REZIMY.sez.length;
   if(volno < 0) volno = 0;
   nove = nove.slice(0, volno);
   nove.forEach(function(r){ REZIMY.sez.push(r); });
-  if(nove.length) ulozRezimy();
+  if(nove.length){ ulozRezimy(); prepocitejHodove(function(n){ if(n) renderP2(); }); }
   return nove.length;
 }
 function nahraditRezimy(vysledek){
   REZIMY.sez = vysledek.sez;
   REZIMY.akt = vysledek.akt;
   ulozRezimy();
+  prepocitejHodove(function(n){ if(n) renderP2(); });
 }
 
 function exportTextPlna(hry, sez, rezimyObj){
@@ -84,13 +92,13 @@ function exportTextPlna(hry, sez, rezimyObj){
   }), ""];
   r = r.concat(hrySeznamRadky(hry));
   r = r.concat(rezimySeznamRadky(sez));
-  return r.join("\n").replace(/ /g, " ") +
+  return bezUzkeMezery(r.join("\n")) +
          "\n" + t("exp.oddelovac") + "\n" + ZNACKA_PLNA + JSON.stringify({ hry: hry, rezimy: rezimyObj });
 }
 function exportTextRez(sez, rezimyObj){
   var r = [t("exprez.nadpis"), t("exprez.vytvoreno", { kdy: dt(Date.now()), n: tn("slovo.rezim", sez.length) }), ""];
   r = r.concat(rezimySeznamRadky(sez));
-  return r.join("\n").replace(/ /g, " ") +
+  return bezUzkeMezery(r.join("\n")) +
          "\n" + t("exp.oddelovac") + "\n" + ZNACKA_REZ + JSON.stringify(rezimyObj);
 }
 function parsePlnaZaloha(text){

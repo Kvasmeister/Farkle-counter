@@ -24,7 +24,7 @@ import {
   rezim
 } from "../stav/historie.js";
 import { kopieKola } from "../stav/stav.js";
-import { gFarkle, gNejlepsiKolo } from "../stav/zaznam.js";
+import { gFarkle, gNejlepsiKolo, gRezim } from "../stav/zaznam.js";
 import { dt, fmt, popisHry } from "../text/format.js";
 import { popisKola } from "../text/stitky.js";
 import { prepniMisto, resetMisto } from "./misto.js";
@@ -48,13 +48,32 @@ function datumCasProNazev(){
   var d = new Date();
   return datumProNazev() + "-" + ("0" + d.getHours()).slice(-2) + ("0" + d.getMinutes()).slice(-2);
 }
-/* Plné záznamy pro zálohu. V režimu ls je má paměť rovnou, v režimu idb
-   se skládají ze souhrnů a detailů. Detaily se čtou kurzorem, ne jedním
+/* Jeden záznam do zálohy. Vypisují se přesně ta pole, která import zpátky
+   čte (cistaHra() níž) — nic víc a nic míň, a v obou režimech úložiště
+   stejně. Dřív se v režimu ls posílal záznam z paměti tak, jak byl, a
+   v režimu idb se skládal ručně BEZ `rezim` a `rezimN`: export z telefonu
+   po migraci do IndexedDB tedy ze všech her dělal při importu KCD2. Že se
+   ty dvě větve rozcházejí, nešlo poznat ani z testu, který obě zálohy
+   porovnává — byly rozdílné shodně.
+   gRezim() proto, že hra uložená před zavedením herních režimů `rezim`
+   vůbec nemá a dopočítává se až při čtení. */
+function proExport(g, turns){
+  return { id: g.id, savedAt: g.savedAt, mode: g.mode, goal: g.goal,
+           roundGoal: g.roundGoal || null,
+           rezim: gRezim(g), rezimN: g.rezimN || null,
+           banked: g.banked || 0,
+           turns: turns || [] };
+}
+/* Plné záznamy pro zálohu. V režimu ls má kola paměť rovnou, v režimu idb
+   se dotahují z police detailů. Detaily se čtou kurzorem, ne jedním
    getAll() přes celou polici — při tisících her by to byl jeden obří
    objekt navíc k textu zálohy, který se stejně musí složit. */
 function slozHry(hotovo){
   var hry = histAll().sort(function(a, b){ return (a.savedAt || 0) - (b.savedAt || 0); });
-  if(rezim !== "idb"){ hotovo(hry); return; }
+  if(rezim !== "idb"){
+    hotovo(hry.map(function(g){ return proExport(g, g.turns); }));
+    return;
+  }
   if(!idb){ hotovo(null); return; }
   var tx;
   try{ tx = idb.transaction(DETAILY, "readonly"); }
@@ -63,11 +82,7 @@ function slozHry(hotovo){
   kur.onsuccess = function(){
     var c = kur.result;
     if(c){ mapa[c.value.id] = c.value.turns || []; c.continue(); return; }
-    hotovo(hry.map(function(g){
-      return { id: g.id, savedAt: g.savedAt, mode: g.mode, goal: g.goal,
-               roundGoal: g.roundGoal || null, banked: g.banked || 0,
-               turns: mapa[g.id] || [] };
-    }));
+    hotovo(hry.map(function(g){ return proExport(g, mapa[g.id]); }));
   };
   kur.onerror = function(){ hotovo(null); };
 }
@@ -97,14 +112,19 @@ function hrySeznamRadky(hry){
   });
   return r;
 }
+/* V čitelné části exportu nechceme úzkou nezlomitelnou mezeru, kterou fmt()
+   sází mezi tisíce — v textovém souboru by se leckde zobrazila jako podivný
+   znak. Jedno místo pro všechny čtyři exporty (historie, kompletní záloha,
+   záloha režimů, sdílení režimů). Zapsáno escapem, ne znakem: U+202F je ve
+   zdroji neviditelná a nástroj na normalizaci bílých znaků by ji tiše
+   vyhodil, aniž by si toho kdokoli všiml. */
+function bezUzkeMezery(s){ return s.replace(/\u202F/g, " "); }
 /* Formát zálohy se nemění: nahoře čitelný přehled, dole řádek #DATA:.
    Soubor z dřívější verze musí jít naimportovat i potom. */
 function exportText(hry){
   var r = [t("exp.nadpis"), t("exp.vytvoreno", { kdy: dt(Date.now()), n: hry.length }), ""];
   r = r.concat(hrySeznamRadky(hry));
-  /* v čitelné části nechceme úzkou nezlomitelnou mezeru, v textovém
-     souboru by se leckde zobrazila jako podivný znak */
-  return r.join("\n").replace(/\u202F/g, " ") +
+  return bezUzkeMezery(r.join("\n")) +
          "\n" + t("exp.oddelovac") + "\n" + ZNACKA + JSON.stringify(hry);
 }
 
@@ -376,4 +396,4 @@ export function initZaloha(){
   });
 }
 
-export { ZNACKA, cistaHra, datumCasProNazev, datumProNazev, doSchranky, elImpBox, elImpFile, elImpInfo, elPasteArea, elPasteBox, elZalMsg, exportText, hrySeznamRadky, nactene, novychZ, parseZaloha, prijmiZalohu, renderZaloha, renderZaloha2, repTimer, sTextemZalohy, slozHry, stahni, zalMsg, zavriImport, zavriVlozeni };
+export { ZNACKA, bezUzkeMezery, cistaHra, datumCasProNazev, datumProNazev, doSchranky, elImpBox, elImpFile, elImpInfo, elPasteArea, elPasteBox, elZalMsg, exportText, hrySeznamRadky, nactene, novychZ, parseZaloha, prijmiZalohu, proExport, renderZaloha, renderZaloha2, repTimer, sTextemZalohy, slozHry, stahni, zalMsg, zavriImport, zavriVlozeni };

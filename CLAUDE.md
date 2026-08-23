@@ -1,6 +1,6 @@
 # Kostky — počítadlo Farkle · předávací dokument
 
-Stav k 21. 8. 2026. Jednohráčské počítadlo skóre pro Farkle, jako PWA na
+Stav k 23. 8. 2026. Jednohráčské počítadlo skóre pro Farkle, jako PWA na
 GitHub Pages. Výchozí pravidla jsou ta z kostek v Kingdom Come: Deliverance II,
 dají se přepnout na jiná. Rozhraní je česky a anglicky, výchozí je čeština.
 
@@ -42,7 +42,7 @@ npm test          ověří, že je aktuální, zkontroluje importy, pustí 22 sa
 Všech 21 jsdom sad staví DOM z řetězce (`new JSDOM(html, …)` bez
 `resources: "usable"`). Takový jsdom **nenačte `<script src>`** a
 **`<script type="module">` neumí vůbec**. Servírovat aplikaci jako víc
-souborů by stálo celou testovací síť — 1 618 kontrol. Zdroj je proto
+souborů by stálo celou testovací síť — 1 649 kontrol. Zdroj je proto
 modulární a výstup zůstává jeden soubor — pro testy i pro `SOUBORY`
 v `sw.js` se tím nemění nic.
 
@@ -86,7 +86,7 @@ src/
     pravidla/           skore, postupky, kombinace, rezimy, riziko
     stav/               stav, kody, hody, uloziste, historie, zaznam
     text/               format (fmt, esc, dt), stitky (kód → slova)
-    ui/                 19 modulů, viz níž
+    ui/                 21 modulů, viz níž
 ```
 
 **Servíruje se kořen repa:** `index.html`, `manifest.webmanifest`, `sw.js`
@@ -162,8 +162,9 @@ prvky hned při načtení; v `<head>` nebo s `defer` by tam byly `null`.
 ### Měnitelný stav přes hranici modulu
 
 Importované vazby jsou v ES modulech **jen pro čtení**. Kdo chce cizí stav
-změnit, volá operaci vlastníka: `zrusVyber()`, `prepniOpravy()`,
-`zrusRozdelaneRezimy()`, `prepniAuto()`, `nastavSeg()`, `orezKostky()`…
+změnit, volá operaci vlastníka: `zrusVyber()`, `zrusVolbuKombinace()`,
+`prepniOpravy()`, `zrusRozdelaneRezimy()`, `prepniAuto()`, `nastavSeg()`,
+`orezKostky()`…
 Esbuild přiřazení do importu **odmítne už při buildu**, takže tahle chyba
 nemůže projít tiše.
 
@@ -264,7 +265,7 @@ node Testy/vse.mjs 18 19    jen vyjmenované
 npm test                    build --kontrola + kontrola importů + sady
 ```
 
-Dnes **1 618 kontrol**, poslední stav: vše prošlo. Rozpis sad drží
+Dnes **1 649 kontrol**, poslední stav: vše prošlo. Rozpis sad drží
 `Testy/TESTS_README.md`.
 
 ### Nástroje vedle sad
@@ -272,7 +273,7 @@ Dnes **1 618 kontrol**, poslední stav: vše prošlo. Rozpis sad drží
 | co | proč |
 |---|---|
 | `00-start.mjs` | kouřová zkouška, 2 s, pouští se první. Chybějící import se jinak projeví rozsypáním osmnácti sad naráz. |
-| `kontrola-modulu.mjs` | jména bez původu = zapomenutý import. Esbuild je nehlásí. |
+| `kontrola-modulu.mjs` | importy oběma směry: jméno bez původu = zapomenutý import (esbuild ho nehlásí), naimportované jméno bez užití = zbytečný řádek v hlavičce modulu |
 | `doplnit-importy.mjs` · `doplnit-exporty.mjs` · `do-initu.mjs` | pomůcky z refaktoru; staví na acornu, ne na odhadu |
 | `volna-jmena.mjs` | analýza rozsahů, sdílená mezi nimi |
 
@@ -292,7 +293,13 @@ Dnes **1 618 kontrol**, poslední stav: vše prošlo. Rozpis sad drží
   `caches`, `fetch` a `setTimeout`. Nová globální závislost v `sw.js` musí
   přibýt i do náhrad.
 - **Sada 10 je jediná s IndexedDB.** Hodnoty předpočítaných polí ze souhrnu
-  se testují jen tam; v sadě 04 by se `souhrnZ()` vůbec nespustil.
+  se testují jen tam; v sadě 04 by se `souhrnZ()` vůbec nespustil. **Cokoli,
+  co se v režimu `idb` chová jinak než v `ls`, patří sem** — export historie
+  se v obou větvích rozcházel (chyběl `rezim`) a nikde jinde to nešlo vidět.
+- **Sada 17 volá `src/js/stav/hody.js` přímo, bez jsdom.** Rozbor kola na
+  hody je čistá funkce a `thrown` u každého hodu se přes aplikaci ověřit
+  nedá — je vidět jen v návratové hodnotě. Platí u toho pravidlo z části 1:
+  co se ptá na kód, ať čte `src/`.
 - **Sondy `window.__i18n` a `window.__pravidla`** existují jen pro sady 16–19.
   Nastavuje je `hlavni.js`; aplikace je sama nepoužívá. Strážní test rizika
   je povinný — bez něj by se konstantní tabulky po změně bodování tiše
@@ -333,7 +340,7 @@ kterýkoli krok selže, nic se neodešle.
 ### Verze
 
 ```js
-const VERZE = "kostky-v39";
+const VERZE = "kostky-v51";   // první řádek sw.js; číslo tady je jen ukázka tvaru
 ```
 
 **Verzi zvyšuje výhradně majitel projektu, ne asistent.** Asistent na ni
@@ -470,11 +477,16 @@ Na výšku, natvrdo ve třech vrstvách: `"orientation": "portrait"` v manifestu
 `screen.orientation.lock()` a CSS překryv `#rot`. **Krajina se nepodporuje
 a nemá se dodělávat.**
 
-### Dvojklik zvětšuje
+### Dvojklik a štípání zvětšují
 
-`user-scalable=no` iOS od verze 10 ignoruje. Řeší to `touch-action:
-manipulation`, ale ta vlastnost **se nedědí** — musí být na `*`, ne jen na
-`html`. Vstupní pole mají 16 px, protože pod tím Safari při zaostření přiblíží.
+`user-scalable=no` iOS od verze 10 ignoruje. Řeší to `touch-action`, ale ta
+vlastnost **se nedědí** — musí být na `*`, ne jen na `html`.
+
+Hodnota je **`pan-x pan-y`**, ne `manipulation`: obojí ubere prodlevu na
+dvojklik, ale `manipulation` nechává štípací zoom projít. Posouvání zůstává,
+protože obě osy jsou vyjmenované.
+
+Vstupní pole mají 16 px, protože pod tím Safari při zaostření přiblíží.
 
 ### Nezhasínání displeje
 

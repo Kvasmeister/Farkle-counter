@@ -79,11 +79,14 @@ export function initStranky(){
     if(e.key === "ArrowLeft") goTo(page - 1);
   });
 
-  /* Kontextové menu je vypnuté všude kromě pole pro vložení zálohy ze
-     schránky (#pastearea) — to na vkládání pravým tlačítkem/podržením
-     spoléhá, protože čtení schránky přes JS je na iOS nespolehlivé. */
+  /* Kontextové menu je vypnuté všude kromě polí pro vložení ze schránky —
+     ta na vkládání pravým tlačítkem/podržením spoléhají, protože čtení
+     schránky přes JS je na iOS nespolehlivé. Ptáme se na typ prvku, ne na
+     id: vkládacích ploch jsou dnes čtyři (záloha historie, kompletní
+     záloha, záloha režimů, sdílení režimů) a seznam id by se rozešel
+     s tou pátou. */
   document.addEventListener("contextmenu", function(e){
-    if(e.target && e.target.id === "pastearea") return;
+    if(e.target && e.target.tagName === "TEXTAREA") return;
     e.preventDefault();
   });
 }

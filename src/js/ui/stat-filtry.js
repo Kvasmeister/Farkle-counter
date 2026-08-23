@@ -29,6 +29,10 @@ import { rezimyPodleHer } from "./statistiky.js";
 var SFKEY = "farkle-statfiltr-v1";
 var STATFILTR = { rezim: null, typ: null, hodnota: null };
 
+/* Vedlejší efekt jako každý jiný: spouští ho hlavni.js v kroku 2 vedle
+   nactiRezimy(), ne import tohohle modulu. Je to táž kategorie — trvalá
+   volba čtená z localStorage — a pořadí startu má být vidět na jednom
+   místě. */
 function nactiStatFiltr(){
   var raw = null;
   try{ raw = localStorage.getItem(SFKEY); }catch(e){}
@@ -40,7 +44,6 @@ function nactiStatFiltr(){
   STATFILTR.typ = (o.typ === "points" || o.typ === "rounds") ? o.typ : null;
   STATFILTR.hodnota = (typeof o.hodnota === "number") ? o.hodnota : null;
 }
-nactiStatFiltr();
 
 function ulozStatFiltr(){
   try{ localStorage.setItem(SFKEY, JSON.stringify(STATFILTR)); }catch(e){}
@@ -81,4 +84,4 @@ function pouzijTypFiltr(hry){
   });
 }
 
-export { STATFILTR, pouzijRezimFiltr, pouzijTypFiltr, seznamRezimuKFiltru, ulozStatFiltr, zrusStatFiltr };
+export { STATFILTR, nactiStatFiltr, pouzijRezimFiltr, pouzijTypFiltr, seznamRezimuKFiltru, ulozStatFiltr, zrusStatFiltr };
