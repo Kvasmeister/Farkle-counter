@@ -1,7 +1,8 @@
 /* Stránka Statistiky: seznam, historie her, detail a stránkování.
 
    Závisí na: stav, pravidla/rezimy (rezimPodleId — rozbor hodů), text,
-              ui/statistiky, ui/filtry
+              ui/statistiky, ui/filtry, ui/stat-filtry (STATFILTR.typ —
+              schování irelevantních rozdělených statistik)
    Sahá na: DOM
 
    Statistiky i historie mají podstránku detailu (#p2list ↔ #p2detail),
@@ -21,6 +22,7 @@ import { gFarkle, gKol, gRezim, nazevRezimuZaznamu } from "../stav/zaznam.js";
 import { dt, dtDen, esc, fmt, popisTypuHry } from "../text/format.js";
 import { FILTR, RAZENI, histView, konecDne, renderFiltry } from "./filtry.js";
 import { $ } from "./prvky.js";
+import { STATFILTR } from "./stat-filtry.js";
 import {
   STATY,
   denKlic,
@@ -164,9 +166,16 @@ function renderStatList(hry){
   }
   /* Kategorie jde v STATY po sobě (viz statistiky.js), takže stačí hlídat
      změnu oproti předchozí položce — stejný vzor jako .dsep o pár desítek
-     řádků níž v renderHistList(). */
+     řádků níž v renderHistList(). Kontrola kategorie běží AŽ PO schování
+     irelevantní položky, ne před ním — jinak by kategorii s jedinou (teď
+     schovanou) položkou zůstal viset osiřelý nadpis bez řádku pod sebou. */
   var posledniKat = null;
   STATY.forEach(function(def, i){
+    /* Se zapnutým filtrem typu hry nemá rozdělená statistika pro OPAČNÝ
+       typ co ukázat — statHodnota() by stejně vrátila null. Neděleným
+       statistikám (bez def.s, „— celkem" varianty i početní) filtr jen
+       zúží zobrazenou hodnotu, nezmizí. */
+    if(def.s && STATFILTR.typ !== null && def.s !== STATFILTR.typ) return;
     if(def.kat !== posledniKat){
       posledniKat = def.kat;
       var cap = document.createElement("div");

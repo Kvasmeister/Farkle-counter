@@ -414,5 +414,31 @@ console.log("X) Reset maže i filtr Statistik a ukládá vynulovaný stav");
      "vynulovaný stav se i uložil: " + JSON.stringify(x.statFiltrUlozeno()));
 }
 
+console.log("Y) filtr typu hry schová irelevantní rozdělené statistiky");
+{
+  const y = app(REZIMY_HRY, { rezimy: REZIMY_SEED });
+  const radky = () => [...y.$("statlist").querySelectorAll(".strow")]
+    .map(b => b.querySelector(".sn").firstChild.textContent.trim());
+  ok(radky().length === 31, "bez filtru je vidět všech 31: " + radky().length);
+
+  y.typStat(2);   // na kola
+  const r2 = radky();
+  ok(r2.length === 23, "s filtrem na kola zbyde 23 řádků: " + r2.length);
+  ["Nejvíc bodů — hra na body", "Průměr na kolo — hra na body",
+   "Nejméně kol v jedné hře na body", "Nejvíc kol v jedné hře na body",
+   "Nejlepší kolo — hra na body", "Nejhorší kolo bez farklu — hra na body",
+   "Průměrný hod — hra na body", "Nejvíc bodů ztraceno farklem — hra na body"
+  ].forEach(n => ok(!r2.includes(n), "„" + n + "“ zmizelo ze seznamu"));
+  ["Nejvíc bodů — celkem", "Nejvíc bodů — hra na kola", "Odehráno her",
+   "Nejlepší kolo — celkem", "Nejlepší kolo — hra na kola"
+  ].forEach(n => ok(r2.includes(n), "„" + n + "“ zůstalo v seznamu"));
+
+  const capy = [...y.$("statlist").children].filter(el => el.className === "seccap");
+  ok(capy.length === 5, "žádná kategorie nezůstala úplně bez řádků, pořád pět nadpisů: " + capy.length);
+
+  y.typStat(0);
+  ok(radky().length === 31, "vrácení na Vše ukáže zase všech 31: " + radky().length);
+}
+
 console.log(fails ? "\nCHYB: " + fails : "\nVše v pořádku");
 process.exit(fails ? 1 : 0);

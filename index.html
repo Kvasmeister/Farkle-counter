@@ -6759,6 +6759,7 @@
     }
     var posledniKat = null;
     STATY.forEach(function(def, i) {
+      if (def.s && STATFILTR.typ !== null && def.s !== STATFILTR.typ) return;
       if (def.kat !== posledniKat) {
         posledniKat = def.kat;
         var cap = document.createElement("div");
